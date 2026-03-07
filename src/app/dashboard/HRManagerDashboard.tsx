@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch, API_URL } from '@/lib/api';
+import { Check, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 
 interface Requisition {
     id: number;
@@ -19,7 +20,7 @@ interface Requisition {
     created_at: string;
     requester?: { id: number; name: string; email: string };
     tenant?: { name: string };
-    job_posting?: { created_at: string; title: string; id: number };
+    job_posting?: { created_at: string; published_at?: string; deadline?: string; title: string; id: number };
 }
 
 export default function HRManagerDashboard({ user, activeTab: initialTab, onLogout }: { user: any; activeTab: string; onLogout: () => void }) {
@@ -132,7 +133,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
             {/* Page Header */}
             <div className="flex justify-between items-end mb-4">
                 <div className="space-y-4">
-                    <h1 className="text-[32px] font-bold text-[#1A2B3D] tracking-tight">{user.tenant?.name || 'Droga Pharma'}</h1>
+                    <h1 className="text-[32px] font-bold text-[#000000] tracking-tight">{user.tenant?.name || 'Droga Pharma'}</h1>
 
                     {/* Sub Tabs */}
                     <div className="flex gap-8 border-b border-gray-100">
@@ -140,14 +141,14 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                             <button
                                 key={t}
                                 onClick={() => setLocalTab(t)}
-                                className={`pb-3 text-[13px] font-black tracking-widest transition-all relative ${localTab === t ? 'text-[#1A2B3D]' : 'text-gray-400 hover:text-gray-600'
+                                className={`pb-3 text-[13px] font-black tracking-widest transition-all relative ${localTab === t ? 'text-[#000000]' : 'text-gray-400 hover:text-gray-600'
                                     }`}
                             >
                                 {t}
                                 {localTab === t && (
                                     <motion.div
                                         layoutId="activeSubTabHR"
-                                        className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#1F7A6E]"
+                                        className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-[#000000]"
                                     />
                                 )}
                             </button>
@@ -159,8 +160,9 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                     <button
                         onClick={handleBulkApprove}
                         disabled={actionLoading}
-                        className="bg-[#1F7A6E] hover:bg-[#165C53] text-white px-6 py-3 rounded font-black text-[13px] tracking-wide shadow-xl shadow-[#1F7A6E]/20 transition-all flex items-center gap-2 disabled:opacity-50"
+                        className="bg-[#FDF22F] hover:bg-black text-[#000000] hover:text-[#FDF22F] px-8 py-3.5 rounded-2xl font-black text-[13px] tracking-widest uppercase shadow-xl shadow-[#FDF22F]/10 transition-all flex items-center gap-2 group border border-[#FDF22F]"
                     >
+                        <Check size={16} className="transition-transform group-hover:scale-125" />
                         Approve Selected ({selectedIds.length})
                     </button>
                 )}
@@ -168,8 +170,8 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
 
             {/* Content Body */}
             {loading ? (
-                <div className="bg-white rounded border border-gray-100 p-20 flex items-center justify-center">
-                    <div className="w-8 h-8 border-4 border-[#1F7A6E] border-t-transparent rounded-full animate-spin" />
+                <div className="bg-white rounded-[32px] border border-gray-100 p-20 flex items-center justify-center">
+                    <div className="w-10 h-10 border-4 border-[#FDF22F] border-t-transparent rounded-full animate-spin" />
                 </div>
             ) : (
                 <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden">
@@ -188,7 +190,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                         <tr><td colSpan={5} className="px-8 py-20 text-center text-gray-400 italic text-sm">No jobs posted yet.</td></tr>
                                     ) : jobs.map((job) => (
                                         <tr key={job.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-6 font-black text-[13px] text-[#1A2B3D]">{job.title}</td>
+                                            <td className="px-6 py-6 font-black text-[13px] text-[#000000]">{job.title}</td>
                                             <td className="px-6 py-6 text-[13px] text-gray-600">{job.department || job.requisition?.department || '—'}</td>
                                             <td className="px-6 py-6 text-[13px] text-gray-600">{job.location || '—'}</td>
                                             <td className="px-6 py-6">
@@ -196,7 +198,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                     {job.status}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-6 text-[13px] font-black text-[#1A2B3D]">
+                                            <td className="px-6 py-6 text-[13px] font-black text-[#000000]">
                                                 {job.applicants_count ?? 0}
                                             </td>
                                         </tr>
@@ -204,13 +206,34 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                 </tbody>
                             </table>
                             {jobsMeta?.last_page > 1 && (
-                                <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+                                <div className="px-8 py-6 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
                                     <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                                        Page {jobsPage} of {jobsMeta.last_page}
+                                        Showing Page {jobsPage} of {jobsMeta.last_page}
                                     </span>
-                                    <div className="flex gap-2">
-                                        <button disabled={jobsPage === 1} onClick={() => setJobsPage(p => p - 1)} className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-400 disabled:opacity-30">←</button>
-                                        <button disabled={jobsPage === jobsMeta.last_page} onClick={() => setJobsPage(p => p + 1)} className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-400 disabled:opacity-30">→</button>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            disabled={jobsPage === 1}
+                                            onClick={() => setJobsPage(p => p - 1)}
+                                            className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:border-[#FDF22F] hover:text-black transition-all disabled:opacity-30 disabled:hover:border-gray-200"
+                                        >
+                                            <ChevronLeft size={18} />
+                                        </button>
+                                        {[...Array(jobsMeta.last_page)].map((_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setJobsPage(i + 1)}
+                                                className={`w-10 h-10 rounded-xl text-xs font-black transition-all ${jobsPage === i + 1 ? 'bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/20' : 'bg-white text-gray-400 border border-gray-100 hover:border-black hover:text-black'}`}
+                                            >
+                                                {i + 1}
+                                            </button>
+                                        ))}
+                                        <button
+                                            disabled={jobsPage === jobsMeta.last_page}
+                                            onClick={() => setJobsPage(p => p + 1)}
+                                            className="w-10 h-10 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-400 hover:border-[#FDF22F] hover:text-black transition-all disabled:opacity-30 disabled:hover:border-gray-200"
+                                        >
+                                            <ChevronRight size={18} />
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -226,7 +249,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                             type="checkbox"
                                             onChange={(e) => setSelectedIds(e.target.checked ? pendingReqs.map(r => r.id) : [])}
                                             checked={pendingReqs.length > 0 && selectedIds.length === pendingReqs.length}
-                                            className="accent-[#1F7A6E] rounded"
+                                            className="accent-[#FDF22F] rounded-lg w-4 h-4 cursor-pointer"
                                         />
                                     </th>
                                     {['REQUISITION', 'COMPANY', 'HIRING MANAGER', 'LOCATION', 'SALARY', 'SUBMITTED ON', 'POSTED TO PORTAL', 'STATUS'].map(h => (
@@ -245,15 +268,15 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                     type="checkbox"
                                                     checked={selectedIds.includes(req.id)}
                                                     onChange={(e) => setSelectedIds(prev => e.target.checked ? [...prev, req.id] : prev.filter(id => id !== req.id))}
-                                                    className="accent-[#1F7A6E] rounded"
+                                                    className="accent-[#FDF22F] rounded-lg w-4 h-4 cursor-pointer"
                                                 />
                                             )}
                                         </td>
                                         <td className="px-6 py-6" onClick={() => setDrawerReq(req)}>
-                                            <p className="font-black text-[13px] text-[#0066CC] hover:underline group-hover:text-[#1F7A6E]">
+                                            <p className="font-black text-[13px] text-[#000000] hover:text-[#FDF22F] transition-colors">
                                                 REQ{req.id} {req.title}
                                             </p>
-                                            <p className="text-[11px] text-gray-400 mt-0.5 tracking-tight">
+                                            <p className="text-[11px] text-gray-400 mt-0.5 tracking-tight font-bold">
                                                 {req.department}
                                             </p>
                                         </td>
@@ -268,7 +291,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                         <td className="px-6 py-6 text-[13px] text-gray-600">
                                             {req.location || '—'}
                                         </td>
-                                        <td className="px-6 py-6 text-[13px] text-[#1A2B3D] font-black">
+                                        <td className="px-6 py-6 text-[13px] text-[#000000] font-black tabular-nums">
                                             {req.budget ? req.budget.toLocaleString() : '15,000'} ETB /mo
                                         </td>
                                         <td className="px-6 py-6">
@@ -276,7 +299,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                 const d = new Date(req.created_at);
                                                 return (
                                                     <div>
-                                                        <p className="text-[12px] font-bold text-[#1A2B3D]">
+                                                        <p className="text-[12px] font-bold text-[#000000]">
                                                             {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                         </p>
                                                         <p className="text-[11px] text-gray-400 mt-0.5">
@@ -286,21 +309,32 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                 );
                                             })() : <span className="text-gray-300">—</span>}
                                         </td>
-                                        <td className="px-6 py-6">
+                                        <td className="px-6 py-6 border-l border-gray-50/50">
                                             {req.job_posting?.created_at ? (() => {
-                                                const d = new Date(req.job_posting.created_at);
+                                                const d = new Date(req.job_posting.published_at || req.job_posting.created_at);
+                                                const deadline = req.job_posting.deadline ? new Date(req.job_posting.deadline) : null;
                                                 return (
-                                                    <div>
-                                                        <p className="text-[12px] font-bold text-[#1A2B3D]">
-                                                            {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                        </p>
-                                                        <p className="text-[11px] text-emerald-600 font-bold mt-0.5">
-                                                            {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
+                                                    <div className="space-y-1">
+                                                        <div>
+                                                            <p className="text-[12px] font-bold text-[#000000]">
+                                                                {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                            </p>
+                                                            <p className="text-[11px] text-emerald-600 font-bold">
+                                                                {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                            </p>
+                                                        </div>
+                                                        {deadline && (
+                                                            <div className="pt-1 border-t border-gray-100">
+                                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Deadline</p>
+                                                                <p className="text-[10px] font-black text-amber-600">
+                                                                    {deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 );
                                             })() : (
-                                                <span className="px-2 py-1 bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded">
+                                                <span className="px-3 py-1 bg-gray-50 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-lg border border-gray-100">
                                                     Not Posted
                                                 </span>
                                             )}
@@ -310,19 +344,19 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleApprove(req.id); }}
-                                                        className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100 uppercase"
+                                                        className="text-[10px] font-black text-[#000000] bg-[#FDF22F] px-4 py-2 rounded-xl hover:bg-black hover:text-[#FDF22F] transition-all border border-[#FDF22F]/30 uppercase tracking-widest shadow-lg shadow-[#FDF22F]/10"
                                                     >
                                                         Approve
                                                     </button>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setRejectTarget(req.id); setRejectReason(''); setDrawerReq(req); }}
-                                                        className="text-[10px] font-black text-red-500 bg-red-50 px-3 py-1.5 rounded hover:bg-red-500 hover:text-white transition-all border border-red-100 uppercase"
+                                                        className="text-[10px] font-black text-gray-400 bg-white px-4 py-2 rounded-xl hover:bg-black hover:text-[#FDF22F] transition-all border border-gray-100 uppercase tracking-widest"
                                                     >
                                                         Reject
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'
+                                                <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-[#FDF22F]/10 text-black border border-[#FDF22F]/20' : 'bg-black text-[#FDF22F]'
                                                     }`}>
                                                     {req.status}
                                                 </span>
@@ -345,7 +379,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                             <select
                                                 value={reportFilters.dateRange}
                                                 onChange={e => setReportFilters(prev => ({ ...prev, dateRange: e.target.value }))}
-                                                className="text-sm font-bold text-[#1A2B3D] bg-transparent outline-none cursor-pointer"
+                                                className="text-sm font-bold text-[#000000] bg-transparent outline-none cursor-pointer"
                                             >
                                                 <option value="7">Last 7 Days</option>
                                                 <option value="30">Last 30 Days</option>
@@ -362,7 +396,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                             <select
                                                 value={reportFilters.department}
                                                 onChange={e => setReportFilters(prev => ({ ...prev, department: e.target.value }))}
-                                                className="text-sm font-bold text-[#1A2B3D] bg-transparent outline-none cursor-pointer"
+                                                className="text-sm font-bold text-[#000000] bg-transparent outline-none cursor-pointer"
                                             >
                                                 <option value="All">All Departments</option>
                                                 {[...new Set(jobs.map(j => j.department || j.requisition?.department).filter(Boolean))].map(dept => (
@@ -379,7 +413,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                             <select
                                                 value={reportFilters.jobId}
                                                 onChange={e => setReportFilters(prev => ({ ...prev, jobId: e.target.value }))}
-                                                className="text-sm font-bold text-[#1A2B3D] bg-transparent outline-none cursor-pointer w-48 truncate"
+                                                className="text-sm font-bold text-[#000000] bg-transparent outline-none cursor-pointer w-48 truncate"
                                             >
                                                 <option value="All">All Open Roles</option>
                                                 {jobs.map(job => (
@@ -405,9 +439,9 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                             const exportUrl = `${process.env.NEXT_PUBLIC_API_URL}/v1/applicants/export?${params.toString()}&token=${token}`;
                                             window.open(exportUrl, '_blank');
                                         }}
-                                        className="px-4 py-2 bg-[#1A2B3D] text-white rounded-lg text-xs font-bold hover:bg-[#1A2B3D]/90 transition-colors shadow-lg shadow-[#1A2B3D]/20"
+                                        className="px-6 py-3 bg-[#FDF22F] text-[#000000] hover:bg-black hover:text-[#FDF22F] rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all shadow-xl shadow-[#FDF22F]/10 flex items-center gap-2"
                                     >
-                                        Export CSV
+                                        <FileText size={14} /> Export CSV
                                     </button>
                                 </div>
                             </div>
@@ -423,7 +457,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                     <div key={i} className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/20 hover:scale-[1.02] transition-transform group">
                                         <div className={`w-12 h-12 rounded-2xl bg-${stat.color}-50 flex items-center justify-center text-xl mb-4 group-hover:rotate-12 transition-transform`}>{stat.icon}</div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                                        <p className="text-3xl font-black text-[#1A2B3D]">{stat.value}</p>
+                                        <p className="text-3xl font-black text-[#000000]">{stat.value}</p>
                                     </div>
                                 ))}
                             </div>
@@ -448,8 +482,8 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                         >
                             <div className="p-8 border-b border-gray-100 flex justify-between items-start">
                                 <div>
-                                    <p className="text-[10px] font-black text-[#1F7A6E] tracking-widest uppercase mb-1">REQ{drawerReq.id}</p>
-                                    <h2 className="text-2xl font-black text-[#1A2B3D]">{drawerReq.title}</h2>
+                                    <p className="text-[10px] font-black text-[#000000] tracking-widest uppercase mb-1">REQ{drawerReq.id}</p>
+                                    <h2 className="text-2xl font-black text-[#000000]">{drawerReq.title}</h2>
                                     <p className="text-gray-400 text-sm mt-1">{drawerReq.department} · {drawerReq.tenant?.name || user.tenant?.name || 'Droga Pharma'}</p>
                                 </div>
                                 <button onClick={() => { setDrawerReq(null); setRejectTarget(null); }} className="text-gray-300 hover:text-gray-500 transition-colors">
@@ -461,11 +495,11 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                 <div className="grid grid-cols-2 gap-6 pb-8 border-b border-gray-100">
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Location / Branch</p>
-                                        <p className="text-sm font-bold text-[#1A2B3D]">{drawerReq.location}</p>
+                                        <p className="text-sm font-bold text-[#000000]">{drawerReq.location}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Salary Range</p>
-                                        <p className="text-sm font-black text-[#1A2B3D]">{drawerReq.budget ? drawerReq.budget.toLocaleString() : '15,000'} ETB /mo</p>
+                                        <p className="text-sm font-black text-[#000000]">{drawerReq.budget ? drawerReq.budget.toLocaleString() : '15,000'} ETB /mo</p>
                                     </div>
                                 </div>
 
@@ -477,7 +511,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                 href={`${API_URL}/v1/requisitions/${drawerReq.id}/jd?token=${typeof window !== 'undefined' ? localStorage.getItem('auth_token') : ''}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex items-center gap-2 text-[10px] font-black text-[#1F7A6E] hover:underline uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-lg transition-all"
+                                                className="flex items-center gap-2 text-[10px] font-black text-[#000000] hover:underline uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-lg transition-all"
                                             >
                                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                 View JD Document
@@ -492,21 +526,21 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                 {drawerReq.status === 'pending' && (
                                     <div className="pt-8 space-y-4 border-t border-gray-100">
                                         {rejectTarget === drawerReq.id ? (
-                                            <div className="space-y-3">
+                                            <div className="space-y-4">
                                                 <textarea
                                                     value={rejectReason}
                                                     onChange={(e) => setRejectReason(e.target.value)}
-                                                    placeholder="Enter rejection reason..."
-                                                    className="w-full px-4 py-3 bg-red-50/50 border border-red-100 rounded focus:ring-2 focus:ring-red-200 outline-none text-sm h-32"
+                                                    placeholder="Provide professional feedback for the manager..."
+                                                    className="w-full px-5 py-4 bg-gray-50 border border-red-100 rounded-2xl focus:ring-4 focus:ring-red-100 focus:border-red-500 outline-none text-sm h-32 font-medium transition-all"
                                                 />
-                                                <div className="flex gap-2">
-                                                    <button onClick={() => setRejectTarget(null)} className="flex-1 px-6 py-3 bg-gray-50 text-gray-400 rounded text-[11px] font-black tracking-widest uppercase mb-4">Cancel</button>
+                                                <div className="flex gap-3">
+                                                    <button onClick={() => setRejectTarget(null)} className="flex-1 px-6 py-4 bg-gray-100 text-gray-500 rounded-2xl text-[11px] font-black tracking-widest uppercase hover:bg-gray-200 transition-all">Cancel</button>
                                                     <button
                                                         onClick={handleReject}
                                                         disabled={!rejectReason.trim() || actionLoading}
-                                                        className="flex-[2] px-6 py-3 bg-red-500 text-white rounded text-[11px] font-black tracking-widest uppercase mb-4 disabled:opacity-50"
+                                                        className="flex-[2] px-6 py-4 bg-black text-white rounded-2xl text-[11px] font-black tracking-widest uppercase hover:bg-red-600 transition-all disabled:opacity-50"
                                                     >
-                                                        Confirm Rejection
+                                                        Confirm & Notify
                                                     </button>
                                                 </div>
                                             </div>
@@ -515,13 +549,14 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                 <button
                                                     onClick={() => handleApprove(drawerReq.id)}
                                                     disabled={actionLoading}
-                                                    className="flex-1 px-6 py-4 bg-[#1F7A6E] text-white rounded text-[11px] font-black tracking-widest uppercase shadow-xl shadow-[#1F7A6E]/20"
+                                                    className="flex-[2] px-6 py-5 bg-[#FDF22F] text-black rounded-[20px] text-[12px] font-black tracking-widest uppercase shadow-2xl shadow-[#FDF22F]/20 hover:bg-black hover:text-[#FDF22F] transition-all flex items-center justify-center gap-3 group"
                                                 >
                                                     Approve Requisition
+                                                    <ChevronRight size={18} className="translate-x-0 group-hover:translate-x-1 transition-transform" />
                                                 </button>
                                                 <button
                                                     onClick={() => setRejectTarget(drawerReq.id)}
-                                                    className="px-6 py-4 bg-red-50 text-red-500 rounded text-[11px] font-black tracking-widest uppercase border border-red-100 hover:bg-red-500 hover:text-white transition-all"
+                                                    className="flex-1 px-6 py-5 bg-white text-gray-400 rounded-[20px] text-[12px] font-black tracking-widest uppercase border border-gray-100 hover:border-red-500 hover:text-red-500 transition-all"
                                                 >
                                                     Reject
                                                 </button>

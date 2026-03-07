@@ -59,6 +59,7 @@ class JobPostingController extends Controller
             'description' => 'required|string',
             'location' => 'required|string',
             'type' => 'required|in:full-time,part-time,contract',
+            'deadline' => 'nullable|date|after:today',
         ]);
 
         $user = $request->user();
@@ -81,6 +82,8 @@ class JobPostingController extends Controller
             'description' => $request->description,
             'location' => $requisition->location,
             'type' => $request->type,
+            'published_at' => now(),
+            'deadline' => $request->deadline,
             'status' => 'active',
         ]);
 
@@ -94,7 +97,11 @@ class JobPostingController extends Controller
     {
         $perPage = request()->input('per_page', 9);
         $query = JobPosting::with('tenant')
-            ->where('status', 'active');
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('deadline')
+                    ->orWhere('deadline', '>=', now()->toDateString());
+            });
 
         if (request()->has('department') && request()->department && request()->department !== 'All Departments') {
             $query->where('department', request()->department);

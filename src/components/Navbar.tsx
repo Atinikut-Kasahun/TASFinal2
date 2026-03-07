@@ -127,6 +127,18 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
         }));
     };
 
+    const deleteNotification = async (id: string) => {
+        try {
+            await apiFetch(`/v1/notifications/${id}`, { method: 'DELETE' });
+            setNotifications(prev => prev.filter(n => n.id !== id));
+            if (!notifications.find(n => n.id === id)?.read_at) {
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const sendReply = async (notifId: string) => {
         const text = replyState[notifId]?.text?.trim();
         if (!text) return;
@@ -179,14 +191,14 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
     };
 
     return (
-        <nav className="bg-[#1A2B3D] h-16 px-8 flex items-center justify-between shadow-lg sticky top-0 z-[100]">
+        <nav className="bg-[#000000] h-16 px-8 flex items-center justify-between shadow-lg sticky top-0 z-[100]">
             <div className="flex items-center gap-12">
                 {/* Logo */}
                 <Link href={roleSlug === 'admin' ? "/admin/dashboard" : "/dashboard"} className="flex items-center gap-2 group">
-                    <div className="bg-white text-[#1A2B3D] w-8 h-8 rounded flex items-center justify-center font-black text-xl">
+                    <div className="bg-white text-[#000000] w-8 h-8 rounded flex items-center justify-center font-black text-xl">
                         {(roleSlug === 'admin' ? 'D' : user.tenant?.name?.charAt(0)) || 'D'}
                     </div>
-                    <span className="text-white font-black text-xl tracking-tighter group-hover:text-teal-400 transition-colors">
+                    <span className="text-white font-black text-xl tracking-tighter group-hover:text-[#FDF22F] transition-colors">
                         {(roleSlug === 'admin' ? 'DROGA' : user.tenant?.name) || 'DROGA'}
                     </span>
                 </Link>
@@ -202,14 +214,11 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                 key={item.label}
                                 href={item.href}
                                 className={`text-[11px] font-black tracking-widest transition-all px-4 py-2 rounded-lg relative ${isActive
-                                    ? 'text-white bg-[#1F7A6E]/30 border border-[#1F7A6E]/50'
+                                    ? 'text-black bg-[#FDF22F] shadow-lg shadow-[#FDF22F]/20'
                                     : 'text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
                             >
                                 {item.label}
-                                {isActive && (
-                                    <span className="absolute -bottom-[1px] left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#1F7A6E]" />
-                                )}
                             </Link>
                         );
                     })}
@@ -230,7 +239,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             {hasInterviewsToday && (
-                                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#1A2B3D] animate-pulse" />
+                                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#000000] animate-pulse" />
                             )}
                         </Link>
 
@@ -270,7 +279,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                     window.history.replaceState({}, '', url);
                                 }}
                                 placeholder="Search candidates, jobs..."
-                                className="absolute right-8 bg-[#2D455A] text-white placeholder-gray-400 text-[11px] font-black tracking-widest px-4 py-2 rounded-lg border border-white/10 focus:outline-none focus:border-[#1F7A6E] z-[110]"
+                                className="absolute right-8 bg-[#1A1C23] text-white placeholder-gray-400 text-[11px] font-black tracking-widest px-4 py-2 rounded-lg border border-white/10 focus:outline-none focus:border-[#000000] z-[110]"
                                 autoFocus
                             />
                         )}
@@ -311,7 +320,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
                         {unreadCount > 0 && (
-                            <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-[9px] font-black text-white w-4 h-4 rounded-full flex items-center justify-center border-2 border-[#1A2B3D]">
+                            <span className="absolute -top-1.5 -right-1.5 bg-[#FDF22F] text-[9px] font-black text-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-[#000000] shadow-[0_0_10px_rgba(253,242,47,0.3)]">
                                 {unreadCount > 9 ? '9+' : unreadCount}
                             </span>
                         )}
@@ -329,16 +338,16 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                 {/* Dropdown header */}
                                 <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50 space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <h3 className="text-xs font-black text-[#1A2B3D] tracking-widest uppercase">Notifications</h3>
+                                        <h3 className="text-xs font-black text-[#000000] tracking-widest uppercase">Notifications</h3>
                                         <div className="flex items-center gap-3">
                                             {unreadCount > 0 && (
-                                                <button onClick={markAllAsRead} className="text-[10px] font-bold text-gray-400 hover:text-[#1F7A6E] transition-colors">
+                                                <button onClick={markAllAsRead} className="text-[10px] font-bold text-gray-400 hover:text-[#000000] transition-colors">
                                                     Mark all read
                                                 </button>
                                             )}
                                             <button
                                                 onClick={() => { setShowCompose(!showCompose); setComposeSent(false); }}
-                                                className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg transition-all ${showCompose ? 'bg-[#1F7A6E] text-white' : 'bg-[#1A2B3D] text-white hover:bg-[#1F7A6E]'}`}
+                                                className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg transition-all ${showCompose ? 'bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/20' : 'bg-[#FDF22F] text-black hover:bg-black hover:text-white'}`}
                                             >
                                                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                                                 New
@@ -360,7 +369,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                                     <select
                                                         value={composeTo}
                                                         onChange={e => setComposeTo(e.target.value)}
-                                                        className="w-full text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#1F7A6E] focus:ring-1 focus:ring-[#1F7A6E] font-medium"
+                                                        className="w-full text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-[#FDF22F] focus:ring-1 focus:ring-[#FDF22F] font-medium"
                                                     >
                                                         <option value="" disabled>To: Select colleague...</option>
                                                         {users.map(u => (
@@ -373,7 +382,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendDirect(); } }}
                                                         placeholder="Write your message... (Enter to send)"
                                                         rows={2}
-                                                        className="w-full text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1F7A6E] focus:ring-1 focus:ring-[#1F7A6E]"
+                                                        className="w-full text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#FDF22F] focus:ring-1 focus:ring-[#FDF22F]"
                                                     />
                                                     <div className="flex items-center justify-between">
                                                         {composeSent && (
@@ -386,7 +395,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                                         <button
                                                             onClick={sendDirect}
                                                             disabled={composeSending || !composeTo || !composeMsg.trim()}
-                                                            className="px-4 py-1.5 bg-[#1F7A6E] text-white text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-[#165C53] disabled:opacity-50 transition-all flex items-center gap-1.5"
+                                                            className="px-4 py-1.5 bg-[#FDF22F] text-black text-[10px] font-black uppercase tracking-widest rounded-lg hover:bg-black hover:text-white disabled:opacity-50 transition-all flex items-center gap-1.5 shadow-md shadow-[#FDF22F]/10"
                                                         >
                                                             {composeSending
                                                                 ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -409,7 +418,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                             const rs = replyState[notif.id];
                                             const canReply = !!(notif.data?.sender_id);
                                             return (
-                                                <div key={notif.id} className={`border-b border-gray-50 transition-colors ${notif.read_at ? 'bg-white' : 'bg-blue-50/30'}`}>
+                                                <div key={notif.id} className={`border-b border-gray-50 transition-colors ${notif.read_at ? 'bg-white' : 'bg-[#FDF22F]/5'}`}>
                                                     {/* Message row */}
                                                     <div
                                                         onClick={() => !notif.read_at && markAsRead(notif.id)}
@@ -423,7 +432,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                                                             notif.data.type === 'system_status' ? '🔔' : '📌'}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className={`text-xs leading-tight ${notif.read_at ? 'font-medium text-gray-700' : 'font-bold text-[#1A2B3D]'}`}>
+                                                            <p className={`text-xs leading-tight ${notif.read_at ? 'font-medium text-gray-700' : 'font-bold text-[#000000]'}`}>
                                                                 {notif.data.title}
                                                             </p>
                                                             <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">
@@ -433,10 +442,17 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                                                 <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">
                                                                     {new Date(notif.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
                                                                 </p>
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); deleteNotification(notif.id); }}
+                                                                    className="text-[9px] font-black uppercase tracking-widest flex items-center gap-1 text-gray-400 hover:text-red-500 transition-colors"
+                                                                >
+                                                                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                                    Del
+                                                                </button>
                                                                 {canReply && (
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); toggleReply(notif.id); }}
-                                                                        className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${rs?.open ? 'text-[#1F7A6E]' : 'text-gray-400 hover:text-[#1F7A6E]'}`}
+                                                                        className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${rs?.open ? 'text-black' : 'text-gray-400 hover:text-[#FDF22F]'}`}
                                                                     >
                                                                         <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>
                                                                         {rs?.open ? 'Cancel' : 'Reply'}
@@ -450,7 +466,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                                                 )}
                                                             </div>
                                                         </div>
-                                                        {!notif.read_at && <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 shrink-0" />}
+                                                        {!notif.read_at && <div className="w-2 h-2 rounded-full bg-[#FDF22F] mt-1.5 shrink-0 shadow-[0_0_5px_rgba(253,242,47,0.5)]" />}
                                                     </div>
 
                                                     {/* Inline reply form */}
@@ -470,13 +486,13 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                                                                         onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(notif.id); } }}
                                                                         placeholder={`Reply to ${notif.data.sender_name || 'sender'}...`}
                                                                         rows={2}
-                                                                        className="flex-1 mt-3 text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#1F7A6E] focus:ring-1 focus:ring-[#1F7A6E]"
+                                                                        className="flex-1 mt-3 text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 resize-none focus:outline-none focus:border-[#FDF22F] focus:ring-1 focus:ring-[#FDF22F]"
                                                                         onClick={(e) => e.stopPropagation()}
                                                                     />
                                                                     <button
                                                                         onClick={(e) => { e.stopPropagation(); sendReply(notif.id); }}
                                                                         disabled={rs.sending || !rs.text?.trim()}
-                                                                        className="mt-3 self-end px-3 py-2 bg-[#1F7A6E] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-[#165C53] disabled:opacity-50 transition-all"
+                                                                        className="mt-3 self-end px-3 py-2 bg-[#FDF22F] text-black text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-black hover:text-white disabled:opacity-50 transition-all shadow-md shadow-[#FDF22F]/10"
                                                                     >
                                                                         {rs.sending ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : '↩ Send'}
                                                                     </button>
@@ -498,7 +514,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
 
                 {/* User Info */}
                 <div className="flex items-center gap-3 group relative cursor-pointer">
-                    <div className="w-8 h-8 rounded-full bg-[#2D455A] flex items-center justify-center text-[11px] font-black text-white border border-white/10 group-hover:border-teal-400 transition-all">
+                    <div className="w-8 h-8 rounded-full bg-[#1A1C23] flex items-center justify-center text-[11px] font-black text-white border border-white/10 group-hover:border-[#FDF22F] transition-all">
                         {user.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="text-right flex flex-col items-end">
@@ -511,7 +527,7 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                     {/* Logout Tooltip/Dropdown Placeholder */}
                     <button
                         onClick={onLogout}
-                        className="opacity-0 group-hover:opacity-100 absolute -bottom-10 right-0 bg-[#2D455A] text-white px-4 py-2 rounded shadow-xl text-[10px] font-black tracking-widest border border-white/10 hover:bg-red-500 transition-all z-[110]"
+                        className="opacity-0 group-hover:opacity-100 absolute -bottom-10 right-0 bg-[#1A1C23] text-white px-4 py-2 rounded shadow-xl text-[10px] font-black tracking-widest border border-white/10 hover:bg-red-500 transition-all z-[110]"
                     >
                         LOGOUT
                     </button>

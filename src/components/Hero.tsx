@@ -83,15 +83,15 @@ export default function Hero({ settings, onSearch, currentSearch }: { settings?:
     };
 
     return (
-        <section className="min-h-[85vh] flex items-center bg-[#FDF9F3] pt-20">
-            <div className="max-w-7xl mx-auto px-8 grid grid-cols-2 gap-16 items-center py-16">
+        <section className="min-h-[85vh] flex items-center bg-[#FDF22F] pt-24 md:pt-32 pb-16">
+            <div className="max-w-7xl mx-auto px-6 md:px-8 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                 {/* Left Content */}
-                <div>
+                <div className="text-center lg:text-left">
                     <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-                        className="text-6xl font-black leading-[1.1] text-[#00453B] mb-6 whitespace-pre-line"
+                        className="text-4xl md:text-5xl lg:text-6xl font-black leading-[1.1] text-[#000000] mb-6 whitespace-pre-line"
                     >
                         {content.title}
                     </motion.h1>
@@ -100,7 +100,7 @@ export default function Hero({ settings, onSearch, currentSearch }: { settings?:
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-                        className="text-lg text-[#00453B]/80 font-medium leading-relaxed mb-12 max-w-xl"
+                        className="text-base md:text-lg text-[#000000]/80 font-medium leading-relaxed mb-8 md:mb-12 max-w-xl mx-auto lg:mx-0"
                     >
                         {content.subtitle}
                     </motion.p>
@@ -110,24 +110,24 @@ export default function Hero({ settings, onSearch, currentSearch }: { settings?:
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-                        className="relative max-w-xl mb-12 group"
+                        className="relative max-w-xl mb-8 md:mb-12 group mx-auto lg:mx-0"
                     >
                         <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none">
-                            <svg className="w-5 h-5 text-[#00453B]/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            <svg className="w-5 h-5 text-[#000000]/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                         </div>
                         <input
                             type="text"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit()}
-                            placeholder="Search jobs by title, skill, or location..."
-                            className="w-full bg-white border border-[#00453B]/10 rounded-[28px] py-6 pl-16 pr-40 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#00453B]/5 focus:bg-white transition-all text-[#00453B] font-bold text-sm"
+                            placeholder="Search jobs..."
+                            className="w-full bg-white border border-[#000000]/10 rounded-full py-5 md:py-6 pl-14 md:pl-16 pr-32 md:pr-40 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#000000]/5 focus:bg-white transition-all text-[#000000] font-bold text-xs md:text-sm"
                         />
                         <button
                             onClick={handleSearchSubmit}
-                            className="absolute right-3 top-3 bottom-3 bg-[#00453B] text-white font-black text-[11px] uppercase tracking-widest px-10 rounded-[20px] hover:bg-black transition-all flex items-center gap-2"
+                            className="absolute right-2 top-2 bottom-2 bg-[#000000] text-white font-black text-[9px] md:text-[11px] uppercase tracking-widest px-6 md:px-10 rounded-full hover:bg-black transition-all flex items-center gap-2"
                         >
-                            Find Jobs <span>→</span>
+                            Find <span>→</span>
                         </button>
                     </motion.div>
 
@@ -135,22 +135,24 @@ export default function Hero({ settings, onSearch, currentSearch }: { settings?:
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.4 }}
-                        className="flex items-center gap-6"
+                        className="flex flex-col md:flex-row items-center gap-4 md:gap-6 justify-center lg:justify-start"
                     >
                         <a
                             href="#positions"
-                            className="text-[#00453B] font-bold border-b-2 border-[#00453B]/20 hover:border-[#00453B] transition-all pb-1 flex items-center gap-2"
+                            className="text-[#000000] font-bold border-b-2 border-[#000000]/20 hover:border-[#000000] transition-all pb-1 flex items-center gap-2 text-sm"
                         >
-                            Explore Opportunities <span className="text-[#00453B]">→</span>
+                            Explore Opportunities <span className="text-[#000000]">→</span>
                         </a>
-                        <div className="h-4 w-px bg-[#00453B]/20" />
-                        <div className="flex -space-x-3">
-                            {[1, 2, 3, 4].map((i) => (
-                                <div key={i} className="w-8 h-8 rounded-full border-2 border-[#FDF9F3] bg-[#EFE8DE] flex items-center justify-center text-[10px] text-[#00453B]">👤</div>
-                            ))}
-                            <div className="w-8 h-8 rounded-full border-2 border-[#FDF9F3] bg-[#00453B] text-white flex items-center justify-center text-[10px] font-bold">{mockStats.cta_badge}</div>
+                        <div className="hidden md:block h-4 w-px bg-[#000000]/20" />
+                        <div className="flex items-center gap-4">
+                            <div className="flex -space-x-3">
+                                {[1, 2, 3, 4].map((i) => (
+                                    <div key={i} className="w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-[#FDF22F] bg-[#EFE21A] flex items-center justify-center text-[10px] text-[#000000]">👤</div>
+                                ))}
+                                <div className="w-7 h-7 md:w-8 md:h-8 rounded-full border-2 border-[#FDF22F] bg-[#000000] text-white flex items-center justify-center text-[10px] font-bold">{mockStats.cta_badge}</div>
+                            </div>
+                            <p className="text-[10px] md:text-xs text-[#000000]/60 font-medium">{mockStats.cta_text}</p>
                         </div>
-                        <p className="text-xs text-[#00453B]/60 font-medium">{mockStats.cta_text}</p>
                     </motion.div>
                 </div>
 
@@ -159,38 +161,38 @@ export default function Hero({ settings, onSearch, currentSearch }: { settings?:
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="relative"
+                    className="relative hidden md:block"
                 >
                     <motion.div
                         animate={{ y: [0, -16, 0] }}
                         transition={{ repeat: Infinity, duration: 6, ease: "easeInOut" }}
-                        className="rounded-[40px] overflow-hidden bg-white border border-[#00453B]/5 p-4 aspect-[4/3] flex flex-col gap-4 shadow-2xl shadow-[#00453B]/5"
+                        className="rounded-[40px] overflow-hidden bg-white border border-[#000000]/5 p-4 aspect-[4/3] flex flex-col gap-4 shadow-2xl shadow-[#000000]/5"
                     >
                         {/* Mock Dashboard Snippet */}
                         <div className="flex items-center justify-between px-4 pt-4">
                             <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-[#EFE8DE]" />
-                                <div className="w-24 h-2 rounded-full bg-[#00453B]/5" />
+                                <div className="w-3 h-3 rounded-full bg-[#EFE21A]" />
+                                <div className="w-24 h-2 rounded-full bg-[#000000]/5" />
                             </div>
-                            <div className="w-8 h-8 rounded-lg bg-[#00453B]/5 flex items-center justify-center text-xs">🔔</div>
+                            <div className="w-8 h-8 rounded-lg bg-[#000000]/5 flex items-center justify-center text-xs">🔔</div>
                         </div>
                         <div className="flex-1 grid grid-cols-2 gap-4 p-4 mt-2">
-                            <div className="bg-[#EFE8DE]/20 rounded-2xl p-4 flex flex-col justify-between">
-                                <div className="text-[10px] font-bold text-[#00453B]/60 uppercase tracking-wider">Average Rating</div>
-                                <div className="text-3xl font-bold text-[#00453B]">{mockStats.rating}<span className="text-lg text-[#00453B]/40">/10</span></div>
+                            <div className="bg-[#EFE21A]/20 rounded-2xl p-4 flex flex-col justify-between">
+                                <div className="text-[10px] font-bold text-[#000000]/60 uppercase tracking-wider">Average Rating</div>
+                                <div className="text-3xl font-bold text-[#000000]">{mockStats.rating}<span className="text-lg text-[#000000]/40">/10</span></div>
                             </div>
-                            <div className="bg-[#00453B]/5 rounded-2xl p-4 flex flex-col justify-between">
-                                <div className="text-[10px] font-bold text-[#00453B]/40 uppercase tracking-wider">Team Members</div>
-                                <div className="text-3xl font-bold text-[#00453B]">{mockStats.members}</div>
+                            <div className="bg-[#000000]/5 rounded-2xl p-4 flex flex-col justify-between">
+                                <div className="text-[10px] font-bold text-[#000000]/40 uppercase tracking-wider">Team Members</div>
+                                <div className="text-3xl font-bold text-[#000000]">{mockStats.members}</div>
                             </div>
-                            <div className="col-span-2 bg-[#FDF9F3] rounded-2xl p-4 flex flex-col gap-3">
+                            <div className="col-span-2 bg-[#FDF22F] rounded-2xl p-4 flex flex-col gap-3">
                                 <div className="flex items-center justify-between">
-                                    <div className="text-[10px] font-bold text-[#00453B]/40 uppercase tracking-wider">Scale & Reach</div>
-                                    <div className="text-[10px] font-bold text-[#00453B]">Global Presence</div>
+                                    <div className="text-[10px] font-bold text-[#000000]/40 uppercase tracking-wider">Scale & Reach</div>
+                                    <div className="text-[10px] font-bold text-[#000000]">Global Presence</div>
                                 </div>
                                 <div className="flex gap-2 flex-wrap">
                                     {teamDiversity.map((item, idx) => (
-                                        <div key={idx} className="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-[#00453B] border border-[#00453B]/5">
+                                        <div key={idx} className="px-3 py-1 rounded-full bg-white text-[10px] font-bold text-[#000000] border border-[#000000]/5">
                                             {item.label}
                                         </div>
                                     ))}
@@ -205,14 +207,14 @@ export default function Hero({ settings, onSearch, currentSearch }: { settings?:
                         whileInView={{ opacity: 1, scale: 1 }}
                         viewport={{ once: false }}
                         transition={{ duration: 0.8, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute -top-6 -right-6 bg-white shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 border border-[#00453B]/5"
+                        className="absolute -top-6 -right-6 bg-white shadow-2xl rounded-2xl px-6 py-4 flex items-center gap-4 border border-[#000000]/5"
                     >
-                        <div className="w-11 h-11 bg-[#EFE8DE] rounded-full flex items-center justify-center text-[#00453B] font-bold">
+                        <div className="w-11 h-11 bg-[#EFE21A] rounded-full flex items-center justify-center text-[#000000] font-bold">
                             <IconComponent strokeWidth={1.5} size={24} />
                         </div>
                         <div>
-                            <p className="text-[10px] text-[#00453B]/40 font-bold uppercase tracking-wider">{heroStats.title}</p>
-                            <p className="text-lg font-bold text-[#00453B]">{heroStats.value}</p>
+                            <p className="text-[10px] text-[#000000]/40 font-bold uppercase tracking-wider">{heroStats.title}</p>
+                            <p className="text-lg font-bold text-[#000000]">{heroStats.value}</p>
                         </div>
                     </motion.div>
                 </motion.div>

@@ -27,7 +27,7 @@ export default function Events() {
             <div className="max-w-7xl mx-auto px-8">
                 <div className="flex justify-between items-end mb-12">
                     <div>
-                        <h2 className="text-4xl font-black text-[#1A2B3D] mb-4">Upcoming Events</h2>
+                        <h2 className="text-4xl font-black text-[#000000] mb-4">Upcoming Events</h2>
                         <p className="text-gray-500 font-medium">Join us in our latest activities across the group</p>
                     </div>
                 </div>
@@ -70,7 +70,7 @@ export default function Events() {
                                         </span>
                                     )}
                                 </div>
-                                <h3 className="text-xl font-bold text-[#1A2B3D] mb-3 group-hover:text-accent transition-colors">
+                                <h3 className="text-xl font-bold text-[#000000] mb-3 group-hover:text-accent transition-colors">
                                     {event.title}
                                 </h3>
                                 <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-6">

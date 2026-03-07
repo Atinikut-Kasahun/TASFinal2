@@ -9,12 +9,10 @@ const config: Config = {
     theme: {
         extend: {
             colors: {
-                primary: "#004139", // Deep Forest Green
-                accent: "#00A65F",  // Mint Green
-                secondary: "#1A1C23",
-                cream: "#F9F8F6",
-                dark: "#12141D",
-                brandYellow: "#F6E000", // Droga Brand Yellow
+                primary: "#000000",
+                accent: "#FDF22F", // Droga Brand Yellow
+                secondary: "#111827",
+                brandYellow: "#FDF22F",
                 brandBlue: "#152033",   // Workable-style Deep Blue
                 'workableGray': {
                     '50': "#F9FAFB",
@@ -34,7 +32,7 @@ const config: Config = {
             },
             backgroundImage: {
                 "gradient-hero": "linear-gradient(135deg, #F9F8F6 0%, #F1EDE9 100%)",
-                "gradient-accent": "linear-gradient(90deg, #004139, #00A65F)",
+                "gradient-accent": "linear-gradient(90deg, #000000, #000000)",
             },
         },
     },

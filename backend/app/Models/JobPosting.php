@@ -20,11 +20,15 @@ class JobPosting extends Model
         'requirements',
         'location',
         'type', // full-time, part-time, contract
+        'published_at',
+        'deadline',
         'status', // draft, active, closed
     ];
 
     protected $casts = [
         'requirements' => 'array',
+        'published_at' => 'datetime',
+        'deadline' => 'date',
     ];
 
     public function tenant(): BelongsTo

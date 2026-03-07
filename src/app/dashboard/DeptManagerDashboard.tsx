@@ -4,6 +4,22 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch } from '@/lib/api';
+import { CheckCircle2 } from 'lucide-react';
+
+/* ─── Toast ─────────────────────────────────────────────── */
+function Toast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className={`fixed bottom-8 right-8 z-[200] px-6 py-4 rounded-2xl shadow-2xl text-[13px] font-black uppercase tracking-widest text-[#FDF22F] flex items-center gap-3 border border-[#FDF22F]/20 bg-black animate-in slide-in-from-bottom-5 duration-300`}
+        >
+            <CheckCircle2 size={18} className="text-[#FDF22F]" />
+            <span>{msg}</span>
+        </motion.div>
+    );
+}
 
 interface Requisition {
     id: number;
@@ -45,7 +61,13 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
     const [reqsPage, setReqsPage] = useState(1);
     const [localTab, setLocalTab] = useState(initialTab === 'HiringPlan' ? 'HIRING PLAN' : 'JOBS');
     const [search, setSearch] = useState(''); // live search term from URL
+    const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
     const router = useRouter();
+
+    const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 4000);
+    };
 
     useEffect(() => {
         setLoading(true);
@@ -110,6 +132,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
             setWizardStep(1);
             setFormData(INITIAL_FORM_DATA);
             setJdFile(null); // Clear file after submission
+            showToast('Requisition Created Successfully!');
             fetchData();
         } catch (e) {
             console.error(e);
@@ -132,7 +155,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
             {/* Page Header */}
             <div className="flex justify-between items-end mb-4">
                 <div className="space-y-4">
-                    <h1 className="text-[32px] font-bold text-[#1A2B3D] tracking-tight">{user.tenant?.name || 'Droga Pharma'}</h1>
+                    <h1 className="text-[32px] font-bold text-[#000000] tracking-tight">{user.tenant?.name || 'Droga Pharma'}</h1>
 
                     {/* Sub Tabs */}
                     <div className="flex gap-10 border-b border-gray-100 mt-2">
@@ -154,7 +177,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                         }
                                     }}
                                     className={`pb-4 text-[12px] font-black tracking-[0.15em] transition-all relative ${isActive
-                                        ? 'text-[#1F7A6E]'
+                                        ? 'text-[#000000]'
                                         : 'text-gray-400 hover:text-gray-600'
                                         }`}
                                 >
@@ -162,7 +185,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                     {isActive && (
                                         <motion.div
                                             layoutId="activeSubTabDM"
-                                            className="absolute bottom-0 left-0 right-0 h-[4px] bg-[#1F7A6E] rounded-t-full"
+                                            className="absolute bottom-0 left-0 right-0 h-[4px] bg-[#FDF22F] rounded-t-full shadow-[0_-2px_8px_rgba(253,242,47,0.4)]"
                                         />
                                     )}
                                 </button>
@@ -174,8 +197,9 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                 {localTab === 'HIRING PLAN' && (
                     <button
                         onClick={() => setDrawerOpen(true)}
-                        className="bg-[#1F7A6E] hover:bg-[#165C53] text-white px-6 py-3 rounded font-black text-[13px] tracking-wide shadow-xl shadow-[#1F7A6E]/20 transition-all flex items-center gap-2"
+                        className="bg-[#FDF22F] hover:bg-black text-[#000000] hover:text-[#FDF22F] px-8 py-3.5 rounded-2xl font-black text-[13px] tracking-widest uppercase shadow-xl shadow-[#FDF22F]/10 transition-all flex items-center gap-2 group"
                     >
+                        <svg className="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
                         Create new requisition
                     </button>
                 )}
@@ -183,8 +207,8 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
 
             {/* Content Body */}
             {loading ? (
-                <div className="bg-white rounded border border-gray-100 p-20 flex items-center justify-center">
-                    <div className="w-8 h-8 border-4 border-[#1F7A6E] border-t-transparent rounded-full animate-spin" />
+                <div className="bg-white rounded-[32px] border border-gray-100 p-20 flex items-center justify-center">
+                    <div className="w-10 h-10 border-4 border-[#FDF22F] border-t-transparent rounded-full animate-spin" />
                 </div>
             ) : (
                 <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
@@ -204,7 +228,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                     ) : jobs.map((job: any) => (
                                         <tr key={job.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
                                             <td className="px-8 py-6">
-                                                <p className="font-bold text-[#1A2B3D] group-hover:text-[#1F7A6E] transition-colors">{job.title}</p>
+                                                <p className="font-bold text-[#000000] group-hover:text-[#000000] transition-colors">{job.title}</p>
                                             </td>
                                             <td className="px-8 py-6 text-sm text-gray-500">{job.location || '—'}</td>
                                             <td className="px-8 py-6 text-sm text-gray-500">
@@ -264,7 +288,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                     ) : requisitions.map((req: any) => (
                                         <tr key={req.id} className="hover:bg-gray-50 transition-colors group cursor-pointer">
                                             <td className="px-8 py-6">
-                                                <p className="font-black text-[13px] text-[#0066CC] hover:underline group-hover:text-[#1F7A6E]">
+                                                <p className="font-black text-[13px] text-[#000000] hover:text-[#FDF22F] transition-colors">
                                                     REQ{req.id} {req.title}
                                                 </p>
                                                 <p className="text-[11px] text-gray-400 mt-0.5 tracking-tight">
@@ -277,7 +301,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                             <td className="px-8 py-6 text-[13px] text-gray-600">
                                                 {req.location || '—'}
                                             </td>
-                                            <td className="px-8 py-6 text-[13px] text-[#1A2B3D] font-black">
+                                            <td className="px-8 py-6 text-[13px] text-[#000000] font-black">
                                                 {req.budget ? req.budget.toLocaleString() : '15,000'} ETB /mo
                                             </td>
                                             <td className="px-8 py-6">
@@ -285,7 +309,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                     const d = new Date(req.created_at);
                                                     return (
                                                         <div>
-                                                            <p className="text-[12px] font-bold text-[#1A2B3D]">
+                                                            <p className="text-[12px] font-bold text-[#000000]">
                                                                 {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                             </p>
                                                             <p className="text-[11px] text-gray-400 mt-0.5">
@@ -297,15 +321,26 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                             </td>
                                             <td className="px-8 py-6">
                                                 {req.job_posting?.created_at ? (() => {
-                                                    const d = new Date(req.job_posting.created_at);
+                                                    const d = new Date(req.job_posting.published_at || req.job_posting.created_at);
+                                                    const deadline = req.job_posting.deadline ? new Date(req.job_posting.deadline) : null;
                                                     return (
-                                                        <div>
-                                                            <p className="text-[12px] font-bold text-[#1A2B3D]">
-                                                                {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                            </p>
-                                                            <p className="text-[11px] text-emerald-600 font-bold mt-0.5">
-                                                                {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                                                            </p>
+                                                        <div className="space-y-1">
+                                                            <div>
+                                                                <p className="text-[12px] font-bold text-[#000000]">
+                                                                    {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                </p>
+                                                                <p className="text-[11px] text-emerald-600 font-bold">
+                                                                    {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                                </p>
+                                                            </div>
+                                                            {deadline && (
+                                                                <div className="pt-1 border-t border-gray-100">
+                                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Deadline</p>
+                                                                    <p className="text-[10px] font-black text-amber-600">
+                                                                        {deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                    </p>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     );
                                                 })() : (
@@ -323,7 +358,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                     </span>
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); handleDuplicate(req.id); }}
-                                                        className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-[#1F7A6E] transition-all"
+                                                        className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-[#000000] transition-all"
                                                         title="Duplicate"
                                                     >
                                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
@@ -378,10 +413,10 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                         >
                             <div className="p-8 border-b border-gray-100 flex justify-between items-center">
                                 <div>
-                                    <h2 className="text-2xl font-black text-[#1A2B3D]">New Requisition</h2>
+                                    <h2 className="text-2xl font-black text-[#000000]">New Requisition</h2>
                                     <div className="flex items-center gap-2 mt-2">
                                         <div className="w-24 h-1 bg-gray-100 rounded-full overflow-hidden">
-                                            <div className="h-full bg-[#1F7A6E] transition-all duration-500" style={{ width: wizardStep === 1 ? '50%' : '100%' }} />
+                                            <div className="h-full bg-[#FDF22F] transition-all duration-500 shadow-[0_0_8px_rgba(253,242,47,0.6)]" style={{ width: wizardStep === 1 ? '50%' : '100%' }} />
                                         </div>
                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Step {wizardStep} of 2</span>
                                     </div>
@@ -395,13 +430,13 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                 {wizardStep === 1 ? (
                                     <div className="space-y-6">
                                         <section className="space-y-4">
-                                            <h3 className="text-[11px] font-black text-[#1F7A6E] uppercase tracking-widest">Job Details</h3>
+                                            <h3 className="text-[11px] font-black text-[#000000] uppercase tracking-widest">Job Details</h3>
                                             <div className="space-y-4">
                                                 <div>
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 leading-none">Job Title</label>
                                                     <input
                                                         type="text"
-                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-4 focus:ring-[#1F7A6E]/10 focus:border-[#1F7A6E] transition-all text-sm font-bold text-[#1A2B3D]"
+                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] transition-all text-sm font-bold text-[#000000]"
                                                         placeholder="e.g. Senior Pharmacist"
                                                         value={formData.title}
                                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -411,7 +446,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 leading-none">Department</label>
                                                     <input
                                                         type="text"
-                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-4 focus:ring-[#1F7A6E]/10 focus:border-[#1F7A6E] transition-all text-sm font-bold text-[#1A2B3D]"
+                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] transition-all text-sm font-bold text-[#000000]"
                                                         placeholder="e.g. Sales & Marketing"
                                                         value={formData.department}
                                                         onChange={(e) => setFormData({ ...formData, department: e.target.value })}
@@ -421,7 +456,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 leading-none">Location / Branch</label>
                                                     <input
                                                         type="text"
-                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-4 focus:ring-[#1F7A6E]/10 focus:border-[#1F7A6E] transition-all text-sm font-bold text-[#1A2B3D]"
+                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] transition-all text-sm font-bold text-[#000000]"
                                                         placeholder="e.g. Arat Kilo, Bole, or Regional"
                                                         value={formData.location}
                                                         onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -431,7 +466,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                         </section>
 
                                         <section className="space-y-4 pt-4 border-t border-gray-100 border-dashed">
-                                            <h3 className="text-[11px] font-black text-[#1F7A6E] uppercase tracking-widest">Urgency & Capacity</h3>
+                                            <h3 className="text-[11px] font-black text-[#000000] uppercase tracking-widest">Urgency & Capacity</h3>
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="col-span-2">
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2 leading-none">Priority Level</label>
@@ -440,9 +475,9 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                             <button
                                                                 key={p}
                                                                 onClick={() => setFormData({ ...formData, priority: p })}
-                                                                className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase border transition-all ${formData.priority === p
-                                                                    ? 'bg-[#1F7A6E] text-white border-[#1F7A6E] shadow-lg shadow-[#1F7A6E]/20'
-                                                                    : 'bg-white text-gray-400 border-gray-200 hover:border-[#1F7A6E] hover:text-[#1F7A6E]'
+                                                                className={`flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase border transition-all ${formData.priority === p
+                                                                    ? 'bg-[#FDF22F] text-[#000000] border-[#FDF22F] shadow-lg shadow-[#FDF22F]/20'
+                                                                    : 'bg-white text-gray-400 border-gray-200 hover:border-black hover:text-black'
                                                                     }`}
                                                             >
                                                                 {p}
@@ -454,7 +489,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 leading-none">Headcount</label>
                                                     <input
                                                         type="number"
-                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-4 focus:ring-[#1F7A6E]/10 focus:border-[#1F7A6E] transition-all text-sm font-bold"
+                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] transition-all text-sm font-bold text-black"
                                                         value={formData.headcount}
                                                         onChange={(e) => setFormData({ ...formData, headcount: parseInt(e.target.value) })}
                                                     />
@@ -462,7 +497,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                 <div>
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 leading-none">Type</label>
                                                     <select
-                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-4 focus:ring-[#1F7A6E]/10 focus:border-[#1F7A6E] transition-all text-sm font-bold appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207L10%2012L15%207%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:20px_20px] bg-[right_1.25rem_center] bg-no-repeat"
+                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] transition-all text-sm font-bold appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Cpath%20d%3D%22M5%207L10%2012L15%207%22%20stroke%3D%22%239CA3AF%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22/%3E%3C/svg%3E')] bg-[length:20px_20px] bg-[right_1.25rem_center] bg-no-repeat text-black"
                                                         value={formData.position_type}
                                                         onChange={(e) => setFormData({ ...formData, position_type: e.target.value as any })}
                                                     >
@@ -476,7 +511,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                 ) : (
                                     <div className="space-y-6">
                                         <section className="space-y-4">
-                                            <h3 className="text-[11px] font-black text-[#1F7A6E] uppercase tracking-widest">Financials & Context</h3>
+                                            <h3 className="text-[11px] font-black text-[#000000] uppercase tracking-widest">Financials & Context</h3>
                                             <div className="space-y-4">
                                                 <div>
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 leading-none">Monthly Salary Budget (ETB)</label>
@@ -484,7 +519,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                         <span className="absolute left-5 top-1/2 -translate-y-1/2 font-black text-gray-300">ETB</span>
                                                         <input
                                                             type="number"
-                                                            className="w-full pl-14 pr-5 py-4 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-4 focus:ring-[#1F7A6E]/10 focus:border-[#1F7A6E] transition-all font-black text-[#1A2B3D]"
+                                                            className="w-full pl-14 pr-5 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] transition-all font-black text-[#000000]"
                                                             value={formData.budget || ''}
                                                             onChange={(e) => setFormData({ ...formData, budget: parseInt(e.target.value) || 0 })}
                                                         />
@@ -493,15 +528,15 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                 <div>
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 leading-none">Internal Notes / Justification</label>
                                                     <textarea
-                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:ring-4 focus:ring-[#1F7A6E]/10 focus:border-[#1F7A6E] transition-all text-sm font-medium h-40 leading-relaxed placeholder:text-gray-300"
+                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] transition-all text-sm font-medium h-40 leading-relaxed placeholder:text-gray-300 text-black"
                                                         placeholder="Provide context for HR regarding why this role is needed now..."
                                                         value={formData.description}
                                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                                     />
                                                 </div>
                                                 <div className="pt-4 border-t border-gray-100 border-dashed">
-                                                    <label className="block text-[11px] font-black text-[#1F7A6E] uppercase tracking-widest mb-3">Job Description (JD) File</label>
-                                                    <div className={`relative border-2 border-dashed rounded-xl p-8 transition-all flex flex-col items-center justify-center text-center ${jdFile ? 'border-[#1F7A6E] bg-emerald-50/30' : 'border-gray-200 hover:border-[#1F7A6E] bg-gray-50/50'}`}>
+                                                    <label className="block text-[11px] font-black text-[#000000] uppercase tracking-widest mb-3">Job Description (JD) File</label>
+                                                    <div className={`relative border-2 border-dashed rounded-[20px] p-8 transition-all flex flex-col items-center justify-center text-center ${jdFile ? 'border-[#FDF22F] bg-[#FDF22F]/5' : 'border-gray-200 hover:border-black bg-gray-50/50'}`}>
                                                         <input
                                                             type="file"
                                                             onChange={(e) => setJdFile(e.target.files ? e.target.files[0] : null)}
@@ -511,10 +546,10 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                         <div className="space-y-2">
                                                             {jdFile ? (
                                                                 <>
-                                                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-emerald-600 mb-2 mx-auto">
-                                                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" /></svg>
+                                                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-black mb-2 mx-auto">
+                                                                        <svg className="w-6 h-6 text-[#FDF22F]" fill="currentColor" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" /></svg>
                                                                     </div>
-                                                                    <p className="text-sm font-black text-[#1A2B3D] truncate max-w-[200px]">{jdFile.name}</p>
+                                                                    <p className="text-sm font-black text-[#000000] truncate max-w-[200px]">{jdFile.name}</p>
                                                                     <p className="text-[10px] font-bold text-gray-400 uppercase">Click to replace file</p>
                                                                 </>
                                                             ) : (
@@ -522,7 +557,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                                     <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm text-gray-300 mb-2 mx-auto">
                                                                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
                                                                     </div>
-                                                                    <p className="text-sm font-black text-[#1F7A6E]">Upload JD Document</p>
+                                                                    <p className="text-sm font-black text-[#000000]">Upload JD Document</p>
                                                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">PDF or Word (Max 5MB)</p>
                                                                 </>
                                                             )}
@@ -547,7 +582,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                 <button
                                     onClick={() => wizardStep === 1 ? setWizardStep(2) : handleSubmit()}
                                     disabled={submitting || (wizardStep === 1 && (!formData.title || !formData.department))}
-                                    className="flex-[2] py-4 bg-[#1F7A6E] text-white rounded-lg text-[11px] font-black tracking-widest uppercase shadow-xl shadow-[#1F7A6E]/20 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                    className="flex-[2] py-4 bg-[#FDF22F] hover:bg-black text-[#000000] hover:text-white rounded-xl text-[11px] font-black tracking-widest uppercase shadow-xl shadow-[#FDF22F]/10 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                 >
                                     {submitting ? (
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -562,6 +597,9 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                         </motion.div>
                     </>
                 )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {toast && <Toast msg={toast.msg} type={toast.type} />}
             </AnimatePresence>
         </div >
     );

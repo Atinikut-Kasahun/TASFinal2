@@ -53,6 +53,7 @@ Route::middleware('mock.auth')->group(function () {
             Route::post('/notifications/{id}/read', [\App\Http\Controllers\NotificationController::class, 'markAsRead']);
             Route::post('/notifications/mark-all-read', [\App\Http\Controllers\NotificationController::class, 'markAllAsRead']);
             Route::post('/notifications/{id}/reply', [\App\Http\Controllers\NotificationController::class, 'reply']);
+            Route::delete('/notifications/{id}', [\App\Http\Controllers\NotificationController::class, 'destroy']);
 
             Route::get('/users', [\App\Http\Controllers\MessageController::class, 'users']);
             Route::post('/messages/send', [\App\Http\Controllers\MessageController::class, 'send']);

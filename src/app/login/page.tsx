@@ -52,11 +52,41 @@ export default function LoginPage() {
                 transition={{ duration: 0.5 }}
                 className="w-full max-w-md bg-white rounded-[32px] shadow-2xl shadow-primary/5 border border-primary/5 p-10"
             >
-                <div className="text-center mb-10">
-                    <Link href="/" className="inline-block mb-6">
-                        <div className="flex items-center justify-center">
-                            <span className="text-primary font-black text-2xl tracking-tighter">DROGA</span>
-                            <span className="text-accent font-light text-2xl tracking-normal ml-1">GROUP</span>
+                <div className="text-center mb-10 relative">
+                    {/* Back to Site Button - Pro Level */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3, duration: 0.5 }}
+                        className="absolute -top-14 left-0"
+                    >
+                        <Link
+                            href="/"
+                            className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-white border border-primary/5 hover:border-[#FDF22F] hover:bg-white text-primary/40 hover:text-black transition-all text-[11px] font-black uppercase tracking-widest group shadow-sm hover:shadow-md active:scale-95"
+                        >
+                            <svg
+                                className="w-3 h-3 group-hover:-translate-x-1 transition-transform duration-300"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                            >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M15 19l-7-7 7-7" />
+                            </svg>
+                            Back to Hub
+                        </Link>
+                    </motion.div>
+
+                    <Link href="/" className="inline-block mb-8 group">
+                        <div className="flex flex-col items-center">
+                            <div className="flex items-center justify-center">
+                                <span className="text-black font-black text-3xl tracking-tighter leading-none">DROGA</span>
+                                <span className="text-black font-extralight text-3xl tracking-tight ml-2 leading-none uppercase">Group</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2 w-full">
+                                <div className="h-[0.5px] bg-black/10 flex-1" />
+                                <span className="text-[9px] font-bold text-black/30 uppercase tracking-[0.4em] whitespace-nowrap">Hiring Hub</span>
+                                <div className="h-[0.5px] bg-black/10 flex-1" />
+                            </div>
                         </div>
                     </Link>
                     <h1 className="text-2xl font-bold text-primary">Login to Hiring Hub</h1>
@@ -75,7 +105,7 @@ export default function LoginPage() {
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-5 py-3.5 rounded-xl border border-primary/10 focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none transition-all placeholder:text-primary/30"
+                            className="w-full px-5 py-3.5 rounded-xl border border-primary/10 focus:border-[#FDF22F] focus:ring-4 focus:ring-[#FDF22F]/20 focus:shadow-[0_0_15px_rgba(253,242,47,0.3)] outline-none transition-all placeholder:text-primary/30"
                             placeholder="name@company.com"
                             required
                         />
@@ -83,13 +113,13 @@ export default function LoginPage() {
                     <div>
                         <div className="flex justify-between mb-2">
                             <label className="block text-sm font-bold text-primary">Password</label>
-                            <a href="#" className="text-xs font-bold text-accent hover:underline">Forgot?</a>
+                            <a href="#" className="text-xs font-black text-[#FDF22F] hover:underline uppercase tracking-wide">Forgot?</a>
                         </div>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-5 py-3.5 rounded-xl border border-primary/10 focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none transition-all placeholder:text-primary/30"
+                            className="w-full px-5 py-3.5 rounded-xl border border-primary/10 focus:border-[#FDF22F] focus:ring-4 focus:ring-[#FDF22F]/20 focus:shadow-[0_0_15px_rgba(253,242,47,0.3)] outline-none transition-all placeholder:text-primary/30"
                             placeholder="••••••••"
                             required
                         />
@@ -98,7 +128,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full bg-primary text-white py-4 rounded-xl font-bold transition-all hover:shadow-xl hover:shadow-primary/10 active:scale-95 ${loading ? "opacity-70 cursor-not-allowed" : "hover:bg-black"}`}
+                        className={`w-full bg-[#FDF22F] text-black py-4 rounded-xl font-bold transition-all hover:bg-[#EBD92B] active:bg-[#D9C726] hover:shadow-xl hover:shadow-[#FDF22F]/20 active:scale-[0.98] ${loading ? "opacity-70 cursor-not-allowed" : ""}`}
                     >
                         {loading ? "Signing in..." : "Sign In"}
                     </button>
@@ -107,7 +137,7 @@ export default function LoginPage() {
                 <div className="mt-8 text-center">
                     <p className="text-sm text-primary/60 mb-4">
                         Don't have an account?{" "}
-                        <a href="#" className="text-accent font-bold hover:underline">Contact Admin</a>
+                        <a href="#" className="text-[#FDF22F] font-black hover:underline uppercase tracking-wide">Contact Admin</a>
                     </p>
                     <div className="pt-6 border-t border-primary/5">
                         <p className="text-[10px] font-bold text-primary/30 uppercase tracking-widest mb-3">Demo Accounts</p>

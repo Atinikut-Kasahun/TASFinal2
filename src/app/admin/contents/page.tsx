@@ -18,7 +18,7 @@ function SectionCard({ title, description, children, onSave, saving }: { title: 
                 <button
                     onClick={onSave}
                     disabled={saving}
-                    className="flex items-center gap-2 bg-[#1F7A6E] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#155a50] transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 bg-[#000000] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#155a50] transition-colors disabled:opacity-50"
                 >
                     {saving ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
                     {saving ? 'Saving...' : 'Save Section'}
@@ -138,7 +138,7 @@ export default function SiteEditor() {
     if (!user || loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1F7A6E]" />
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#000000]" />
             </div>
         );
     }
@@ -148,7 +148,7 @@ export default function SiteEditor() {
 
             {/* Success Toast Configuration */}
             {toastMessage && (
-                <div className="fixed top-20 right-8 z-50 bg-[#1F7A6E] text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
+                <div className="fixed top-20 right-8 z-50 bg-[#000000] text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-300">
                     <CheckCircle size={20} />
                     <span className="font-bold text-sm tracking-wide">{toastMessage}</span>
                 </div>
@@ -178,7 +178,7 @@ export default function SiteEditor() {
                                 <input
                                     type="text"
                                     placeholder="e.g. 9.8"
-                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none"
+                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#000000] outline-none"
                                     value={mockStats.rating}
                                     onChange={e => setMockStats({ ...mockStats, rating: e.target.value })}
                                 />
@@ -188,7 +188,7 @@ export default function SiteEditor() {
                                 <input
                                     type="text"
                                     placeholder="e.g. 500+"
-                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none"
+                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#000000] outline-none"
                                     value={mockStats.members}
                                     onChange={e => setMockStats({ ...mockStats, members: e.target.value })}
                                 />
@@ -198,7 +198,7 @@ export default function SiteEditor() {
                                 <input
                                     type="text"
                                     placeholder="e.g. Join 200+ team members"
-                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none"
+                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#000000] outline-none"
                                     value={mockStats.cta_text}
                                     onChange={e => setMockStats({ ...mockStats, cta_text: e.target.value })}
                                 />
@@ -208,7 +208,7 @@ export default function SiteEditor() {
                                 <input
                                     type="text"
                                     placeholder="e.g. +12"
-                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none"
+                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#000000] outline-none"
                                     value={mockStats.cta_badge}
                                     onChange={e => setMockStats({ ...mockStats, cta_badge: e.target.value })}
                                 />
@@ -228,7 +228,7 @@ export default function SiteEditor() {
                                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Metric Title</label>
                                 <input
                                     type="text"
-                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none"
+                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#000000] outline-none"
                                     value={heroStats.title}
                                     onChange={e => setHeroStats({ ...heroStats, title: e.target.value })}
                                 />
@@ -237,7 +237,7 @@ export default function SiteEditor() {
                                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Metric Value</label>
                                 <input
                                     type="text"
-                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none"
+                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#000000] outline-none"
                                     value={heroStats.value}
                                     onChange={e => setHeroStats({ ...heroStats, value: e.target.value })}
                                 />
@@ -245,7 +245,7 @@ export default function SiteEditor() {
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Icon</label>
                                 <select
-                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none bg-white"
+                                    className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#000000] outline-none bg-white"
                                     value={heroStats.icon}
                                     onChange={e => setHeroStats({ ...heroStats, icon: e.target.value })}
                                 >
@@ -269,7 +269,7 @@ export default function SiteEditor() {
                             <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wide">Main Heading</label>
                             <input
                                 type="text"
-                                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none"
+                                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#000000] outline-none"
                                 value={cultureText.heading}
                                 onChange={e => setCultureText({ ...cultureText, heading: e.target.value })}
                             />
@@ -280,7 +280,7 @@ export default function SiteEditor() {
                                     <label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wide">Bullet {idx + 1} Heading</label>
                                     <input
                                         type="text"
-                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none mb-3 bg-white"
+                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#000000] outline-none mb-3 bg-white"
                                         value={bullet.heading}
                                         onChange={e => {
                                             const newBullets = [...cultureText.bullets];
@@ -291,7 +291,7 @@ export default function SiteEditor() {
                                     <label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wide">Bullet {idx + 1} Text</label>
                                     <textarea
                                         rows={3}
-                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none bg-white resize-none"
+                                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#000000] outline-none bg-white resize-none"
                                         value={bullet.text}
                                         onChange={e => {
                                             const newBullets = [...cultureText.bullets];
@@ -328,7 +328,7 @@ export default function SiteEditor() {
                                             <ImageIcon size={24} />
                                         </div>
                                     )}
-                                    <label className="cursor-pointer bg-white border border-gray-200 shadow-sm text-gray-700 px-4 py-2 rounded-xl text-xs font-bold hover:border-[#1F7A6E] hover:text-[#1F7A6E] transition-colors flex items-center gap-2">
+                                    <label className="cursor-pointer bg-white border border-gray-200 shadow-sm text-gray-700 px-4 py-2 rounded-xl text-xs font-bold hover:border-[#000000] hover:text-[#000000] transition-colors flex items-center gap-2">
                                         <Upload size={14} />
                                         {cultureImages[key] ? 'Replace Image' : 'Upload Image'}
                                         <input
@@ -361,7 +361,7 @@ export default function SiteEditor() {
                                         <label className="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wide">Location Name</label>
                                         <input
                                             type="text"
-                                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none bg-white"
+                                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#000000] outline-none bg-white"
                                             value={item.label}
                                             onChange={e => {
                                                 const newDiversity = [...teamDiversity];
@@ -377,7 +377,7 @@ export default function SiteEditor() {
                                             type="number"
                                             min="0"
                                             max="100"
-                                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none bg-white"
+                                            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#000000] outline-none bg-white"
                                             value={item.value}
                                             onChange={e => {
                                                 const newDiversity = [...teamDiversity];
@@ -392,7 +392,7 @@ export default function SiteEditor() {
                                                 className="h-full transition-all duration-500"
                                                 style={{
                                                     width: `${item.value}%`,
-                                                    backgroundColor: idx % 2 === 0 ? '#1F7A6E' : '#FFBA49'
+                                                    backgroundColor: idx % 2 === 0 ? '#000000' : '#FFBA49'
                                                 }}
                                             />
                                         </div>
@@ -417,7 +417,7 @@ export default function SiteEditor() {
                                 onClick={() => {
                                     setTeamDiversity([...teamDiversity, { label: '', value: 0 }]);
                                 }}
-                                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold text-sm flex items-center justify-center gap-2 hover:border-[#1F7A6E] hover:text-[#1F7A6E] hover:bg-gray-50 transition-colors"
+                                className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold text-sm flex items-center justify-center gap-2 hover:border-[#000000] hover:text-[#000000] hover:bg-gray-50 transition-colors"
                             >
                                 <Plus size={16} />
                                 Add New Location
@@ -456,7 +456,7 @@ export default function SiteEditor() {
                                     type="text"
                                     id="new-dept-input"
                                     placeholder="Add new department (e.g. Marketing)"
-                                    className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#1F7A6E] outline-none"
+                                    className="flex-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#000000] outline-none"
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                             const val = (e.target as HTMLInputElement).value.trim();

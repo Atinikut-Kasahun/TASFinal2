@@ -9,16 +9,16 @@ const features = [
         title: "Innovation First",
         desc: "We push boundaries and embrace cutting-edge technologies.",
         tag: "Engineering",
-        color: "text-[#00453B]",
-        bg: "bg-[#EFE8DE]"
+        color: "text-[#000000]",
+        bg: "bg-[#EFE21A]"
     },
     {
         icon: Users,
         title: "Collaborative Culture",
         desc: "Work with talented individuals who value teamwork and respect.",
         tag: "Culture",
-        color: "text-[#00453B]",
-        bg: "bg-[#EFE8DE]"
+        color: "text-[#000000]",
+        bg: "bg-[#EFE21A]"
     },
     {
         icon: Rocket,
@@ -26,15 +26,15 @@ const features = [
         desc: "Continuous learning and development are at our core.",
         tag: "Personal Growth",
         color: "text-white",
-        bg: "bg-[#00453B]"
+        bg: "bg-[#000000]"
     },
     {
         icon: Globe,
         title: "Global Impact",
         desc: "Build products that reach millions of users worldwide.",
         tag: "Mission",
-        color: "text-[#00453B]",
-        bg: "bg-[#EFE8DE]"
+        color: "text-[#000000]",
+        bg: "bg-[#EFE21A]"
     },
 ];
 
@@ -50,22 +50,22 @@ const cardVariants = {
 
 export default function Features() {
     return (
-        <section className="py-24 bg-white" id="why-tas">
-            <div className="max-w-7xl mx-auto px-8">
+        <section className="py-20 md:py-24 bg-white" id="why-tas">
+            <div className="max-w-7xl mx-auto px-6 md:px-8">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
-                    className="mb-14 text-center"
+                    className="mb-10 md:mb-14 text-center"
                 >
-                    <span className="text-[#00453B] font-bold text-xs uppercase tracking-widest bg-[#EFE8DE] px-4 py-1.5 rounded-full mb-6 inline-block">
+                    <span className="text-[#000000] font-bold text-[10px] md:text-xs uppercase tracking-widest bg-[#EFE21A] px-4 py-1.5 rounded-full mb-4 md:mb-6 inline-block">
                         Why Droga?
                     </span>
-                    <h2 className="text-5xl font-bold text-[#00453B] mb-4">
+                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#000000] mb-4">
                         Why Droga Group?
                     </h2>
-                    <p className="text-xl text-[#00453B]/60 max-w-2xl mx-auto font-medium">
+                    <p className="text-base md:text-lg lg:text-xl text-[#000000]/60 max-w-2xl mx-auto font-medium">
                         We&apos;re more than just a workplace. We&apos;re a community committed to
                         excellence and innovation.
                     </p>
@@ -91,18 +91,18 @@ export default function Features() {
                                 },
                             }}
                             whileHover={{ y: -8, rotateX: 0, transition: { duration: 0.3 } }}
-                            className="group p-8 bg-[#FDF9F3] rounded-[32px] border border-[#00453B]/5 hover:border-[#00453B]/20 hover:bg-white transition-all hover:shadow-2xl hover:shadow-[#00453B]/5 cursor-default relative overflow-hidden"
+                            className="group p-8 bg-[#FDF22F] rounded-[32px] border border-[#000000]/5 hover:border-[#000000]/20 hover:bg-white transition-all hover:shadow-2xl hover:shadow-[#000000]/5 cursor-default relative overflow-hidden"
                         >
                             <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <span className="text-[10px] font-bold text-[#00453B] uppercase tracking-tighter bg-[#EFE8DE] px-2 py-1 rounded-md">{feature.tag}</span>
+                                <span className="text-[10px] font-bold text-[#000000] uppercase tracking-tighter bg-[#EFE21A] px-2 py-1 rounded-md">{feature.tag}</span>
                             </div>
                             <div className={`w-14 h-14 ${feature.bg} rounded-2xl flex items-center justify-center mb-8 shadow-sm group-hover:scale-110 transition-transform`}>
                                 <feature.icon className={`w-7 h-7 ${feature.color}`} strokeWidth={2.5} />
                             </div>
-                            <h3 className="text-xl font-bold text-[#00453B] mb-4 group-hover:text-[#00453B] transition-colors">
+                            <h3 className="text-xl font-bold text-[#000000] mb-4 group-hover:text-[#000000] transition-colors">
                                 {feature.title}
                             </h3>
-                            <p className="text-[#00453B]/60 text-sm leading-relaxed font-medium">
+                            <p className="text-[#000000]/60 text-sm leading-relaxed font-medium">
                                 {feature.desc}
                             </p>
                         </motion.div>

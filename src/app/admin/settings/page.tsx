@@ -160,7 +160,7 @@ export default function GlobalSettings() {
 
     if (!user) return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1F7A6E]" />
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#000000]" />
         </div>
     );
 
@@ -184,7 +184,7 @@ export default function GlobalSettings() {
                         </div>
                         <button className="text-gray-400 hover:text-gray-700 transition-colors"><Bell size={18} /></button>
                         <div className="flex items-center gap-3 border-l border-gray-200 pl-4 ml-2">
-                            <div className="w-8 h-8 rounded-full bg-[#1F7A6E]/20 border border-[#1F7A6E]/40 flex items-center justify-center text-[#1F7A6E] font-black text-xs">
+                            <div className="w-8 h-8 rounded-full bg-[#000000]/20 border border-[#000000]/40 flex items-center justify-center text-[#000000] font-black text-xs">
                                 {user.name.charAt(0).toUpperCase()}
                             </div>
                             <button onClick={handleLogout} className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-500 transition-colors">
@@ -202,7 +202,7 @@ export default function GlobalSettings() {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`text-left px-4 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2.5 ${activeTab === tab.id ? 'bg-[#1F7A6E]/10 text-[#1F7A6E]' : 'text-gray-500 hover:bg-gray-50'}`}
+                                    className={`text-left px-4 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2.5 ${activeTab === tab.id ? 'bg-[#000000]/10 text-[#000000]' : 'text-gray-500 hover:bg-gray-50'}`}
                                 >
                                     {tab.icon}{tab.label}
                                 </button>
@@ -220,12 +220,12 @@ export default function GlobalSettings() {
 
                                     {/* Avatar */}
                                     <div className="flex items-center gap-5 mb-8">
-                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#1A2B3D] to-[#1F7A6E] flex items-center justify-center text-white font-black text-2xl shadow-lg">
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#000000] to-[#000000] flex items-center justify-center text-white font-black text-2xl shadow-lg">
                                             {user.name.charAt(0).toUpperCase()}
                                         </div>
                                         <div>
                                             <p className="font-black text-gray-900">{user.name}</p>
-                                            <p className="text-xs text-[#1F7A6E] font-bold uppercase tracking-widest mt-0.5">Global Admin</p>
+                                            <p className="text-xs text-[#000000] font-bold uppercase tracking-widest mt-0.5">Global Admin</p>
                                         </div>
                                     </div>
 
@@ -234,7 +234,7 @@ export default function GlobalSettings() {
                                             <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Display Name</label>
                                             <input
                                                 type="text" required
-                                                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] focus:border-transparent outline-none"
+                                                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#000000] focus:border-transparent outline-none"
                                                 value={name}
                                                 onChange={e => setName(e.target.value)}
                                             />
@@ -258,7 +258,7 @@ export default function GlobalSettings() {
                                         </div>
                                         <button
                                             type="submit"
-                                            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl transition-all ${saved ? 'bg-emerald-500 text-white' : 'bg-[#1F7A6E] text-white hover:bg-[#165a51]'}`}
+                                            className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl transition-all ${saved ? 'bg-emerald-500 text-white' : 'bg-[#000000] text-white hover:bg-[#165a51]'}`}
                                         >
                                             {saved ? <><Check size={15} /> Saved!</> : <><Save size={15} /> Save Changes</>}
                                         </button>
@@ -275,7 +275,7 @@ export default function GlobalSettings() {
                                                 <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Current Password</label>
                                                 <input
                                                     type="password" required
-                                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1F7A6E]"
+                                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#000000]"
                                                     value={passwordData.current_password}
                                                     onChange={e => setPasswordData({ ...passwordData, current_password: e.target.value })}
                                                 />
@@ -284,7 +284,7 @@ export default function GlobalSettings() {
                                                 <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">New Password</label>
                                                 <input
                                                     type="password" required
-                                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1F7A6E]"
+                                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#000000]"
                                                     value={passwordData.new_password}
                                                     onChange={e => setPasswordData({ ...passwordData, new_password: e.target.value })}
                                                 />
@@ -293,7 +293,7 @@ export default function GlobalSettings() {
                                                 <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Confirm New Password</label>
                                                 <input
                                                     type="password" required
-                                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1F7A6E]"
+                                                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#000000]"
                                                     value={passwordData.new_password_confirmation}
                                                     onChange={e => setPasswordData({ ...passwordData, new_password_confirmation: e.target.value })}
                                                 />
@@ -321,7 +321,7 @@ export default function GlobalSettings() {
                                         <h2 className="text-base font-black text-gray-900">Admin Management</h2>
                                         <button
                                             onClick={() => { setShowAddAdmin(!showAddAdmin); setGeneratedPassword(''); }}
-                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1F7A6E] text-white rounded-lg text-xs font-bold hover:bg-[#165a51] transition-all"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#000000] text-white rounded-lg text-xs font-bold hover:bg-[#165a51] transition-all"
                                         >
                                             {showAddAdmin ? 'Cancel' : <><Plus size={14} /> Add Admin</>}
                                         </button>
@@ -356,7 +356,7 @@ export default function GlobalSettings() {
                                                         <input
                                                             type="text" required
                                                             placeholder="e.g. John Doe"
-                                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1F7A6E]/20"
+                                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#000000]/20"
                                                             value={newAdmin.name}
                                                             onChange={e => setNewAdmin({ ...newAdmin, name: e.target.value })}
                                                         />
@@ -366,7 +366,7 @@ export default function GlobalSettings() {
                                                         <input
                                                             type="email" required
                                                             placeholder="admin@company.com"
-                                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#1F7A6E]/20"
+                                                            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#000000]/20"
                                                             value={newAdmin.email}
                                                             onChange={e => setNewAdmin({ ...newAdmin, email: e.target.value })}
                                                         />
@@ -374,7 +374,7 @@ export default function GlobalSettings() {
                                                     {error && <p className="text-red-500 text-[10px] font-bold">{error}</p>}
                                                     <button
                                                         disabled={creating}
-                                                        className="w-full bg-[#1F7A6E] text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                                                        className="w-full bg-[#000000] text-white py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
                                                     >
                                                         {creating ? 'Creating...' : <><UserPlus size={16} /> Create Global Admin</>}
                                                     </button>
@@ -389,7 +389,7 @@ export default function GlobalSettings() {
                                                 admins.map(admin => (
                                                     <div key={admin.id} className="group flex items-center justify-between p-4 bg-gray-50/50 border border-gray-100 rounded-2xl hover:bg-white hover:shadow-md transition-all">
                                                         <div className="flex items-center gap-4">
-                                                            <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-[#1F7A6E] font-black text-sm">
+                                                            <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-[#000000] font-black text-sm">
                                                                 {admin.name.charAt(0).toUpperCase()}
                                                             </div>
                                                             <div>
@@ -462,8 +462,8 @@ export default function GlobalSettings() {
                                         ))}
                                     </div>
 
-                                    <div className="mt-8 p-4 bg-[#1A2B3D]/5 rounded-2xl border border-[#1A2B3D]/10">
-                                        <p className="text-xs font-black text-[#1A2B3D] uppercase tracking-widest mb-1">Company & User Management</p>
+                                    <div className="mt-8 p-4 bg-[#000000]/5 rounded-2xl border border-[#000000]/10">
+                                        <p className="text-xs font-black text-[#000000] uppercase tracking-widest mb-1">Company & User Management</p>
                                         <p className="text-xs text-gray-500 leading-relaxed">
                                             To add/remove companies and users, open the <strong>Global Admin Dashboard</strong> and click any company row to open the management panel.
                                         </p>
@@ -481,7 +481,7 @@ export default function GlobalSettings() {
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onClick={() => setConfirmModal(prev => ({ ...prev, open: false }))}
-                            className="fixed inset-0 bg-[#1A2B3D]/60 backdrop-blur-md z-[200]"
+                            className="fixed inset-0 bg-[#000000]/60 backdrop-blur-md z-[200]"
                         />
                         <div className="fixed inset-0 flex items-center justify-center z-[210] p-4 pointer-events-none">
                             <motion.div
@@ -494,7 +494,7 @@ export default function GlobalSettings() {
                                     <div className={`w-20 h-20 rounded-full mx-auto mb-6 flex items-center justify-center ${confirmModal.type === 'danger' ? 'bg-red-50 text-red-500' : 'bg-amber-50 text-amber-500'}`}>
                                         {confirmModal.type === 'danger' ? <Trash2 size={32} /> : <AlertTriangle size={32} />}
                                     </div>
-                                    <h3 className="text-2xl font-black text-[#1A2B3D] mb-3">{confirmModal.title}</h3>
+                                    <h3 className="text-2xl font-black text-[#000000] mb-3">{confirmModal.title}</h3>
                                     <p className="text-gray-500 text-sm leading-relaxed mb-10 px-4">
                                         {confirmModal.message}
                                     </p>
@@ -503,7 +503,7 @@ export default function GlobalSettings() {
                                             onClick={confirmModal.onConfirm}
                                             className={`w-full py-4 rounded-2xl text-[13px] font-black uppercase tracking-widest transition-all shadow-lg ${confirmModal.type === 'danger'
                                                 ? 'bg-red-500 text-white shadow-red-200 hover:bg-red-600'
-                                                : 'bg-[#1F7A6E] text-white shadow-[#1F7A6E]/20 hover:bg-[#165a51]'
+                                                : 'bg-[#000000] text-white shadow-[#000000]/20 hover:bg-[#165a51]'
                                                 }`}
                                         >
                                             Confirm Action

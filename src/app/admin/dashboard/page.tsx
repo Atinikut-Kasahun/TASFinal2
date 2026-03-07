@@ -34,8 +34,8 @@ interface Stats {
 /* ─── Toast ─────────────────────────────────────────────── */
 function Toast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
     return (
-        <div className={`fixed bottom-6 right-6 z-[200] px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-bold text-white flex items-center gap-2 animate-fade-in ${type === 'success' ? 'bg-[#1F7A6E]' : 'bg-red-500'}`}>
-            {type === 'success' ? '✅' : '❌'} {msg}
+        <div className={`fixed bottom-6 right-6 z-[200] px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-bold text-white flex items-center gap-2 animate-fade-in ${type === 'success' ? 'bg-[#000000] border border-brandYellow/20' : 'bg-red-500'}`}>
+            {type === 'success' ? <CheckCircle2 size={18} className="text-brandYellow" /> : '❌'} {msg}
         </div>
     );
 }
@@ -43,33 +43,51 @@ function Toast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
 /* ─── Confirm Dialog ─────────────────────────────────────── */
 function ConfirmDialog({
     title, detail, warning, onConfirm, onCancel, loading, error,
+    confirmLabel = 'Delete',
+    confirmLoadingLabel = 'Deleting…',
+    confirmColorClass = 'bg-red-500 hover:bg-red-600',
+    icon = <AlertTriangle size={28} className="text-red-500" />
 }: {
     title: string; detail: string; warning?: string;
     onConfirm: () => void; onCancel: () => void; loading: boolean; error: string;
+    confirmLabel?: string;
+    confirmLoadingLabel?: string;
+    confirmColorClass?: string;
+    icon?: React.ReactNode;
 }) {
     return (
-        <div className="fixed inset-0 bg-[#1A2B3D]/50 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-                <div className="w-14 h-14 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <AlertTriangle size={28} className="text-red-500" />
+        <div className="fixed inset-0 bg-[#000000]/60 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                className="bg-white rounded-[32px] shadow-2xl w-full max-w-sm overflow-hidden"
+            >
+                <div className="p-8 text-center">
+                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        {icon}
+                    </div>
+                    <h3 className="font-black text-gray-900 text-xl mb-2 tracking-tight">{title}</h3>
+                    <p className="text-gray-500 text-sm mb-4 leading-relaxed font-medium">"{detail}"</p>
+                    {warning && (
+                        <div className="text-[11px] font-bold text-amber-700 bg-amber-50/50 border border-amber-100 rounded-2xl p-4 mb-4 text-left leading-relaxed">
+                            {warning}
+                        </div>
+                    )}
+                    {error && (
+                        <div className="text-[11px] font-bold text-red-600 bg-red-50 border border-red-100 rounded-2xl p-4 mb-4 text-left">
+                            {error}
+                        </div>
+                    )}
+                    <div className="flex gap-3 mt-2">
+                        <button onClick={onCancel} className="flex-1 py-4 bg-gray-100 text-gray-500 font-black uppercase tracking-widest rounded-2xl hover:bg-gray-200 transition-all text-[11px]">
+                            Cancel
+                        </button>
+                        <button onClick={onConfirm} disabled={loading} className={`flex-1 py-4 text-white font-black uppercase tracking-widest rounded-2xl transition-all text-[11px] disabled:opacity-50 shadow-xl ${confirmColorClass}`}>
+                            {loading ? confirmLoadingLabel : confirmLabel}
+                        </button>
+                    </div>
                 </div>
-                <h3 className="font-black text-gray-900 text-base mb-1">{title}</h3>
-                <p className="text-gray-500 text-sm mb-3">"{detail}"</p>
-                {warning && (
-                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-xl p-3 mb-3">{warning}</p>
-                )}
-                {error && (
-                    <p className="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl p-3 mb-3">{error}</p>
-                )}
-                <div className="flex gap-3">
-                    <button onClick={onCancel} className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition text-sm">
-                        Cancel
-                    </button>
-                    <button onClick={onConfirm} disabled={loading} className="flex-1 py-2.5 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition text-sm disabled:opacity-50">
-                        {loading ? 'Deleting…' : 'Delete'}
-                    </button>
-                </div>
-            </div>
+            </motion.div>
         </div>
     );
 }
@@ -93,37 +111,37 @@ function CredentialCard({
     };
 
     return (
-        <div className="fixed inset-0 bg-[#1A2B3D]/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[#000000]/40 backdrop-blur-sm z-[110] flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-8 animate-fade-in relative">
                 <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-gray-700 transition"><X size={20} /></button>
 
-                <div className="w-16 h-16 bg-[#1A2B3D]/5 rounded-full flex items-center justify-center mx-auto mb-5 border border-gray-100">
-                    <Key size={30} className="text-[#1A2B3D]" />
+                <div className="w-20 h-20 bg-brandYellow/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-brandYellow/20 rotate-12 transition-transform hover:rotate-0">
+                    <Key size={36} className="text-brandYellow" />
                 </div>
-                <h3 className="font-black text-gray-900 text-lg mb-2">{title}</h3>
-                <p className="text-gray-500 text-sm mb-6">{subtitle}</p>
+                <h3 className="font-black text-gray-900 text-2xl mb-2 tracking-tight">{title}</h3>
+                <p className="text-gray-500 text-sm mb-8 leading-relaxed px-4">{subtitle}</p>
 
-                <div className="bg-[#F5F6FA] border border-gray-200 rounded-xl p-4 text-left space-y-3 relative group">
+                <div className="bg-[#0A0A0A] rounded-2xl p-6 text-left space-y-4 relative group shadow-2xl border border-white/5">
                     <button
                         onClick={handleCopy}
-                        className="absolute top-3 right-3 p-1.5 bg-white border border-gray-200 rounded-lg text-gray-400 hover:text-[#1F7A6E] hover:border-[#1F7A6E] transition shadow-sm opacity-0 group-hover:opacity-100"
+                        className="absolute top-4 right-4 p-2 bg-white/10 border border-white/10 rounded-xl text-brandYellow hover:bg-brandYellow hover:text-black transition-all shadow-lg opacity-0 group-hover:opacity-100"
                         title="Copy to clipboard"
                     >
-                        {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                        {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
                     </button>
 
                     <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Email</p>
-                        <p className="font-semibold text-gray-800 text-sm font-mono">{credentials.email}</p>
+                        <p className="text-[10px] font-black text-brandYellow/50 uppercase tracking-[0.2em] mb-1.5">Email Access</p>
+                        <p className="font-bold text-white text-sm font-mono break-all">{credentials.email}</p>
                     </div>
                     <div>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Password</p>
-                        <p className="font-semibold text-gray-800 text-base font-mono bg-white px-2 py-1 rounded inline-block border border-gray-200">{credentials.pass}</p>
+                        <p className="text-[10px] font-black text-brandYellow/50 uppercase tracking-[0.2em] mb-1.5">Temporary Password</p>
+                        <p className="font-black text-brandYellow text-xl font-mono tracking-wider">{credentials.pass}</p>
                     </div>
                 </div>
 
-                <button onClick={onClose} className="w-full mt-6 py-2.5 bg-[#1A2B3D] text-white font-bold rounded-xl hover:bg-[#111A24] transition text-sm">
-                    Done
+                <button onClick={onClose} className="w-full mt-8 py-4 bg-brandYellow text-[#000000] font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-brandYellow/10">
+                    Secure & Done
                 </button>
             </div>
         </div>
@@ -161,32 +179,33 @@ function AddUserModal({ tenant, tenants, onClose, onAdded }: {
     }
 
     return (
-        <div className="fixed inset-0 bg-[#1A2B3D]/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[#000000]/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/60">
-                    <div>
-                        <p className="text-[10px] font-black text-[#1F7A6E] uppercase tracking-widest">Add User to</p>
-                        <h3 className="font-black text-gray-900 text-base">{tenant.name}</h3>
+                <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-[#0A0A0A] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-brandYellow/10 rounded-full -mr-12 -mt-12 blur-2xl" />
+                    <div className="relative z-10">
+                        <p className="text-brandYellow text-[10px] font-black uppercase tracking-[0.2em] mb-1">Onboarding System</p>
+                        <h3 className="font-black text-white text-xl tracking-tight">Add User to {tenant.name}</h3>
                     </div>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition"><X size={20} /></button>
+                    <button onClick={onClose} className="text-white/40 hover:text-white transition p-2 hover:bg-white/5 rounded-full relative z-10"><X size={20} /></button>
                 </div>
-                <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                    {error && <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm">{error}</div>}
+                <form onSubmit={handleSubmit} className="p-8 space-y-5">
+                    {error && <div className="p-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl text-sm font-medium">{error}</div>}
                     {[
-                        { label: 'Full Name', key: 'name', type: 'text' },
-                        { label: 'Email Address', key: 'email', type: 'email' },
+                        { label: 'Full Name', key: 'name', type: 'text', placeholder: 'e.g. Abebe Kebede' },
+                        { label: 'Email Address', key: 'email', type: 'email', placeholder: 'abebe@example.com' },
                     ].map(f => (
                         <div key={f.key}>
                             <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">{f.label}</label>
-                            <input required type={f.type}
-                                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] focus:border-transparent outline-none"
+                            <input required type={f.type} placeholder={f.placeholder}
+                                className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-brandYellow focus:border-transparent outline-none transition-all font-medium"
                                 value={(form as any)[f.key]}
                                 onChange={e => setForm({ ...form, [f.key]: e.target.value })} />
                         </div>
                     ))}
                     <div>
-                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Role</label>
-                        <select className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm bg-white focus:ring-2 focus:ring-[#1F7A6E] focus:border-transparent outline-none"
+                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Access Role</label>
+                        <select className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm bg-white focus:ring-2 focus:ring-brandYellow focus:border-transparent outline-none transition-all font-bold text-gray-700"
                             value={form.role_slug} onChange={e => setForm({ ...form, role_slug: e.target.value })}>
                             <option value="admin">Global Admin</option>
                             <option value="hr_manager">HR Manager</option>
@@ -194,11 +213,11 @@ function AddUserModal({ tenant, tenants, onClose, onAdded }: {
                             <option value="ta_manager">Talent Acquisition</option>
                         </select>
                     </div>
-                    <p className="text-xs text-center text-gray-400 mt-2">A secure password will be randomly generated.</p>
-                    <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="flex-1 py-2.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-xl transition">Cancel</button>
-                        <button type="submit" disabled={submitting} className="flex-1 py-2.5 bg-[#1F7A6E] text-white text-sm font-bold rounded-xl hover:bg-[#165a51] transition disabled:opacity-50">
-                            {submitting ? 'Creating…' : 'Create User'}
+                    <p className="text-[10px] text-center text-gray-400 font-bold uppercase tracking-widest bg-gray-50 py-2 rounded-lg">Auto-generated password will be provided</p>
+                    <div className="flex gap-4 pt-4">
+                        <button type="button" onClick={onClose} className="flex-1 py-4 text-sm font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 rounded-2xl transition">Cancel</button>
+                        <button type="submit" disabled={submitting} className="flex-1 py-4 bg-brandYellow text-[#000000] text-sm font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-brandYellow/10 border border-brandYellow/50">
+                            {submitting ? 'Creating...' : 'Create User'}
                         </button>
                     </div>
                 </form>
@@ -226,27 +245,27 @@ function AddCompanyModal({ onClose, onAdded }: {
     };
 
     return (
-        <div className="fixed inset-0 bg-[#1A2B3D]/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[#000000]/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-8 animate-fade-in relative">
                 <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 hover:text-gray-700 transition"><X size={20} /></button>
 
-                <div className="w-16 h-16 bg-[#1F7A6E]/10 rounded-full flex items-center justify-center mx-auto mb-5">
-                    <Building2 size={32} className="text-[#1F7A6E]" />
+                <div className="w-20 h-20 bg-brandYellow/10 rounded-3xl flex items-center justify-center mx-auto mb-6 border border-brandYellow/20 rotate-6 transition-transform hover:rotate-0">
+                    <Building2 size={40} className="text-brandYellow" />
                 </div>
-                <h3 className="font-black text-gray-900 text-lg mb-2">New Sister Company</h3>
-                <p className="text-gray-500 text-sm mb-6">Create a new isolated workspace.</p>
+                <h3 className="font-black text-gray-900 text-2xl mb-2 tracking-tight">New Sister Company</h3>
+                <p className="text-gray-500 text-sm mb-8 leading-relaxed">Spawn a new enterprise workspace.</p>
 
-                <form onSubmit={handleSubmit} className="text-left space-y-4">
-                    {error && <div className="p-3 bg-red-50 text-red-600 border border-red-100 rounded-xl text-sm">{error}</div>}
+                <form onSubmit={handleSubmit} className="text-left space-y-5">
+                    {error && <div className="p-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl text-sm font-medium">{error}</div>}
                     <div>
-                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Company Name</label>
+                        <label className="block text-xs font-black text-gray-500 uppercase tracking-[0.2em] mb-2">Enterprise Name</label>
                         <input required type="text" autoFocus
-                            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#1F7A6E] focus:border-transparent outline-none"
-                            value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Droga Tech" />
+                            className="w-full border border-gray-200 rounded-2xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-brandYellow focus:border-transparent outline-none transition-all font-bold placeholder:font-normal"
+                            value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Droga Logistics" />
                     </div>
 
-                    <button type="submit" disabled={submitting || !name.trim()} className="w-full py-2.5 bg-[#1F7A6E] text-white font-bold rounded-xl hover:bg-[#165a51] transition text-sm disabled:opacity-50 mt-2">
-                        {submitting ? 'Creating...' : 'Create Company'}
+                    <button type="submit" disabled={submitting || !name.trim()} className="w-full py-4 bg-[#0A0A0A] text-brandYellow font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-black/20 border border-white/5 disabled:opacity-50 mt-4">
+                        {submitting ? 'Generating Namespace...' : 'Initialize Workspace'}
                     </button>
                 </form>
             </div>
@@ -338,29 +357,34 @@ function CompanyPanel({
             {resetTarget && (
                 <ConfirmDialog
                     title="Reset Password"
-                    detail={`Are you sure you want to generate a new password for ${resetTarget.name}?`}
-                    warning="They will lose access using their current password immediately."
+                    detail={`Generate a new secure password for ${resetTarget.name}?`}
+                    warning="The user will be logged out and must use the new credentials immediately. This action cannot be undone."
                     onConfirm={executeResetPassword}
                     onCancel={() => setResetTarget(null)}
                     loading={resetting}
                     error={resetError}
+                    confirmLabel="Reset Access"
+                    confirmLoadingLabel="Resetting..."
+                    confirmColorClass="bg-[#FDF22F] text-[#000000] hover:bg-black hover:text-white shadow-[#FDF22F]/20"
+                    icon={<Key size={28} className="text-[#FDF22F]" />}
                 />
             )}
 
             {/* Overlay */}
-            <div className="fixed inset-0 bg-[#1A2B3D]/20 z-[60]" onClick={onClose} />
+            <div className="fixed inset-0 bg-[#000000]/20 z-[60]" onClick={onClose} />
 
             {/* Panel */}
             <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl z-[70] flex flex-col">
                 {/* Header */}
-                <div className="bg-[#1A2B3D] px-6 py-6 shrink-0">
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white font-black text-xl">
+                <div className="bg-[#0A0A0A] px-6 py-10 shrink-0 border-b border-white/5 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-brandYellow/10 rounded-full -mr-16 -mt-16 blur-2xl" />
+                    <div className="flex items-start justify-between relative z-10">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-2xl bg-brandYellow flex items-center justify-center text-[#000000] font-black text-2xl shadow-xl shadow-brandYellow/20">
                                 {tenant.name.charAt(0)}
                             </div>
                             <div>
-                                <p className="text-white/50 text-[10px] font-black uppercase tracking-widest">Sister Company</p>
+                                <p className="text-brandYellow text-[10px] font-black uppercase tracking-[0.2em] mb-1">Sister Company</p>
 
                                 {isRenaming ? (
                                     <form onSubmit={handleRenameSubmit} className="flex items-center gap-2 mt-0.5">
@@ -371,7 +395,7 @@ function CompanyPanel({
                                             disabled={renaming}
                                             className="bg-white/10 border border-white/20 rounded px-2 py-1 text-sm text-white focus:outline-none focus:border-white/50"
                                         />
-                                        <button type="submit" disabled={renaming} className="text-[#1F7A6E] bg-white rounded p-1"><Check size={14} /></button>
+                                        <button type="submit" disabled={renaming} className="text-[#000000] bg-white rounded p-1"><Check size={14} /></button>
                                         <button type="button" onClick={() => { setIsRenaming(false); setRenameValue(tenant.name); }} className="text-white/50 hover:text-white p-1"><X size={14} /></button>
                                     </form>
                                 ) : (
@@ -386,15 +410,15 @@ function CompanyPanel({
                     </div>
 
                     {/* Stats bar */}
-                    <div className="grid grid-cols-3 gap-3 mt-5">
+                    <div className="grid grid-cols-3 gap-3 mt-8 relative z-10">
                         {[
                             { label: 'Active Jobs', value: tenant.active_jobs_count ?? '—' },
                             { label: 'Requisitions', value: tenant.job_requisitions_count ?? '—' },
                             { label: 'Users', value: companyUsers.length },
                         ].map(s => (
-                            <div key={s.label} className="bg-white/5 rounded-xl p-3 border border-white/10">
-                                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-0.5">{s.label}</p>
-                                <p className="text-white font-black text-xl tabular-nums">{s.value}</p>
+                            <div key={s.label} className="bg-white/5 rounded-2xl p-4 border border-white/10 transition-colors hover:bg-white/10 group/stat">
+                                <p className="text-white/40 text-[9px] font-black uppercase tracking-widest mb-1 group-hover/stat:text-brandYellow transition-colors">{s.label}</p>
+                                <p className="text-white font-black text-2xl tabular-nums tracking-tighter">{s.value}</p>
                             </div>
                         ))}
                     </div>
@@ -404,36 +428,36 @@ function CompanyPanel({
                 <div className="flex-1 overflow-y-auto">
                     <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
                         <h3 className="font-black text-gray-900 text-sm flex items-center gap-2">
-                            <Users size={15} className="text-[#1F7A6E]" />
+                            <Users size={15} className="text-brandYellow" />
                             Team Members ({companyUsers.length})
                         </h3>
                         <button
                             onClick={() => setShowAddUser(true)}
-                            className="flex items-center gap-1.5 text-[11px] font-black text-white bg-[#1F7A6E] hover:bg-[#165a51] px-3 py-1.5 rounded-lg transition"
+                            className="flex items-center gap-1.5 text-[11px] font-black text-[#000000] bg-brandYellow hover:bg-black hover:text-brandYellow px-4 py-2 rounded-xl transition shadow-lg shadow-brandYellow/10"
                         >
-                            <UserPlus size={13} /> Add User
+                            <UserPlus size={13} strokeWidth={3} /> Add User
                         </button>
                     </div>
 
                     <div className="divide-y divide-gray-50">
                         {usersLoading ? (
-                            <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1F7A6E]" /></div>
+                            <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#000000]" /></div>
                         ) : companyUsers.length === 0 ? (
                             <div className="p-10 text-center text-gray-400 text-sm italic">
                                 No users yet. Add the first team member!
                             </div>
                         ) : companyUsers.map(u => (
-                            <div key={u.id} className="flex items-center gap-3 px-6 py-3.5 hover:bg-gray-50/70 transition group">
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1A2B3D] to-[#1F7A6E] flex items-center justify-center text-white font-black text-sm shrink-0">
+                            <div key={u.id} className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50/70 transition group">
+                                <div className="w-10 h-10 rounded-full bg-brandYellow flex items-center justify-center text-[#000000] font-black text-sm shrink-0 border-2 border-white shadow-sm group-hover:shadow-md transition-all">
                                     {u.name.charAt(0)}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-gray-800 truncate">{u.name}</p>
-                                    <p className="text-xs text-gray-400 truncate">{u.email}</p>
+                                    <p className="text-sm font-bold text-gray-800 truncate group-hover:text-brandYellow transition-colors leading-tight">{u.name}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-tighter text-gray-400 truncate mt-0.5">{u.email}</p>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
                                     <select
-                                        className="text-[10px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-2 py-1 rounded-lg border-none focus:ring-1 focus:ring-[#1F7A6E] cursor-pointer hover:bg-gray-200"
+                                        className="text-[10px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-2 py-1 rounded-lg border-none focus:ring-1 focus:ring-[#000000] cursor-pointer hover:bg-gray-200"
                                         value={u.roles?.[0]?.slug || 'ta_manager'}
                                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
                                     >
@@ -445,14 +469,14 @@ function CompanyPanel({
                                     <div className="opacity-0 group-hover:opacity-100 flex items-center transition-opacity border-l border-gray-200 pl-1 ml-1">
                                         <button
                                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); setResetTarget(u); }}
-                                            className="p-1.5 text-gray-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg transition"
+                                            className="p-1.5 text-gray-400 hover:text-brandYellow hover:bg-black rounded-lg transition-all"
                                             title="Reset Password"
                                         >
                                             <Key size={15} />
                                         </button>
                                         <button
                                             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteUser(u); }}
-                                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                                            className="p-1.5 text-gray-400 hover:text-black hover:bg-[#FDF22F] rounded-lg transition-all"
                                             title="Remove user"
                                         >
                                             <UserMinus size={15} />
@@ -468,9 +492,9 @@ function CompanyPanel({
                 <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 shrink-0">
                     <button
                         onClick={() => onDeleteCompany(tenant)}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-bold text-red-500 border border-red-200 rounded-xl hover:bg-red-50 transition"
+                        className="w-full flex items-center justify-center gap-2 py-3 text-sm font-black uppercase tracking-widest text-[#000000] bg-[#FDF22F] border border-[#FDF22F] rounded-2xl hover:bg-black hover:text-[#FDF22F] transition-all shadow-lg shadow-[#FDF22F]/10 hover:shadow-black/20"
                     >
-                        <Trash2 size={15} /> Delete This Company
+                        <Trash2 size={15} strokeWidth={3} /> Delete This Company
                     </button>
                     <p className="text-[10px] text-gray-400 text-center mt-2">Remove all users before deleting the company.</p>
                 </div>
@@ -487,20 +511,22 @@ function CompanyPanel({
 function StatCard({ title, value, icon, trend, trendLabel }: { title: string; value: number | string; icon: React.ReactNode; trend?: number; trendLabel?: string }) {
     const isPositive = (trend ?? 0) >= 0;
     return (
-        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
-            <div className="flex items-start justify-between mb-3">
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-xl hover:shadow-brandYellow/5 transition-all group">
+            <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase tracking-widest">
-                    <span className="p-1.5 bg-gray-50 rounded-lg group-hover:bg-[#1F7A6E]/10 group-hover:text-[#1F7A6E] transition-colors">{icon}</span>{title}
+                    <span className="p-2 bg-gray-50 rounded-xl group-hover:bg-brandYellow group-hover:text-[#000000] transition-colors">{icon}</span>{title}
                 </div>
-                <ArrowUpRight size={16} className="text-gray-300 group-hover:text-[#1F7A6E] transition-colors" />
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gray-50 border border-gray-100 text-gray-300 group-hover:text-brandYellow group-hover:border-brandYellow/30 transition-all">
+                    <ArrowUpRight size={14} />
+                </div>
             </div>
-            <p className="text-3xl font-black text-gray-900 tabular-nums tracking-tight">{value}</p>
+            <p className="text-4xl font-black text-gray-900 tabular-nums tracking-tight">{value}</p>
             {trend !== undefined && (
-                <div className="flex items-center gap-1.5 mt-1">
-                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
+                <div className="flex items-center gap-1.5 mt-2">
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}>
                         {isPositive ? '+' : ''}{trend}%
                     </span>
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{trendLabel || 'from last month'}</span>
+                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">{trendLabel || 'vs last month'}</span>
                 </div>
             )}
         </div>
@@ -520,7 +546,7 @@ function Dashboard() {
 
     if (!user) return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#1F7A6E]" />
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#000000]" />
         </div>
     );
 
@@ -538,21 +564,21 @@ function SearchCategory({ title, results, icon, onClick }: { title: string; resu
     if (results.length === 0) return null;
     return (
         <div className="mb-2 last:mb-0 border-b border-gray-50 last:border-none pb-2 last:pb-0">
-            <h4 className="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest text-[#1F7A6E] flex items-center gap-1.5 opacity-60">
+            <h4 className="px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-brandYellow bg-[#0A0A0A] rounded-lg mb-2 flex items-center gap-2">
                 {icon} {title}
             </h4>
-            <div className="space-y-0.5">
+            <div className="space-y-1">
                 {results.map((item) => (
                     <button
                         key={item.id}
                         onClick={() => onClick(item)}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-[#1F7A6E]/5 transition-colors group flex items-center justify-between"
+                        className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-brandYellow/10 transition-all group flex items-center justify-between border border-transparent hover:border-brandYellow/20"
                     >
                         <div className="flex flex-col">
-                            <span className="text-xs font-bold text-gray-700 group-hover:text-[#1F7A6E]">{item.name || item.title}</span>
-                            {item.email && <span className="text-[10px] text-gray-400">{item.email}</span>}
+                            <span className="text-xs font-bold text-gray-700 group-hover:text-black transition-colors">{item.name || item.title}</span>
+                            {item.email && <span className="text-[10px] text-gray-400 font-bold tracking-tight">{item.email}</span>}
                         </div>
-                        <ChevronRight size={12} className="text-gray-300 group-hover:text-[#1F7A6E] transform group-hover:translate-x-0.5 transition-all" />
+                        <ChevronRight size={12} className="text-gray-300 group-hover:text-brandYellow transform group-hover:translate-x-1 transition-all" />
                     </button>
                 ))}
             </div>
@@ -576,21 +602,22 @@ function NotificationDropdown({
             className="absolute right-0 mt-4 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-[100]"
         >
             {/* Dropdown header */}
-            <div className="px-4 py-4 border-b border-gray-100 bg-gray-50/50 space-y-3">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-[10px] font-black text-[#1A2B3D] tracking-widest uppercase opacity-60">Notifications</h3>
+            <div className="px-4 py-4 border-b border-gray-100 bg-[#0A0A0A] space-y-3 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-brandYellow/5 rounded-full -mr-12 -mt-12 blur-2xl" />
+                <div className="flex items-center justify-between relative z-10">
+                    <h3 className="text-[10px] font-black text-brandYellow tracking-[0.2em] uppercase">Intelligence Center</h3>
                     <div className="flex items-center gap-3">
                         {unreadCount > 0 && (
-                            <button onClick={markAllAsRead} className="text-[10px] font-bold text-[#1F7A6E] hover:underline">
-                                Mark all read
+                            <button onClick={markAllAsRead} className="text-[9px] font-black text-white/50 hover:text-brandYellow uppercase tracking-widest transition-colors">
+                                Clear All
                             </button>
                         )}
                         <button
                             onClick={() => setShowCompose(!showCompose)}
-                            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${showCompose ? 'bg-[#1F7A6E] text-white' : 'bg-[#1A2B3D] text-white hover:bg-[#1F7A6E]'}`}
+                            className={`flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg transition-all ${showCompose ? 'bg-brandYellow text-black shadow-lg shadow-brandYellow/20' : 'bg-white/10 text-white hover:bg-brandYellow hover:text-black border border-white/10'}`}
                         >
-                            <Mail size={12} />
-                            New
+                            <Mail size={12} strokeWidth={3} />
+                            Compose
                         </button>
                     </div>
                 </div>
@@ -609,11 +636,11 @@ function NotificationDropdown({
                                 <select
                                     value={composeTo}
                                     onChange={e => setComposeTo(e.target.value)}
-                                    className="w-full text-xs bg-white border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#1F7A6E] focus:ring-4 focus:ring-[#1F7A6E]/5 font-bold text-gray-700"
+                                    className="w-full text-xs bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 focus:outline-none focus:border-brandYellow focus:ring-4 focus:ring-brandYellow/10 font-bold text-white transition-all"
                                 >
-                                    <option value="" disabled>To: Select colleague...</option>
+                                    <option value="" disabled className="text-black">To: Select colleague...</option>
                                     {users.map((u: any) => (
-                                        <option key={u.id} value={u.id}>{u.name} ({u.tenant?.name || 'Group Admin'})</option>
+                                        <option key={u.id} value={u.id} className="text-black">{u.name} ({u.tenant?.name || 'Group Admin'})</option>
                                     ))}
                                 </select>
                                 <textarea
@@ -621,21 +648,21 @@ function NotificationDropdown({
                                     onChange={e => setComposeMsg(e.target.value)}
                                     placeholder="Write your message..."
                                     rows={3}
-                                    className="w-full text-xs bg-white border border-gray-200 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-[#1F7A6E] focus:ring-4 focus:ring-[#1F7A6E]/5 font-medium"
+                                    className="w-full text-xs bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:border-brandYellow focus:ring-4 focus:ring-brandYellow/10 font-medium text-white placeholder:text-white/20 transition-all"
                                 />
                                 <div className="flex items-center justify-between">
                                     {composeSent ? (
-                                        <span className="text-[10px] font-black text-emerald-600 flex items-center gap-1">
+                                        <span className="text-[10px] font-black text-brandYellow flex items-center gap-1">
                                             <CheckCircle2 size={12} />
-                                            Message sent!
+                                            Dispatched!
                                         </span>
                                     ) : <span />}
                                     <button
                                         onClick={sendDirect}
                                         disabled={composeSending || !composeTo || !composeMsg.trim()}
-                                        className="px-5 py-2 bg-[#1F7A6E] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[#165C53] disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#1F7A6E]/20"
+                                        className="px-5 py-2 bg-brandYellow text-black text-[10px] font-black uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-brandYellow/10"
                                     >
-                                        {composeSending ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Send size={12} /> Send</>}
+                                        {composeSending ? <div className="w-3 h-3 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : <><Send size={12} strokeWidth={3} /> Send</>}
                                     </button>
                                 </div>
                             </div>
@@ -657,20 +684,20 @@ function NotificationDropdown({
                         const rs = replyState[notif.id];
                         const canReply = !!(notif.data?.sender_id);
                         return (
-                            <div key={notif.id} className={`rounded-xl mb-1 last:mb-0 transition-colors ${notif.read_at ? 'bg-white' : 'bg-[#1F7A6E]/5'}`}>
+                            <div key={notif.id} className={`rounded-xl mb-1 last:mb-0 transition-colors ${notif.read_at ? 'bg-white' : 'bg-[#000000]/5'}`}>
                                 <div
                                     onClick={() => !notif.read_at && markAsRead(notif.id)}
                                     className="p-3.5 flex gap-3 cursor-pointer hover:bg-gray-50 rounded-xl group"
                                 >
                                     <div className="mt-0.5 w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center shrink-0 group-hover:bg-white transition-colors">
-                                        {notif.data.type === 'direct_message' ? <Mail size={14} className="text-[#1F7A6E]" /> : <Bell size={14} className="text-gray-400" />}
+                                        {notif.data.type === 'direct_message' ? <Mail size={14} className="text-[#000000]" /> : <Bell size={14} className="text-gray-400" />}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2 mb-0.5">
-                                            <p className={`text-xs leading-tight truncate ${notif.read_at ? 'font-bold text-gray-700' : 'font-black text-[#1A2B3D]'}`}>
+                                            <p className={`text-xs leading-tight truncate ${notif.read_at ? 'font-bold text-gray-700' : 'font-black text-[#000000]'}`}>
                                                 {notif.data.title}
                                             </p>
-                                            {!notif.read_at && <div className="w-1.5 h-1.5 rounded-full bg-[#1F7A6E] shrink-0" />}
+                                            {!notif.read_at && <div className="w-1.5 h-1.5 rounded-full bg-[#000000] shrink-0" />}
                                         </div>
                                         <p className="text-[11px] text-gray-500 leading-relaxed line-clamp-2">
                                             {notif.data.message}
@@ -682,7 +709,7 @@ function NotificationDropdown({
                                             {canReply && (
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); toggleReply(notif.id); }}
-                                                    className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${rs?.open ? 'text-[#1F7A6E]' : 'text-gray-400 hover:text-[#1F7A6E]'}`}
+                                                    className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${rs?.open ? 'text-[#000000]' : 'text-gray-400 hover:text-[#000000]'}`}
                                                 >
                                                     {rs?.open ? 'Cancel' : 'Reply'}
                                                 </button>
@@ -705,14 +732,14 @@ function NotificationDropdown({
                                                     onChange={(e) => setReplyState((prev: any) => ({ ...prev, [notif.id]: { ...prev[notif.id], text: e.target.value } }))}
                                                     placeholder={`Reply...`}
                                                     rows={2}
-                                                    className="w-full text-xs bg-white border border-gray-100 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]/10"
+                                                    className="w-full text-xs bg-white border border-gray-100 rounded-lg px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-[#000000]/10"
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                                 <div className="flex justify-end">
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); sendReply(notif.id); }}
                                                         disabled={rs.sending || !rs.text?.trim()}
-                                                        className="px-4 py-1.5 bg-[#1F7A6E] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-[#165C53] disabled:opacity-50 transition-all flex items-center gap-1.5"
+                                                        className="px-4 py-1.5 bg-[#000000] text-white text-[9px] font-black uppercase tracking-widest rounded-lg hover:bg-[#222222] disabled:opacity-50 transition-all flex items-center gap-1.5"
                                                     >
                                                         {rs.sending ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Send size={10} /> Send</>}
                                                     </button>
@@ -996,12 +1023,12 @@ function GlobalDashboard({ user }: { user: any }) {
                 {/* Top Bar */}
                 <header className="bg-white border-b border-gray-100 h-14 px-8 flex items-center justify-between sticky top-0 z-40 shadow-sm">
                     <div>
-                        <p className="text-gray-800 font-bold text-sm">Welcome back, <span className="text-[#1A2B3D]">{user.name}</span></p>
+                        <p className="text-gray-800 font-bold text-sm">Welcome back, <span className="text-[#000000]">{user.name}</span></p>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="relative group">
-                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-400 text-sm w-64 focus-within:ring-2 focus-within:ring-[#1F7A6E]/20 focus-within:border-[#1F7A6E] transition-all">
-                                <Search size={14} className={isSearching ? 'animate-pulse text-[#1F7A6E]' : ''} />
+                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-400 text-sm w-64 focus-within:ring-2 focus-within:ring-[#000000]/20 focus-within:border-[#000000] transition-all">
+                                <Search size={14} className={isSearching ? 'animate-pulse text-[#000000]' : ''} />
                                 <input
                                     type="text"
                                     placeholder="Search companies, candidates, jobs..."
@@ -1055,7 +1082,7 @@ function GlobalDashboard({ user }: { user: any }) {
                         <div className="relative">
                             <button
                                 onClick={() => setShowNotifs(!showNotifs)}
-                                className={`relative transition-colors ${showNotifs ? 'text-[#1F7A6E]' : 'text-gray-400 hover:text-gray-700'}`}
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${showNotifs ? 'bg-brandYellow text-[#000000] shadow-lg shadow-brandYellow/10' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
                             >
                                 <Bell size={18} />
                                 {unreadCount > 0 && (
@@ -1091,7 +1118,7 @@ function GlobalDashboard({ user }: { user: any }) {
                             </AnimatePresence>
                         </div>
                         <div className="flex items-center gap-3 border-l border-gray-200 pl-4 ml-2">
-                            <div className="w-8 h-8 rounded-full bg-[#1F7A6E]/20 border border-[#1F7A6E]/40 flex items-center justify-center text-[#1F7A6E] font-black text-xs">
+                            <div className="w-8 h-8 rounded-full bg-brandYellow border-2 border-white shadow-sm flex items-center justify-center text-[#000000] font-black text-xs">
                                 {user.name.charAt(0).toUpperCase()}
                             </div>
                             <button onClick={onLogout} className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-red-500 transition-colors">
@@ -1135,14 +1162,14 @@ function GlobalDashboard({ user }: { user: any }) {
                                             </div>
                                             <button
                                                 onClick={() => setShowAddCompany(true)}
-                                                className="flex items-center gap-1.5 text-[11px] font-black text-[#1F7A6E] bg-[#1F7A6E]/10 hover:bg-[#1F7A6E]/20 px-3 py-1.5 rounded-lg transition"
+                                                className="flex items-center gap-1.5 text-[11px] font-black text-[#000000] bg-brandYellow hover:bg-brandYellow/90 px-4 py-2 rounded-xl transition shadow-lg shadow-brandYellow/10"
                                             >
                                                 <Building2 size={13} /> Add Company
                                             </button>
                                         </div>
 
                                         {loading ? (
-                                            <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1F7A6E]" /></div>
+                                            <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#000000]" /></div>
                                         ) : (
                                             <div className="overflow-x-auto custom-scrollbar">
                                                 <table className="w-full">
@@ -1164,7 +1191,7 @@ function GlobalDashboard({ user }: { user: any }) {
                                                                 <tr
                                                                     key={tenant.id}
                                                                     onClick={() => setSelectedTenant(tenant)}
-                                                                    className={`transition-colors cursor-pointer group ${selectedTenant?.id === tenant.id ? 'bg-[#1F7A6E]/5 border-l-2 border-l-[#1F7A6E]' : 'hover:bg-gray-50/70'}`}
+                                                                    className={`transition-colors cursor-pointer group ${selectedTenant?.id === tenant.id ? 'bg-brandYellow/5 border-l-2 border-l-brandYellow' : 'hover:bg-gray-50/70'}`}
                                                                 >
                                                                     <td className="px-5 py-3.5">
                                                                         <div className="flex items-center gap-3">
@@ -1180,7 +1207,7 @@ function GlobalDashboard({ user }: { user: any }) {
                                                                     <td className="px-5 py-3.5">
                                                                         <div className="flex items-center gap-2">
                                                                             <div className="flex-1 bg-gray-100 rounded-full h-1.5 w-20">
-                                                                                <div className="bg-[#1F7A6E] h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                                                                                <div className="bg-brandYellow h-1.5 rounded-full" style={{ width: `${pct}%` }} />
                                                                             </div>
                                                                             <span className="text-xs text-gray-500 tabular-nums font-bold">{tenant.active_jobs_count}/{tenant.job_postings_count}</span>
                                                                         </div>
@@ -1193,14 +1220,14 @@ function GlobalDashboard({ user }: { user: any }) {
                                                                     </td>
                                                                     <td className="px-5 py-3.5">
                                                                         <div className="flex items-center gap-1.5">
-                                                                            <span className="text-sm font-black text-[#1F7A6E] tabular-nums">{tenant.conversion_rate}%</span>
-                                                                            {tenant.conversion_rate > 0 && <TrendingUp size={12} className="text-[#1F7A6E]" />}
+                                                                            <span className="text-sm font-black text-gray-900 tabular-nums">{tenant.conversion_rate}%</span>
+                                                                            {tenant.conversion_rate > 0 && <TrendingUp size={12} className="text-brandYellow" />}
                                                                         </div>
                                                                     </td>
                                                                     <td className="px-5 py-3.5 text-sm font-bold text-gray-600 tabular-nums">{tenant.users_count}</td>
                                                                     <td className="px-5 py-3.5">
                                                                         <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                            <span className="text-[10px] font-black uppercase tracking-widest text-[#1F7A6E] flex items-center gap-0.5">
+                                                                            <span className="text-[10px] font-black uppercase tracking-widest text-brandYellow bg-black px-2 py-1 rounded-lg flex items-center gap-0.5">
                                                                                 Manage <ChevronRight size={12} />
                                                                             </span>
                                                                             <button
@@ -1231,26 +1258,26 @@ function GlobalDashboard({ user }: { user: any }) {
                                             <div className="flex items-center gap-3">
                                                 <button
                                                     onClick={() => router.push('/admin/dashboard?tab=Candidates')}
-                                                    className="text-[10px] font-black text-[#1F7A6E] uppercase tracking-widest cursor-pointer hover:underline bg-transparent border-none p-0 outline-none"
+                                                    className="text-[10px] font-black text-brandYellow uppercase tracking-widest cursor-pointer hover:underline bg-black px-2 py-1 rounded-lg"
                                                 >
                                                     See all →
                                                 </button>
                                             </div>
                                         </div>
                                         {loading ? (
-                                            <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1F7A6E]" /></div>
+                                            <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#000000]" /></div>
                                         ) : (
                                             <div className="divide-y divide-gray-50">
                                                 {stats?.recent_global_applicants?.map((applicant) => (
-                                                    <div key={applicant.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition-colors">
-                                                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1A2B3D] to-[#1F7A6E] flex items-center justify-center text-white font-black text-xs shrink-0">
+                                                    <div key={applicant.id} className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors">
+                                                        <div className="w-10 h-10 rounded-full bg-brandYellow flex items-center justify-center text-[#000000] font-black text-xs shrink-0 border-2 border-white shadow-sm">
                                                             {applicant.name.charAt(0)}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-semibold text-gray-800 truncate">{applicant.name}</p>
-                                                            <p className="text-[11px] text-gray-400 truncate">{applicant.job_posting?.title}</p>
+                                                            <p className="text-sm font-bold text-gray-800 truncate leading-tight">{applicant.name}</p>
+                                                            <p className="text-[10px] text-gray-400 truncate mt-0.5 uppercase tracking-tighter font-black">{applicant.job_posting?.title}</p>
                                                         </div>
-                                                        <span className="text-[9px] font-black uppercase tracking-widest text-[#1F7A6E] bg-[#1F7A6E]/10 px-2 py-0.5 rounded-full shrink-0">
+                                                        <span className="text-[9px] font-black uppercase tracking-widest text-brandYellow bg-black px-2.5 py-1 rounded-full shrink-0">
                                                             {applicant.tenant?.name?.split(' ')[1] ?? applicant.tenant?.name}
                                                         </span>
                                                     </div>
@@ -1264,7 +1291,8 @@ function GlobalDashboard({ user }: { user: any }) {
                                 </div>
 
                                 {/* Bottom Metrics Bar */}
-                                <div className="bg-[#1E2A35] rounded-2xl p-6 flex flex-wrap gap-8 items-center">
+                                <div className="bg-[#0A0A0A] rounded-3xl p-8 flex flex-wrap gap-12 items-center border border-white/5 shadow-2xl relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-brandYellow/5 rounded-full -mr-32 -mt-32 blur-3xl transition-opacity group-hover:opacity-100 opacity-60" />
                                     {[
                                         { label: 'Total Companies', value: stats?.total_tenants ?? '—' },
                                         { label: 'Total Employees', value: stats?.total_employees ?? '—' },
@@ -1272,15 +1300,16 @@ function GlobalDashboard({ user }: { user: any }) {
                                         { label: 'Group Events', value: stats?.active_events ?? '—' },
                                     ].map((m, i) => (
                                         <React.Fragment key={m.label}>
-                                            {i > 0 && <div className="w-px h-10 bg-white/10" />}
-                                            <div>
-                                                <p className="text-[#1F7A6E] text-[9px] font-black uppercase tracking-widest mb-1">{m.label}</p>
-                                                <p className="text-white font-black text-2xl tabular-nums">{m.value}</p>
+                                            {i > 0 && <div className="w-px h-12 bg-white/10 hidden sm:block" />}
+                                            <div className="relative z-10 w-full sm:w-auto">
+                                                <p className="text-brandYellow text-[10px] font-black uppercase tracking-[0.2em] mb-2">{m.label}</p>
+                                                <p className="text-white font-black text-4xl tabular-nums tracking-tighter">{m.value}</p>
                                             </div>
                                         </React.Fragment>
                                     ))}
-                                    <div className="ml-auto flex items-center gap-2 text-white/40 text-xs">
-                                        <TrendingUp size={14} /> Last updated: {new Date().toLocaleTimeString()}
+                                    <div className="ml-auto flex items-center gap-2 text-white/30 text-[10px] font-bold uppercase tracking-widest relative z-10">
+                                        <div className="w-2 h-2 rounded-full bg-brandYellow animate-pulse" />
+                                        Live Status: {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </div>
                                 </div>
                             </>
@@ -1322,11 +1351,15 @@ function GlobalDashboard({ user }: { user: any }) {
                 <ConfirmDialog
                     title={`Delete ${deleteTarget.type === 'company' ? 'Company' : 'User'}?`}
                     detail={deleteTarget.item.name}
-                    warning={deleteTarget.type === 'company' ? '⚠️ Companies with active users cannot be deleted. Remove all users first.' : undefined}
+                    warning={deleteTarget.type === 'company' ? '⚠️ Companies with active users cannot be deleted. Remove all users first.' : 'The user will no longer be able to access the system.'}
                     onConfirm={handleConfirmDelete}
                     onCancel={() => { setDeleteTarget(null); setDeleteError(''); }}
                     loading={deleting}
                     error={deleteError}
+                    confirmLabel="Confirm Delete"
+                    confirmLoadingLabel="Deleting..."
+                    confirmColorClass="bg-black text-[#FDF22F] border border-[#FDF22F]/30 hover:bg-red-600 hover:text-white hover:border-red-600 shadow-xl shadow-[#FDF22F]/5"
+                    icon={<Trash2 size={28} className="text-[#FDF22F]" />}
                 />
             )}
 
@@ -1368,7 +1401,7 @@ function CompanyDashboard({ user }: { user: any }) {
             <div className="flex-1 ml-56 flex flex-col min-h-screen">
                 <header className="bg-white border-b border-gray-100 h-14 px-8 flex items-center justify-between sticky top-0 z-40 shadow-sm">
                     <div>
-                        <p className="text-gray-800 font-bold text-sm">Welcome back, <span className="text-[#1A2B3D]">{user.name}</span></p>
+                        <p className="text-gray-800 font-bold text-sm">Welcome back, <span className="text-[#000000]">{user.name}</span></p>
                     </div>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-gray-400 text-sm w-52">
@@ -1412,16 +1445,16 @@ function CompanyDashboard({ user }: { user: any }) {
                                         ) : (
                                             <div className="divide-y divide-gray-50">
                                                 {stats?.recent_applicants?.map((applicant: any) => (
-                                                    <div key={applicant.id} className="flex items-center gap-4 px-5 py-3 hover:bg-gray-50 transition-colors">
-                                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-900 to-blue-500 flex items-center justify-center text-white font-black text-sm shrink-0">
+                                                    <div key={applicant.id} className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors group">
+                                                        <div className="w-10 h-10 rounded-full bg-brandYellow flex items-center justify-center text-[#000000] font-black text-sm shrink-0 shadow-sm border-2 border-white">
                                                             {applicant.name.charAt(0)}
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-semibold text-gray-800">{applicant.name}</p>
-                                                            <p className="text-xs text-gray-500 truncate">{applicant.job_posting?.title || 'Unknown Position'}</p>
+                                                            <p className="text-sm font-bold text-gray-800 group-hover:text-brandYellow transition-colors">{applicant.name}</p>
+                                                            <p className="text-[10px] text-gray-400 truncate mt-0.5 uppercase tracking-tighter font-black">{applicant.job_posting?.title || 'Unknown Position'}</p>
                                                         </div>
-                                                        <span className="text-xs font-medium text-gray-500">
-                                                            {new Date(applicant.created_at).toLocaleDateString()}
+                                                        <span className="text-[10px] font-black text-gray-400 tabular-nums">
+                                                            {new Date(applicant.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
                                                         </span>
                                                     </div>
                                                 ))}
@@ -1466,7 +1499,7 @@ function Pagination({ meta, onPageChange, onPerPageChange }: any) {
                 <select
                     value={per_page}
                     onChange={(e) => onPerPageChange(Number(e.target.value))}
-                    className="bg-white border border-gray-200 rounded-lg px-2 py-1 text-[10px] font-bold text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]/20"
+                    className="bg-white border border-gray-200 rounded-lg px-2 py-1 text-[10px] font-black text-gray-600 focus:outline-none focus:ring-2 focus:ring-brandYellow/30"
                 >
                     {[10, 25, 50, 100].map(v => <option key={v} value={v}>{v} / page</option>)}
                 </select>
@@ -1476,7 +1509,7 @@ function Pagination({ meta, onPageChange, onPerPageChange }: any) {
                 <button
                     onClick={() => onPageChange(current_page - 1)}
                     disabled={current_page === 1}
-                    className="p-2 rounded-lg text-gray-400 hover:text-[#1F7A6E] hover:bg-[#1F7A6E]/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    className="p-2 rounded-lg text-gray-400 hover:text-black hover:bg-brandYellow/10 disabled:opacity-20 disabled:hover:bg-transparent transition-all"
                 >
                     <ChevronRight size={14} className="rotate-180" />
                 </button>
@@ -1496,7 +1529,7 @@ function Pagination({ meta, onPageChange, onPerPageChange }: any) {
                         <button
                             key={pageNum}
                             onClick={() => onPageChange(pageNum)}
-                            className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${current_page === pageNum ? 'bg-[#1F7A6E] text-white shadow-lg shadow-[#1F7A6E]/20' : 'text-gray-500 hover:text-[#1F7A6E] hover:bg-[#1F7A6E]/5'}`}
+                            className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${current_page === pageNum ? 'bg-brandYellow text-[#000000] shadow-lg shadow-brandYellow/20' : 'text-gray-500 hover:text-brandYellow hover:bg-black/5'}`}
                         >
                             {pageNum}
                         </button>
@@ -1506,7 +1539,7 @@ function Pagination({ meta, onPageChange, onPerPageChange }: any) {
                 <button
                     onClick={() => onPageChange(current_page + 1)}
                     disabled={current_page === last_page}
-                    className="p-2 rounded-lg text-gray-400 hover:text-[#1F7A6E] hover:bg-[#1F7A6E]/5 disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+                    className="p-2 rounded-lg text-gray-400 hover:text-black hover:bg-brandYellow/10 disabled:opacity-20 disabled:hover:bg-transparent transition-all"
                 >
                     <ChevronRight size={14} />
                 </button>
@@ -1556,7 +1589,7 @@ function GlobalUsersView() {
                         placeholder="Search name or email..."
                         value={search}
                         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                        className="bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]/20 w-64 transition-all"
+                        className="bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#000000]/20 w-64 transition-all"
                     />
                 </div>
             </div>
@@ -1574,16 +1607,16 @@ function GlobalUsersView() {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {loading ? (
-                                <tr><td colSpan={4} className="p-10 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1F7A6E] mx-auto" /></td></tr>
+                                <tr><td colSpan={4} className="p-10 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brandYellow mx-auto shadow-sm" /></td></tr>
                             ) : users.length === 0 ? (
                                 <tr><td colSpan={4} className="p-10 text-center text-xs text-gray-400 italic">No users found.</td></tr>
                             ) : (
                                 users.map((u: any) => (
-                                    <tr key={u.id} className="hover:bg-gray-50/50 transition-colors">
+                                    <tr key={u.id} className="hover:bg-gray-50/50 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#1A2B3D] to-[#1F7A6E] flex items-center justify-center text-white font-black text-xs uppercase shadow-sm">{u.name.charAt(0)}</div>
-                                                <span className="font-semibold text-gray-800 text-sm">{u.name}</span>
+                                                <div className="w-9 h-9 rounded-xl bg-brandYellow flex items-center justify-center text-[#000000] font-black text-xs uppercase shadow-sm border-2 border-white group-hover:shadow-md transition-all">{u.name.charAt(0)}</div>
+                                                <span className="font-bold text-gray-800 text-sm group-hover:text-brandYellow transition-colors">{u.name}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">{u.email}</td>
@@ -1718,7 +1751,7 @@ function CompanyJobsView({ user }: { user: any }) {
                 <h2 className="font-bold text-gray-900 text-sm">Active Job Postings</h2>
             </div>
             {loading ? (
-                <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500" /></div>
+                <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brandYellow mx-auto shadow-sm" /></div>
             ) : (
                 <div className="overflow-x-auto">
                     <table className="w-full">
@@ -1842,7 +1875,7 @@ function CompanyApplicantsView({ user }: { user: any }) {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {loading ? (
-                                <tr><td colSpan={4} className="p-12 text-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto" /></td></tr>
+                                <tr><td colSpan={4} className="p-12 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brandYellow mx-auto shadow-sm" /></td></tr>
                             ) : applicants.length === 0 ? (
                                 <tr><td colSpan={4} className="p-12 text-center text-xs text-gray-400 italic">No candidates found matching your criteria.</td></tr>
                             ) : (
@@ -1850,7 +1883,7 @@ function CompanyApplicantsView({ user }: { user: any }) {
                                     <tr key={a.id} className="hover:bg-gray-50/50 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-900 to-blue-500 flex items-center justify-center text-white font-black text-xs uppercase shadow-md">
+                                                <div className="w-10 h-10 rounded-full bg-brandYellow border-2 border-white shadow-sm flex items-center justify-center text-[#000000] font-black text-xs uppercase">
                                                     {a.name?.charAt(0)}
                                                 </div>
                                                 <div className="flex flex-col">
@@ -1919,11 +1952,11 @@ function GlobalJobsView({ tenants }: { tenants: any[] }) {
         <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
                 <h2 className="font-black text-gray-900 flex-1">Job Posts — All Companies</h2>
-                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]" value={filterTenant} onChange={e => setFilterTenant(e.target.value)}>
+                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#000000]" value={filterTenant} onChange={e => setFilterTenant(e.target.value)}>
                     <option value="">All Companies</option>
                     {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
-                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#000000]" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                     <option value="">All Statuses</option>
                     <option value="active">Active</option>
                     <option value="pending">Pending</option>
@@ -1932,7 +1965,7 @@ function GlobalJobsView({ tenants }: { tenants: any[] }) {
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1F7A6E]" /></div>
+                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#000000]" /></div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -1952,7 +1985,7 @@ function GlobalJobsView({ tenants }: { tenants: any[] }) {
                                         <td className="px-5 py-3.5 font-semibold text-gray-800 text-sm">{j.title}</td>
                                         <td className="px-5 py-3.5">
                                             <span className="flex items-center gap-2">
-                                                <span className="w-6 h-6 rounded bg-[#1E2A35]/10 text-[#1E2A35] font-black text-[10px] flex items-center justify-center">{j.tenant?.name?.charAt(0)}</span>
+                                                <span className="w-6 h-6 rounded bg-brandYellow text-[#000000] font-black text-[10px] flex items-center justify-center shadow-sm">{j.tenant?.name?.charAt(0)}</span>
                                                 <span className="text-sm text-gray-600">{j.tenant?.name}</span>
                                             </span>
                                         </td>
@@ -2032,11 +2065,11 @@ function GlobalRequisitionsView({ tenants }: { tenants: any[] }) {
         <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
                 <h2 className="font-black text-gray-900 flex-1">Hiring Plan — All Companies</h2>
-                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]" value={filterTenant} onChange={e => setFilterTenant(e.target.value)}>
+                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#000000]" value={filterTenant} onChange={e => setFilterTenant(e.target.value)}>
                     <option value="">All Companies</option>
                     {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
-                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#000000]" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
                     <option value="">All Statuses</option>
                     <option value="pending">Pending Approval</option>
                     <option value="approved">Approved</option>
@@ -2046,7 +2079,7 @@ function GlobalRequisitionsView({ tenants }: { tenants: any[] }) {
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1F7A6E]" /></div>
+                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#000000]" /></div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -2182,11 +2215,11 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                             placeholder="Search name, email..."
                             value={search}
                             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                            className="bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]/20 w-64 transition-all"
+                            className="bg-white border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#000000]/20 w-64 transition-all"
                         />
                     </div>
                     <select
-                        className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]/20"
+                        className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#000000]/20"
                         value={filterTenant}
                         onChange={e => { setFilterTenant(e.target.value); setPage(1); }}
                     >
@@ -2194,7 +2227,7 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                         {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
                     <select
-                        className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]/20"
+                        className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-[#000000]/20"
                         value={filterStatus}
                         onChange={e => { setFilterStatus(e.target.value); setPage(1); }}
                     >
@@ -2216,7 +2249,7 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {loading ? (
-                                <tr><td colSpan={5} className="p-16 text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1F7A6E] mx-auto" /></td></tr>
+                                <tr><td colSpan={5} className="p-16 text-center"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brandYellow mx-auto shadow-sm" /></td></tr>
                             ) : applicants.length === 0 ? (
                                 <tr><td colSpan={5} className="p-16 text-center text-sm text-gray-400 italic">No applicants found matching your criteria.</td></tr>
                             ) : (
@@ -2224,7 +2257,7 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                                     <tr key={a.id} className="hover:bg-gray-50/30 transition-colors group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1A2B3D] to-[#1F7A6E] flex items-center justify-center text-white font-black text-xs uppercase shadow-sm">
+                                                <div className="w-10 h-10 rounded-full bg-brandYellow border-2 border-white shadow-sm flex items-center justify-center text-[#000000] font-black text-xs uppercase group-hover:shadow-md transition-all">
                                                     {a.name?.charAt(0)}
                                                 </div>
                                                 <div>
@@ -2241,7 +2274,7 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                                         </td>
                                         <td className="px-6 py-4 text-sm font-bold text-gray-600">
                                             <span className="flex items-center gap-2">
-                                                <span className="w-1.5 h-1.5 rounded-full bg-[#1F7A6E]" />
+                                                <span className="w-1.5 h-1.5 rounded-full bg-brandYellow shadow-[0_0_5px_rgba(253,242,47,0.5)]" />
                                                 {a.tenant?.name || '—'}
                                             </span>
                                         </td>
@@ -2251,12 +2284,12 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                {updatingId === a.id && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-[#1F7A6E]" />}
+                                                {updatingId === a.id && <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-[#000000]" />}
                                                 <select
                                                     value={a.status}
                                                     onChange={e => handleStatusChange(a.id, e.target.value)}
                                                     disabled={updatingId === a.id}
-                                                    className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-transparent focus:ring-2 focus:ring-[#1F7A6E]/20 cursor-pointer transition-all ${statusColors[a.status] || 'bg-gray-100 text-gray-500'}`}
+                                                    className={`text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border border-transparent focus:ring-2 focus:ring-brandYellow/50 cursor-pointer transition-all ${statusColors[a.status] || 'bg-gray-100 text-gray-500'}`}
                                                 >
                                                     <option value="new">New</option>
                                                     <option value="under_review">Under Review</option>
@@ -2309,14 +2342,14 @@ function GlobalInterviewsView({ tenants }: { tenants: any[] }) {
         <div className="space-y-4">
             <div className="flex flex-wrap items-center gap-3">
                 <h2 className="font-black text-gray-900 flex-1">Interview Schedule — All Companies</h2>
-                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#1F7A6E]" value={filterTenant} onChange={e => setFilterTenant(e.target.value)}>
+                <select className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brandYellow/50 font-bold text-gray-700 bg-white shadow-sm" value={filterTenant} onChange={e => setFilterTenant(e.target.value)}>
                     <option value="">All Companies</option>
                     {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1F7A6E]" /></div>
+                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brandYellow" /></div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -2382,21 +2415,22 @@ function GlobalReportsView() {
 
             {/* Global Funnel */}
             {data?.global_funnel && (
-                <div className="bg-[#1E2A35] rounded-2xl p-6">
-                    <p className="text-white/50 text-[10px] font-black uppercase tracking-widest mb-4">Global Hiring Funnel</p>
+                <div className="bg-[#0A0A0A] rounded-3xl p-8 border border-white/5 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-brandYellow/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-brandYellow/10 transition-colors" />
+                    <p className="text-brandYellow text-[10px] font-black uppercase tracking-[0.2em] mb-6 relative z-10">Global Hiring Funnel</p>
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                         {[
                             { label: 'Applied', value: data.global_funnel.total_applied, color: 'text-white' },
-                            { label: 'Shortlisted', value: data.global_funnel.total_shortlisted, color: 'text-amber-400' },
+                            { label: 'Shortlisted', value: data.global_funnel.total_shortlisted, color: 'text-brandYellow' },
                             { label: 'Interview', value: data.global_funnel.total_interview, color: 'text-purple-400' },
                             { label: 'Hired', value: data.global_funnel.total_hired, color: 'text-emerald-400' },
                             { label: 'Rejected', value: data.global_funnel.total_rejected, color: 'text-red-400' },
                         ].map((s, i) => (
                             <React.Fragment key={s.label}>
-                                {i > 0 && <div className="hidden sm:block w-px bg-white/10 self-stretch" />}
-                                <div className="text-center">
-                                    <p className={`text-3xl font-black tabular-nums ${s.color}`}>{s.value ?? 0}</p>
-                                    <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-1">{s.label}</p>
+                                {i > 0 && <div className="hidden sm:block w-px bg-white/10 self-stretch mx-2" />}
+                                <div className="text-center relative z-10">
+                                    <p className={`text-4xl font-black tabular-nums transition-transform group-hover:scale-110 duration-500 ${s.color}`}>{s.value ?? 0}</p>
+                                    <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-2">{s.label}</p>
                                 </div>
                             </React.Fragment>
                         ))}
@@ -2411,32 +2445,32 @@ function GlobalReportsView() {
                     <p className="text-xs text-gray-400 mt-0.5">Lower is better — shows average days from application to hire</p>
                 </div>
                 {loading ? (
-                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1F7A6E]" /></div>
+                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#000000]" /></div>
                 ) : (
                     <div className="divide-y divide-gray-50">
                         {(!data?.tenants || data.tenants.length === 0) && (
                             <div className="p-10 text-center text-sm text-gray-400 italic">No report data available yet.</div>
                         )}
                         {data?.tenants?.map((t: any, i: number) => (
-                            <div key={t.id} className="px-6 py-4 flex items-center gap-4">
-                                <span className="text-[10px] font-black text-gray-400 w-4">#{i + 1}</span>
-                                <div className="w-9 h-9 rounded-xl bg-[#1E2A35]/10 flex items-center justify-center text-[#1E2A35] font-black text-sm shrink-0">{t.name?.charAt(0)}</div>
+                            <div key={t.id} className="px-6 py-5 flex items-center gap-5 hover:bg-gray-50/50 transition-colors group">
+                                <span className="text-[11px] font-black text-gray-300 w-5 group-hover:text-brandYellow transition-colors">#{i + 1}</span>
+                                <div className="w-10 h-10 rounded-xl bg-brandYellow flex items-center justify-center text-[#000000] font-black text-sm shrink-0 shadow-sm">{t.name?.charAt(0)}</div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-gray-800 text-sm">{t.name}</p>
-                                    <div className="mt-1.5 flex items-center gap-2">
-                                        <div className="flex-1 h-1.5 bg-gray-100 rounded-full">
-                                            <div className="h-1.5 rounded-full bg-[#1F7A6E]" style={{ width: `${Math.min(100, ((t.hired_count || 0) / maxHired) * 100)}%` }} />
+                                    <p className="font-bold text-gray-800 text-sm group-hover:text-brandYellow transition-colors">{t.name}</p>
+                                    <div className="mt-2 flex items-center gap-3">
+                                        <div className="flex-1 h-2 bg-gray-100 rounded-full">
+                                            <div className="h-2 rounded-full bg-brandYellow shadow-[0_0_10px_rgba(253,242,47,0.3)]" style={{ width: `${Math.min(100, ((t.hired_count || 0) / maxHired) * 100)}%` }} />
                                         </div>
-                                        <span className="text-[11px] text-gray-400 tabular-nums shrink-0">{t.hired_count || 0} hired</span>
+                                        <span className="text-[10px] text-gray-400 font-bold uppercase tabular-nums shrink-0">{t.hired_count || 0} hired</span>
                                     </div>
                                 </div>
-                                <div className="text-right shrink-0">
-                                    <p className="font-black text-gray-900 text-lg tabular-nums">{t.avg_days_to_hire != null ? `${t.avg_days_to_hire}d` : '—'}</p>
-                                    <p className="text-[10px] text-gray-400">avg. time to hire</p>
+                                <div className="text-right shrink-0 px-4 border-l border-gray-100">
+                                    <p className="font-black text-gray-900 text-xl tabular-nums tracking-tighter">{t.avg_days_to_hire != null ? `${t.avg_days_to_hire}d` : '—'}</p>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Avg Time</p>
                                 </div>
-                                <div className="text-right shrink-0">
-                                    <p className="font-black text-[#1F7A6E] text-sm tabular-nums">{t.conversion_rate}%</p>
-                                    <p className="text-[10px] text-gray-400">hire rate</p>
+                                <div className="text-right shrink-0 w-24">
+                                    <p className="font-black text-brandYellow bg-black px-2 py-1 rounded-lg inline-block text-[11px] tabular-nums">{t.conversion_rate}%</p>
+                                    <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Hire Rate</p>
                                 </div>
                             </div>
                         ))}
@@ -2480,15 +2514,15 @@ function GlobalEventsView({ tenants }: { tenants: any[] }) {
                 </div>
                 <button
                     onClick={() => setShowCreate(true)}
-                    className="flex items-center gap-2 bg-[#1F7A6E] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#165a51] transition shadow-lg shadow-[#1F7A6E]/20"
+                    className="flex items-center gap-2 bg-brandYellow text-[#000000] px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-brandYellow/10 hover:scale-[1.02] active:scale-95"
                 >
-                    <Calendar size={18} /> Create Event
+                    <Calendar size={16} strokeWidth={3} /> Create Event
                 </button>
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 {loading ? (
-                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#1F7A6E]" /></div>
+                    <div className="p-10 flex justify-center"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#000000]" /></div>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full">
@@ -2515,7 +2549,7 @@ function GlobalEventsView({ tenants }: { tenants: any[] }) {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded bg-[#1A2B3D]/10 text-[#1A2B3D] font-black text-[10px] flex items-center justify-center">{event.tenant?.name?.charAt(0)}</div>
+                                                <div className="w-6 h-6 rounded bg-[#000000]/10 text-[#000000] font-black text-[10px] flex items-center justify-center">{event.tenant?.name?.charAt(0)}</div>
                                                 <span className="text-sm text-gray-600 font-medium">{event.tenant?.name || 'Global'}</span>
                                             </span>
                                         </td>
@@ -2566,11 +2600,11 @@ function CreateEventModal({ tenants, onClose, onCreated }: { tenants: any[]; onC
     };
 
     return (
-        <div className="fixed inset-0 bg-[#1A2B3D]/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-[#000000]/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
                 <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/60">
                     <div>
-                        <p className="text-[10px] font-black text-[#1F7A6E] uppercase tracking-widest">Global Comms</p>
+                        <p className="text-[10px] font-black text-[#000000] uppercase tracking-widest">Global Comms</p>
                         <h3 className="font-black text-gray-900 text-xl">Create New Event</h3>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-700 transition p-2 hover:bg-white rounded-full"><X size={20} /></button>
@@ -2581,7 +2615,7 @@ function CreateEventModal({ tenants, onClose, onCreated }: { tenants: any[]; onC
                     <div className="grid grid-cols-2 gap-5">
                         <div className="col-span-2 sm:col-span-1">
                             <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Target Company</label>
-                            <select required className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm bg-white focus:ring-2 focus:ring-[#1F7A6E] focus:border-transparent outline-none transition-all"
+                            <select required className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm bg-white focus:ring-2 focus:ring-[#000000] focus:border-transparent outline-none transition-all"
                                 value={form.tenant_id} onChange={e => setForm({ ...form, tenant_id: e.target.value })}>
                                 <option value="">Select a company...</option>
                                 {tenants.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -2590,7 +2624,7 @@ function CreateEventModal({ tenants, onClose, onCreated }: { tenants: any[]; onC
                         <div className="col-span-2 sm:col-span-1">
                             <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Event Title</label>
                             <input required type="text" placeholder="e.g. Annual Tech Summit 2026"
-                                className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#1F7A6E] focus:border-transparent outline-none transition-all"
+                                className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#000000] focus:border-transparent outline-none transition-all"
                                 value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
                         </div>
                     </div>
@@ -2598,7 +2632,7 @@ function CreateEventModal({ tenants, onClose, onCreated }: { tenants: any[]; onC
                     <div>
                         <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Description & Purpose</label>
                         <textarea rows={3} placeholder="Describe the event and why it's important..."
-                            className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#1F7A6E] focus:border-transparent outline-none transition-all resize-none"
+                            className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#000000] focus:border-transparent outline-none transition-all resize-none"
                             value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
                     </div>
 
@@ -2606,21 +2640,21 @@ function CreateEventModal({ tenants, onClose, onCreated }: { tenants: any[]; onC
                         <div className="col-span-2 sm:col-span-1">
                             <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Event Date & Time</label>
                             <input required type="datetime-local"
-                                className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#1F7A6E] focus:border-transparent outline-none transition-all"
+                                className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#000000] focus:border-transparent outline-none transition-all"
                                 value={form.event_date} onChange={e => setForm({ ...form, event_date: e.target.value })} />
                         </div>
                         <div className="col-span-2 sm:col-span-1">
                             <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Location</label>
                             <input type="text" placeholder="e.g. Hilton Addis / Virtual"
-                                className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#1F7A6E] focus:border-transparent outline-none transition-all"
+                                className="w-full border border-gray-200 rounded-2xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#000000] focus:border-transparent outline-none transition-all"
                                 value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
                         </div>
                     </div>
 
-                    <div className="flex gap-4 pt-4">
-                        <button type="button" onClick={onClose} className="flex-1 py-3.5 text-sm font-bold text-gray-600 hover:bg-gray-100 rounded-2xl transition">Cancel</button>
-                        <button type="submit" disabled={submitting} className="flex-1 py-3.5 bg-[#1F7A6E] text-white text-sm font-bold rounded-2xl hover:bg-[#165a51] transition disabled:opacity-50 shadow-lg shadow-[#1F7A6E]/20">
-                            {submitting ? 'Creating Event...' : 'Broadcast Event'}
+                    <div className="flex gap-4 pt-6">
+                        <button type="button" onClick={onClose} className="flex-1 py-4 text-sm font-black uppercase tracking-widest text-gray-500 hover:bg-gray-100 rounded-2xl transition-all">Cancel</button>
+                        <button type="submit" disabled={submitting} className="flex-1 py-4 bg-brandYellow text-[#000000] text-sm font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-brandYellow/10 hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all">
+                            {submitting ? 'Creating...' : 'Broadcast Event'}
                         </button>
                     </div>
                 </form>
@@ -2632,7 +2666,7 @@ function CreateEventModal({ tenants, onClose, onCreated }: { tenants: any[]; onC
 /* ─── Page Wrapper for Suspense ──────────────────────────── */
 export default function DashboardPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1F7A6E]" /></div>}>
+        <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#000000]" /></div>}>
             <Dashboard />
         </Suspense>
     );

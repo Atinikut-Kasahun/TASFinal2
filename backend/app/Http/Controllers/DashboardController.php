@@ -211,9 +211,13 @@ class DashboardController extends Controller
      */
     public function reportsData(): JsonResponse
     {
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $dateDiffRaw = $driver === 'sqlite'
+            ? 'AVG(julianday(applicants.updated_at) - julianday(applicants.created_at)) as avg_days'
+            : 'AVG(DATEDIFF(applicants.updated_at, applicants.created_at)) as avg_days';
+
         $avgDaysMap = \App\Models\Applicant::where('status', 'hired')
-            ->whereNotNull('hired_at')
-            ->selectRaw('tenant_id, AVG(DATEDIFF(hired_at, created_at)) as avg_days')
+            ->selectRaw("tenant_id, $dateDiffRaw")
             ->groupBy('tenant_id')
             ->pluck('avg_days', 'tenant_id');
 

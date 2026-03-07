@@ -19,6 +19,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
     const [subTab, setSubTab] = useState('NEW'); // Represents the local view/stage
     const [drawerReq, setDrawerReq] = useState<any>(null);
     const [drawerApp, setDrawerApp] = useState<any>(null);
+    const [postJobDeadline, setPostJobDeadline] = useState("");
     const [actionLoading, setActionLoading] = useState(false);
     const router = useRouter();
     const [offerModal, setOfferModal] = useState(false);
@@ -321,10 +322,12 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                     description: req.description || `New opening for ${req.title} in ${req.department} department.`,
                     location: req.location,
                     type: 'full-time',
+                    deadline: postJobDeadline,
                 }),
             });
             setDrawerReq(null);
             fetchData();
+            setPostJobDeadline("");
         } catch (e) {
             console.error(e);
         } finally {
@@ -487,13 +490,13 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="mx-10 mt-2 p-3 bg-[#1F7A6E]/10 border border-[#1F7A6E]/20 rounded-2xl flex items-center gap-4"
+                        className="mx-10 mt-2 p-3 bg-[#FDF22F]/10 border border-[#FDF22F]/20 rounded-2xl flex items-center gap-4"
                     >
-                        <svg className="w-4 h-4 text-[#1F7A6E] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-black shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <p className="text-xs font-bold text-[#1F7A6E] flex-1">
-                            Showing results for: <span className="font-black text-[#1A2B3D]">"{search}"</span>
+                        <p className="text-xs font-bold text-black flex-1">
+                            Showing results for: <span className="font-black">"{search}"</span>
                         </p>
                         <button
                             onClick={() => {
@@ -502,7 +505,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                 window.history.replaceState({}, '', url);
                                 setSearch('');
                             }}
-                            className="text-[10px] font-black text-[#1F7A6E] uppercase tracking-widest hover:text-[#165C53] transition-colors"
+                            className="text-[10px] font-black text-black uppercase tracking-widest hover:bg-black hover:text-white px-3 py-1.5 rounded-lg transition-all"
                         >
                             Clear ✕
                         </button>
@@ -537,22 +540,22 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                         };
                         return (
                             <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                                <span className="hover:text-[#1F7A6E] cursor-pointer transition-colors">Sister Companies</span>
+                                <span className="hover:text-[#000000] cursor-pointer transition-colors">Sister Companies</span>
                                 <svg className="w-2.5 h-2.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
-                                <span className="text-[#1F7A6E]">{user.tenant?.name || 'Droga Pharma'}</span>
+                                <span className="text-[#000000]">{user.tenant?.name || 'Droga Pharma'}</span>
                                 <svg className="w-2.5 h-2.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
                                 <span>{tabLabels[initialTab] || initialTab}</span>
                                 {subLabels[subTab] && (
                                     <>
                                         <svg className="w-2.5 h-2.5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
-                                        <span className="text-[#1A2B3D] font-black">{subLabels[subTab]}</span>
+                                        <span className="text-[#000000] font-black">{subLabels[subTab]}</span>
                                     </>
                                 )}
                             </div>
                         );
                     })()}
 
-                    <h1 className="text-[32px] font-bold text-[#1A2B3D] tracking-tight">{user.tenant?.name || 'Droga Pharma'}</h1>
+                    <h1 className="text-[32px] font-bold text-[#000000] tracking-tight">{user.tenant?.name || 'Droga Pharma'}</h1>
 
                     {/* Hierarchical Sub Tabs - Contextual Logic */}
                     <div className="flex gap-10 border-b border-gray-100 mt-2">
@@ -582,7 +585,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             }
                                         }}
                                         className={`pb-4 text-[12px] font-black tracking-[0.15em] transition-all relative ${isActive
-                                            ? 'text-[#1F7A6E]'
+                                            ? 'text-[#000000]'
                                             : 'text-gray-400 hover:text-gray-600'
                                             }`}
                                     >
@@ -590,7 +593,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         {isActive && (
                                             <motion.div
                                                 layoutId="activeSubTabIndicator"
-                                                className="absolute bottom-0 left-0 right-0 h-[4px] bg-[#1F7A6E] rounded-t-full"
+                                                className="absolute bottom-0 left-0 right-0 h-[4px] bg-[#FDF22F] rounded-t-full shadow-[0_-2px_10px_rgba(253,242,47,0.4)]"
                                             />
                                         )}
                                     </button>
@@ -604,7 +607,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     <button
                                         key={f}
                                         onClick={() => { setSubTab(f); setCurrentPage(1); }}
-                                        className={`text-[10px] font-black tracking-widest transition-all ${subTab === f ? 'text-[#1A2B3D]' : 'text-gray-400 hover:text-gray-600'}`}
+                                        className={`text-[10px] font-black tracking-widest transition-all ${subTab === f ? 'text-[#000000]' : 'text-gray-400 hover:text-gray-600'}`}
                                     >
                                         {f}
                                     </button>
@@ -614,11 +617,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                     </div>
                 </div>
 
-                {subTab === 'REQUISITIONS' && (
-                    <button className="bg-[#1F7A6E] hover:bg-[#165C53] text-white px-6 py-3 rounded font-black text-[13px] tracking-wide shadow-xl shadow-[#1F7A6E]/20 transition-all flex items-center gap-2">
-                        Create new requisition
-                    </button>
-                )}
+
             </div>
 
             {/* Content Table */}
@@ -652,7 +651,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                     </div>
                 ) : (
                     <div className="bg-white rounded border border-gray-100 p-20 flex items-center justify-center">
-                        <div className="w-8 h-8 border-4 border-[#1F7A6E] border-t-transparent rounded-full animate-spin" />
+                        <div className="w-8 h-8 border-4 border-[#FDF22F] border-t-transparent rounded-full animate-spin" />
                     </div>
                 )
             ) : initialTab === 'Jobs' ? (
@@ -671,14 +670,34 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                             ) : jobs.map((job: any) => (
                                 <tr key={job.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
                                     <td className="px-8 py-6">
-                                        <p className="font-bold text-[#1A2B3D] group-hover:text-[#1F7A6E] transition-colors">{job.title}</p>
+                                        <p className="font-bold text-[#000000] group-hover:text-[#000000] transition-colors">{job.title}</p>
+                                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                                            {job.published_at && (() => {
+                                                const d = new Date(job.published_at);
+                                                const now = new Date();
+                                                const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+                                                const relative = diffDays === 0 ? 'Today' : diffDays === 1 ? 'Yesterday' : `${diffDays}d ago`;
+                                                return <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Posted {relative}</span>;
+                                            })()}
+                                            {job.deadline && (() => {
+                                                const d = new Date(job.deadline);
+                                                const now = new Date();
+                                                const diffTime = d.getTime() - now.getTime();
+                                                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                return (
+                                                    <span className={`text-[10px] font-black uppercase tracking-widest ${diffDays <= 3 ? 'text-red-500 animate-pulse' : 'text-amber-600'}`}>
+                                                        {diffDays <= 0 ? 'Closing Today' : `Closes in ${diffDays}d`}
+                                                    </span>
+                                                );
+                                            })()}
+                                        </div>
                                     </td>
                                     <td className="px-8 py-6 text-sm text-gray-500">{job.location || '—'}</td>
                                     <td className="px-8 py-6 text-sm text-gray-500">
                                         {job.department || job.requisition?.department || 'General'}
                                     </td>
                                     <td className="px-8 py-6">
-                                        <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === 'active' ? 'bg-emerald-50 text-emerald-600' : job.status === 'closed' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-400'}`}>
+                                        <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === 'active' ? 'bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10' : job.status === 'closed' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-400'}`}>
                                             {job.status}
                                         </span>
                                     </td>
@@ -709,14 +728,14 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                         <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                                    Showing <span className="text-[#1A2B3D]">{jobsPagination.from}</span> - <span className="text-[#1A2B3D]">{jobsPagination.to}</span> of <span className="text-[#1A2B3D]">{jobsPagination.total}</span>
+                                    Showing <span className="text-[#000000]">{jobsPagination.from}</span> - <span className="text-[#000000]">{jobsPagination.to}</span> of <span className="text-[#000000]">{jobsPagination.total}</span>
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => fetchData(currentPage - 1)}
                                     disabled={currentPage === 1}
-                                    className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1F7A6E] hover:border-[#1F7A6E] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                                    className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#000000] hover:border-[#000000] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
                                 </button>
@@ -732,8 +751,8 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             key={pageNum}
                                             onClick={() => fetchData(pageNum)}
                                             className={`w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm border ${currentPage === pageNum
-                                                ? 'bg-[#1F7A6E] text-white border-[#1F7A6E]'
-                                                : 'bg-white text-gray-400 border-gray-200 hover:border-[#1F7A6E] hover:text-[#1F7A6E]'
+                                                ? 'bg-[#FDF22F] text-black border-[#FDF22F]'
+                                                : 'bg-white text-gray-400 border-gray-200 hover:border-[#FDF22F] hover:text-[#000000]'
                                                 }`}
                                         >
                                             {pageNum}
@@ -744,7 +763,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                 <button
                                     onClick={() => fetchData(currentPage + 1)}
                                     disabled={currentPage === jobsPagination.last_page}
-                                    className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1F7A6E] hover:border-[#1F7A6E] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                                    className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#000000] hover:border-[#000000] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
                                 </button>
@@ -759,8 +778,8 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                     {/* Header Section without inner filters */}
                     <div className="px-10 py-8 border-b border-gray-100 flex justify-between items-center bg-white">
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-black text-[#1A2B3D] flex items-center gap-3">
-                                <div className="w-2 h-8 bg-[#1F7A6E] rounded-full" />
+                            <h2 className="text-2xl font-black text-[#000000] flex items-center gap-3">
+                                <div className="w-2 h-8 bg-[#FDF22F] rounded-full" />
                                 {subTab} PIPELINE
                             </h2>
                             <p className="text-xs font-medium text-gray-400">Manage talent through the {subTab.toLowerCase()} stage</p>
@@ -769,14 +788,14 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                             {initialTab === 'Candidates' && (
                                 <button
                                     onClick={() => setAddCandidateModal(true)}
-                                    className="bg-[#1F7A6E] hover:bg-[#165C53] text-white px-4 py-2 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#1F7A6E]/20 transition-all flex items-center gap-2"
+                                    className="bg-[#FDF22F] hover:bg-black text-black hover:text-white px-4 py-2 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20 transition-all flex items-center gap-2"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
                                     Add Candidate
                                 </button>
                             )}
                             <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
-                                Total: <span className="text-[#1A2B3D]">
+                                Total: <span className="text-[#000000]">
                                     {loading ? '...' : (initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? (employeesPagination?.total ?? 0) : (applicantsPagination?.total ?? 0)}
                                 </span>
                             </p>
@@ -804,11 +823,11 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         <tr key={emp.id} className="hover:bg-gray-50 transition-colors group">
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-[#1F7A6E]">
+                                                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center font-black text-[#000000]">
                                                         {emp.name.split(' ').map((n: string) => n[0]).join('')}
                                                     </div>
                                                     <div>
-                                                        <p className="font-black text-[14px] text-[#1A2B3D]">{emp.name}</p>
+                                                        <p className="font-black text-[14px] text-[#000000]">{emp.name}</p>
                                                         <p className="text-[10px] font-bold text-gray-400 lowercase tracking-widest">{emp.email}</p>
                                                     </div>
                                                 </div>
@@ -841,7 +860,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                         });
                                                         setEmployeeStatusModal(true);
                                                     }}
-                                                    className="text-[10px] font-black text-[#1F7A6E] uppercase tracking-widest hover:underline"
+                                                    className="text-[10px] font-black text-[#000000] uppercase tracking-widest hover:underline"
                                                 >
                                                     Manage
                                                 </button>
@@ -862,7 +881,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-4">
                                                     <div className="relative group/avatar">
-                                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:border-[#1F7A6E] transition-all duration-300 shadow-sm">
+                                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:border-[#FDF22F] transition-all duration-300 shadow-sm">
                                                             {app.photo_path ? (
                                                                 <img
                                                                     src={app.photo_path.startsWith('http') ? app.photo_path : `${API_URL.replace('/api', '/storage')}/${app.photo_path}`}
@@ -873,23 +892,23 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                                     }}
                                                                 />
                                                             ) : (
-                                                                <span className="text-sm font-black text-[#1F7A6E]">{app.name.split(' ').map((n: string) => n[0]).join('')}</span>
+                                                                <span className="text-sm font-black text-[#000000]">{app.name.split(' ').map((n: string) => n[0]).join('')}</span>
                                                             )}
                                                         </div>
                                                         <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white bg-emerald-500 shadow-sm" />
                                                     </div>
                                                     <div className="space-y-0.5">
-                                                        <p className="font-black text-[14px] text-[#1A2B3D] tracking-tight group-hover:text-[#1F7A6E] transition-colors">{app.name}</p>
+                                                        <p className="font-black text-[14px] text-[#000000] tracking-tight group-hover:text-[#000000] transition-colors">{app.name}</p>
                                                         <div className="flex items-center gap-2">
                                                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{app.email}</span>
                                                             <span className="w-1 h-1 rounded-full bg-gray-200" />
-                                                            <span className="text-[10px] font-bold text-[#1F7A6E] uppercase tracking-widest">{app.phone || 'No Phone'}</span>
+                                                            <span className="text-[10px] font-bold text-[#000000] uppercase tracking-widest">{app.phone || 'No Phone'}</span>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <p className="text-[13px] font-bold text-[#1A2B3D]">{app.job_posting?.title || 'Open Role'}</p>
+                                                <p className="text-[13px] font-bold text-[#000000]">{app.job_posting?.title || 'Open Role'}</p>
                                                 <p className="text-[10px] font-medium text-gray-400 uppercase tracking-widest mt-0.5">Reference: REQ{app.job_posting?.job_requisition_id || '---'}</p>
                                             </td>
                                             <td className="px-8 py-6 text-[13px] text-gray-600 font-medium">
@@ -902,11 +921,11 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                                                         <div
-                                                            className="h-full bg-emerald-500 rounded-full"
+                                                            className="h-full bg-[#FDF22F] rounded-full"
                                                             style={{ width: `${app.match_score || 85}%` }}
                                                         />
                                                     </div>
-                                                    <span className="text-[11px] font-black text-[#1A2B3D]">{app.match_score || 85}%</span>
+                                                    <span className="text-[11px] font-black text-[#000000]">{app.match_score || 85}%</span>
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
@@ -936,78 +955,82 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                     const relative = diffDays === 0 ? 'Today' : diffDays === 1 ? 'Yesterday' : `${diffDays}d ago`;
                                                     return (
                                                         <div>
-                                                            <p className="text-[12px] font-bold text-[#1A2B3D]">
+                                                            <p className="text-[12px] font-bold text-[#000000]">
                                                                 {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                             </p>
                                                             <p className="text-[11px] text-gray-400 mt-0.5">
-                                                                {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · <span className="text-[#1F7A6E] font-black">{relative}</span>
+                                                                {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} · <span className="text-[#000000] font-black">{relative}</span>
                                                             </p>
                                                         </div>
                                                     );
                                                 })() : <span className="text-gray-300 text-xs">—</span>}
                                             </td>
-                                            {initialTab === 'Employees' && (
-                                                <td className="px-8 py-6">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setDrawerApp(app);
-                                                        }}
-                                                        className="text-[10px] font-black text-[#1F7A6E] uppercase tracking-widest hover:underline"
-                                                    >
-                                                        Manage
-                                                    </button>
-                                                </td>
-                                            )}
-                                        </tr>
+                                            {
+                                                initialTab === 'Employees' && (
+                                                    <td className="px-8 py-6">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDrawerApp(app);
+                                                            }}
+                                                            className="text-[10px] font-black text-[#000000] uppercase tracking-widest hover:underline"
+                                                        >
+                                                            Manage
+                                                        </button>
+                                                    </td>
+                                                )
+                                            }
+                                        </tr >
                                     ))
                                 )
-                            )}
-                        </tbody>
-                    </table>
+                            )
+                            }
+                        </tbody >
+                    </table >
 
                     {/* Pagination Controls */}
                     {/* Pagination Controls */}
-                    {((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination) && ((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination).last_page > 1 && (
-                        <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                                    Showing <span className="text-[#1A2B3D]">{((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination).from}</span> - <span className="text-[#1A2B3D]">{((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination).to}</span> of <span className="text-[#1A2B3D]">{((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination).total}</span>
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => fetchData(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                    className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1F7A6E] hover:border-[#1F7A6E] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
-                                </button>
-
-                                {[...Array(((initialTab === 'Employees' && subTab !== 'HIRED') ? employeesPagination : applicantsPagination).last_page)].map((_, i) => (
+                    {
+                        ((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination) && ((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination).last_page > 1 && (
+                            <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                                        Showing <span className="text-[#000000]">{((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination).from}</span> - <span className="text-[#000000]">{((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination).to}</span> of <span className="text-[#000000]">{((initialTab === 'Employees' && (subTab === 'STAFF' || subTab === 'SEPARATED')) ? employeesPagination : applicantsPagination).total}</span>
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
                                     <button
-                                        key={i + 1}
-                                        onClick={() => fetchData(i + 1)}
-                                        className={`w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm border ${currentPage === i + 1
-                                            ? 'bg-[#1F7A6E] text-white border-[#1F7A6E]'
-                                            : 'bg-white text-gray-400 border-gray-200 hover:border-[#1F7A6E] hover:text-[#1F7A6E]'
-                                            }`}
+                                        onClick={() => fetchData(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#000000] hover:border-[#000000] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
                                     >
-                                        {i + 1}
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
                                     </button>
-                                ))}
 
-                                <button
-                                    onClick={() => fetchData(currentPage + 1)}
-                                    disabled={currentPage === ((initialTab === 'Employees' && subTab !== 'HIRED') ? employeesPagination : applicantsPagination).last_page}
-                                    className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#1F7A6E] hover:border-[#1F7A6E] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                                >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
-                                </button>
+                                    {[...Array(((initialTab === 'Employees' && subTab !== 'HIRED') ? employeesPagination : applicantsPagination).last_page)].map((_, i) => (
+                                        <button
+                                            key={i + 1}
+                                            onClick={() => fetchData(i + 1)}
+                                            className={`w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm border ${currentPage === i + 1
+                                                ? 'bg-[#FDF22F] text-black border-[#FDF22F]'
+                                                : 'bg-white text-gray-400 border-gray-200 hover:border-[#FDF22F] hover:text-[#000000]'
+                                                }`}
+                                        >
+                                            {i + 1}
+                                        </button>
+                                    ))}
+
+                                    <button
+                                        onClick={() => fetchData(currentPage + 1)}
+                                        disabled={currentPage === ((initialTab === 'Employees' && subTab !== 'HIRED') ? employeesPagination : applicantsPagination).last_page}
+                                        className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#000000] hover:border-[#000000] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                                    >
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </div >
+                        )}
+                </div>
             )
             }
 
@@ -1031,7 +1054,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     onClick={() => setDrawerReq(req)}
                                 >
                                     <td className="px-8 py-6">
-                                        <p className="font-black text-[13px] text-[#0066CC] hover:underline group-hover:text-[#1F7A6E]">
+                                        <p className="font-black text-[13px] text-black group-hover:text-[#FDF22F] transition-colors">
                                             REQ{req.id} {req.title}
                                         </p>
                                         <p className="text-[11px] text-gray-400 mt-0.5 tracking-tight">
@@ -1044,7 +1067,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     <td className="px-8 py-6 text-[13px] text-gray-600">
                                         {req.location}
                                     </td>
-                                    <td className="px-8 py-6 text-[13px] text-[#1A2B3D] font-black">
+                                    <td className="px-8 py-6 text-[13px] text-[#000000] font-black">
                                         {req.budget ? req.budget.toLocaleString() : '15,000'} ETB /mo
                                     </td>
                                     <td className="px-8 py-6">
@@ -1052,7 +1075,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             const d = new Date(req.created_at);
                                             return (
                                                 <div>
-                                                    <p className="text-[12px] font-bold text-[#1A2B3D]">
+                                                    <p className="text-[12px] font-bold text-[#000000]">
                                                         {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                     </p>
                                                     <p className="text-[11px] text-gray-400 mt-0.5">
@@ -1064,25 +1087,36 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     </td>
                                     <td className="px-8 py-6">
                                         {req.job_posting?.created_at ? (() => {
-                                            const d = new Date(req.job_posting.created_at);
+                                            const d = new Date(req.job_posting.published_at || req.job_posting.created_at);
+                                            const deadline = req.job_posting.deadline ? new Date(req.job_posting.deadline) : null;
                                             return (
-                                                <div>
-                                                    <p className="text-[12px] font-bold text-[#1A2B3D]">
-                                                        {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                    </p>
-                                                    <p className="text-[11px] text-emerald-600 font-bold mt-0.5">
-                                                        {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                                                    </p>
+                                                <div className="space-y-1">
+                                                    <div>
+                                                        <p className="text-[12px] font-bold text-[#000000]">
+                                                            {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        </p>
+                                                        <p className="text-[11px] text-emerald-600 font-bold">
+                                                            {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                        </p>
+                                                    </div>
+                                                    {deadline && (
+                                                        <div className="pt-1 border-t border-gray-100">
+                                                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Deadline</p>
+                                                            <p className="text-[10px] font-black text-amber-600">
+                                                                {deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                            </p>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })() : (
-                                            <span className="px-2 py-1 bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded">
+                                            <span className="px-2 py-1 bg-[#FDF22F]/10 text-black text-[10px] font-black uppercase tracking-widest rounded">
                                                 Not Posted
                                             </span>
                                         )}
                                     </td>
                                     <td className="px-8 py-6">
-                                        <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                                        <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10' :
                                             req.status === 'pending' ? 'bg-amber-50 text-amber-600' :
                                                 'bg-red-50 text-red-500'
                                             }`}>
@@ -1101,15 +1135,15 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                     <div className="flex flex-col">
                         <div className="px-10 py-8 border-b border-gray-100 flex justify-between items-center bg-white">
                             <div className="space-y-1">
-                                <h2 className="text-2xl font-black text-[#1A2B3D] flex items-center gap-3">
-                                    <div className="w-2 h-8 bg-[#1F7A6E] rounded-full" />
+                                <h2 className="text-2xl font-black text-[#000000] flex items-center gap-3">
+                                    <div className="w-2 h-8 bg-[#FDF22F] rounded-full" />
                                     INTERVIEW CALENDAR
                                 </h2>
                                 <p className="text-xs font-medium text-gray-400">Manage and view all upcoming scheduled interviews</p>
                             </div>
                             <div className="flex items-center gap-4">
                                 <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
-                                    Upcoming: <span className="text-[#1A2B3D]">{interviewsList.length}</span>
+                                    Upcoming: <span className="text-[#000000]">{interviewsList.length}</span>
                                 </p>
                             </div>
                         </div>
@@ -1134,7 +1168,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                     {interview.applicant?.name?.charAt(0) || 'C'}
                                                 </div>
                                                 <div>
-                                                    <p className="font-black text-[13px] text-[#1A2B3D]">{interview.applicant?.name || 'Unknown'}</p>
+                                                    <p className="font-black text-[13px] text-[#000000]">{interview.applicant?.name || 'Unknown'}</p>
                                                     <p className="text-[11px] text-gray-400 mt-0.5">{interview.applicant?.job_posting?.title || 'Open Role'}</p>
                                                 </div>
                                             </div>
@@ -1145,14 +1179,14 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         </td>
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#1F7A6E] group-hover:text-white transition-colors">
+                                                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#000000] group-hover:text-white transition-colors">
                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                                 </div>
                                                 <div>
-                                                    <p className="font-bold text-[#1A2B3D] text-[13px]">
+                                                    <p className="font-bold text-[#000000] text-[13px]">
                                                         {new Date(interview.scheduled_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                                                     </p>
-                                                    <p className="text-[#1F7A6E] font-black text-[11px]">
+                                                    <p className="text-[#000000] font-black text-[11px]">
                                                         {new Date(interview.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                                                     </p>
                                                 </div>
@@ -1207,7 +1241,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                 {/* ── Top Greeting ── */}
                                 <div className="flex items-end justify-between">
                                     <div>
-                                        <h2 className="text-3xl font-black text-[#1A2B3D]">Welcome, {user.name}!</h2>
+                                        <h2 className="text-3xl font-black text-[#000000]">Welcome, {user.name}!</h2>
                                         <p className="text-sm font-medium text-gray-500 mt-1">Manage candidates and track applications</p>
                                     </div>
                                     {/* Live data badge */}
@@ -1234,7 +1268,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         <select
                                             value={reportFilters.dateRange}
                                             onChange={e => { setReportFilters(prev => ({ ...prev, dateRange: e.target.value })); fetchData(1); }}
-                                            className="text-[11px] font-bold text-[#1A2B3D] bg-gray-50/80 border border-gray-100 rounded-xl px-3 py-2 outline-none cursor-pointer focus:border-[#1F7A6E] hover:border-gray-200 transition-all appearance-none shadow-sm"
+                                            className="text-[11px] font-bold text-[#000000] bg-gray-50/80 border border-gray-100 rounded-xl px-3 py-2 outline-none cursor-pointer focus:border-[#000000] hover:border-gray-200 transition-all appearance-none shadow-sm"
                                         >
                                             <option value="7">Last 7 Days</option>
                                             <option value="30">Last 30 Days</option>
@@ -1252,7 +1286,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         <select
                                             value={reportFilters.department}
                                             onChange={e => { setReportFilters(prev => ({ ...prev, department: e.target.value })); fetchData(1); }}
-                                            className="text-[11px] font-bold text-[#1A2B3D] bg-gray-50/80 border border-gray-100 rounded-xl px-3 py-2 outline-none cursor-pointer focus:border-[#1F7A6E] hover:border-gray-200 transition-all appearance-none shadow-sm max-w-[160px]"
+                                            className="text-[11px] font-bold text-[#000000] bg-gray-50/80 border border-gray-100 rounded-xl px-3 py-2 outline-none cursor-pointer focus:border-[#000000] hover:border-gray-200 transition-all appearance-none shadow-sm max-w-[160px]"
                                         >
                                             <option value="All">All Departments</option>
                                             {[...new Set((jobs || []).map(j => j.department || j.requisition?.department).filter(Boolean))].map(dept => (
@@ -1270,7 +1304,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         <select
                                             value={reportFilters.jobId}
                                             onChange={e => { setReportFilters(prev => ({ ...prev, jobId: e.target.value })); fetchData(1); }}
-                                            className="text-[11px] font-bold text-[#1A2B3D] bg-gray-50/80 border border-gray-100 rounded-xl px-3 py-2 outline-none cursor-pointer focus:border-[#1F7A6E] hover:border-gray-200 transition-all appearance-none shadow-sm max-w-[180px]"
+                                            className="text-[11px] font-bold text-[#000000] bg-gray-50/80 border border-gray-100 rounded-xl px-3 py-2 outline-none cursor-pointer focus:border-[#000000] hover:border-gray-200 transition-all appearance-none shadow-sm max-w-[180px]"
                                         >
                                             <option value="All">All Open Roles</option>
                                             {(jobs || []).map(job => (
@@ -1287,8 +1321,8 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         onClick={() => fetchData(1)}
                                         title="Refresh data"
                                         className={`w-9 h-9 flex items-center justify-center rounded-xl border transition-all shadow-sm ${statsLoading
-                                            ? 'bg-[#1F7A6E]/5 border-[#1F7A6E]/20 text-[#1F7A6E] cursor-not-allowed'
-                                            : 'bg-gray-50 border-gray-100 text-gray-400 hover:bg-[#1F7A6E]/5 hover:border-[#1F7A6E]/30 hover:text-[#1F7A6E]'
+                                            ? 'bg-[#000000]/5 border-[#000000]/20 text-[#000000] cursor-not-allowed'
+                                            : 'bg-gray-50 border-gray-100 text-gray-400 hover:bg-[#000000]/5 hover:border-[#000000]/30 hover:text-[#000000]'
                                             }`}
                                     >
                                         <svg
@@ -1340,8 +1374,8 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004 12m0 8h5.082m-5.082-5H19a4 4 0 003.582-5H19" />
                                                 </svg>
                                             ),
-                                            color: 'text-[#1F7A6E]',
-                                            bg: 'bg-[#1F7A6E]/5'
+                                            color: 'text-black',
+                                            bg: 'bg-[#FDF22F]'
                                         },
                                         {
                                             label: 'Ongoing Job Openings',
@@ -1365,7 +1399,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                 <p className="text-[13px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</p>
                                             </div>
                                             <div>
-                                                <p className="text-[34px] font-black text-[#1A2B3D] tracking-tighter leading-none mb-3">{stat.value}</p>
+                                                <p className="text-[34px] font-black text-[#000000] tracking-tighter leading-none mb-3">{stat.value}</p>
                                                 <div className={`flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider ${stat.trend === 'Positions' ? 'text-gray-300' : stat.isPositive ? 'text-emerald-500' : 'text-red-400'}`}>
                                                     {stat.trend !== 'Positions' && (
                                                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1391,7 +1425,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         {/* ── Header ── */}
                                         <div className="flex justify-between items-start mb-6 relative z-10">
                                             <div>
-                                                <h3 className="text-[18px] font-black text-[#1A2B3D] tracking-tight">Employee Turnover</h3>
+                                                <h3 className="text-[18px] font-black text-[#000000] tracking-tight">Employee Turnover</h3>
                                                 <div className="flex items-center gap-2 mt-2">
                                                     <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Growth Analytics</p>
                                                     <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${stats?.turnoverTrend < 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100/50' : 'bg-red-50 text-red-600 border-red-100/50'}`}>
@@ -1408,10 +1442,10 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                                    <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                                    <div className="w-2 h-2 rounded-full bg-[#FDF22F] shadow-[0_0_8px_rgba(253,242,47,0.5)]" />
                                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Live Trend</span>
                                                 </div>
-                                                <select className="bg-white border text-[10px] font-black uppercase tracking-widest text-gray-500 border-gray-200 rounded-xl px-4 py-2 outline-none cursor-pointer hover:border-[#1F7A6E] transition-all appearance-none shadow-sm">
+                                                <select className="bg-white border text-[10px] font-black uppercase tracking-widest text-gray-500 border-gray-200 rounded-xl px-4 py-2 outline-none cursor-pointer hover:border-[#000000] transition-all appearance-none shadow-sm">
                                                     <option>Yearly</option>
                                                     <option>Monthly</option>
                                                 </select>
@@ -1456,9 +1490,9 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                 <defs>
                                                     {/* 3-stop airy gradient: 30% → 5% → 0% — light and modern */}
                                                     <linearGradient id="toGrad2" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="0%" stopColor="#1F7A6E" stopOpacity="0.30" />
-                                                        <stop offset="60%" stopColor="#1F7A6E" stopOpacity="0.06" />
-                                                        <stop offset="100%" stopColor="#1F7A6E" stopOpacity="0.00" />
+                                                        <stop offset="0%" stopColor="#FDF22F" stopOpacity="0.40" />
+                                                        <stop offset="60%" stopColor="#FDF22F" stopOpacity="0.10" />
+                                                        <stop offset="100%" stopColor="#FDF22F" stopOpacity="0.00" />
                                                     </linearGradient>
                                                 </defs>
 
@@ -1507,7 +1541,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                             <path
                                                                 d={linePath}
                                                                 fill="none"
-                                                                stroke="#1F7A6E"
+                                                                stroke="#FDF22F"
                                                                 strokeWidth="3"
                                                                 strokeLinecap="round"
                                                                 strokeLinejoin="round"
@@ -1518,7 +1552,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                                 <line
                                                                     x1={hx} y1={pad}
                                                                     x2={hx} y2={H - pad}
-                                                                    stroke="#1F7A6E"
+                                                                    stroke="#000000"
                                                                     strokeWidth="1.5"
                                                                     strokeDasharray="5 4"
                                                                     strokeOpacity="0.28"
@@ -1528,9 +1562,9 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                             {/* 4. Active point: outer glow → mid ring → solid dot */}
                                                             {hx !== null && hy !== null && (
                                                                 <g>
-                                                                    <circle cx={hx} cy={hy} r="12" fill="rgba(31,122,110,0.07)" />
-                                                                    <circle cx={hx} cy={hy} r="7" fill="rgba(31,122,110,0.14)" />
-                                                                    <circle cx={hx} cy={hy} r="4" fill="#1A2B3D" stroke="white" strokeWidth="2.5" />
+                                                                    <circle cx={hx} cy={hy} r="12" fill="rgba(253,242,47,0.15)" />
+                                                                    <circle cx={hx} cy={hy} r="7" fill="rgba(253,242,47,0.3)" />
+                                                                    <circle cx={hx} cy={hy} r="4" fill="#FDF22F" stroke="black" strokeWidth="2.5" />
                                                                 </g>
                                                             )}
 
@@ -1566,8 +1600,8 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                             className="bg-[#0F1C28] pointer-events-none text-white px-4 py-3 rounded-2xl shadow-2xl border border-white/10 min-w-[120px]"
                                                         >
                                                             <div className="flex items-center gap-1.5 mb-1">
-                                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-                                                                <p className="text-[9px] font-black uppercase tracking-[0.12em] text-emerald-400">Portfolio</p>
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-[#FDF22F] shrink-0" />
+                                                                <p className="text-[9px] font-black uppercase tracking-[0.12em] text-[#FDF22F]">Analytics</p>
                                                             </div>
                                                             <p className="text-[18px] font-black leading-none">{d.rate}%</p>
                                                             <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">{d.label} 2024</p>
@@ -1583,7 +1617,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                 <span
                                                     key={i}
                                                     style={{ flex: 1 }}
-                                                    className={`text-center text-[9px] font-bold uppercase tracking-widest select-none transition-all ${hoveredPoint === i ? 'text-[#1F7A6E] font-black' : 'text-gray-300'}`}
+                                                    className={`text-center text-[9px] font-bold uppercase tracking-widest select-none transition-all ${hoveredPoint === i ? 'text-[#000000] font-black' : 'text-gray-300'}`}
                                                 >
                                                     {t.label}
                                                 </span>
@@ -1597,13 +1631,13 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         {/* Header */}
                                         <div className="flex justify-between items-start mb-6">
                                             <div>
-                                                <h3 className="text-[18px] font-black text-[#1A2B3D] tracking-tight">Hiring Funnel Overview</h3>
+                                                <h3 className="text-[18px] font-black text-[#000000] tracking-tight">Hiring Funnel Overview</h3>
                                                 <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1">Candidate pipeline · {new Date().getFullYear()}</p>
                                             </div>
                                             <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6]" />
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#60A5FA]" />
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#2DD4BF]" />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-black/80" />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#FDF22F]" />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-black/60" />
                                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Flow</span>
                                             </div>
                                         </div>
@@ -1611,10 +1645,10 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         {/* KPI row */}
                                         {(() => {
                                             const stages = [
-                                                { label: 'Applied', count: stats?.funnel?.applied || 0, color: '#8B5CF6' },
-                                                { label: 'Shortlisted', count: stats?.funnel?.shortlisted || 0, color: '#60A5FA' },
-                                                { label: 'Interviewed', count: stats?.funnel?.interview || 0, color: '#38BDF8' },
-                                                { label: 'Offered', count: stats?.funnel?.offer || 0, color: '#2DD4BF' },
+                                                { label: 'Applied', count: stats?.funnel?.applied || 0, color: '#000000' },
+                                                { label: 'Shortlisted', count: stats?.funnel?.shortlisted || 0, color: '#222222' },
+                                                { label: 'Interviewed', count: stats?.funnel?.interview || 0, color: '#444444' },
+                                                { label: 'Offered', count: stats?.funnel?.offer || 0, color: '#FDF22F' },
                                             ];
                                             const max = Math.max(...stages.map(s => s.count), 1);
 
@@ -1701,10 +1735,9 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                             <defs>
                                                                 {/* Purple → teal gradient across full width */}
                                                                 <linearGradient id="funnelGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                                    <stop offset="0%" stopColor="#8B5CF6" stopOpacity="0.85" />
-                                                                    <stop offset="35%" stopColor="#60A5FA" stopOpacity="0.85" />
-                                                                    <stop offset="70%" stopColor="#38BDF8" stopOpacity="0.85" />
-                                                                    <stop offset="100%" stopColor="#2DD4BF" stopOpacity="0.85" />
+                                                                    <stop offset="0%" stopColor="#000000" stopOpacity="0.85" />
+                                                                    <stop offset="50%" stopColor="#222222" stopOpacity="0.80" />
+                                                                    <stop offset="100%" stopColor="#FDF22F" stopOpacity="0.95" />
                                                                 </linearGradient>
                                                                 {/* Lighter version for per-segment hover */}
                                                                 {stages.map((s, i) => (
@@ -1777,13 +1810,13 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     {/* Recent Applications Table - Full Width */}
                                     <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-md transition-all duration-300">
                                         <div className="p-8 border-b border-gray-50 flex justify-between items-center bg-gray-50/10">
-                                            <h3 className="text-[17px] font-black text-[#1A2B3D]">Recent Applications</h3>
+                                            <h3 className="text-[17px] font-black text-[#000000]">Recent Applications</h3>
                                             <div className="flex gap-4">
-                                                <button className="text-[10px] font-black uppercase text-gray-400 hover:text-[#1F7A6E] transition-colors flex items-center gap-1.5 bg-white border border-gray-100 px-4 py-2 rounded-xl shadow-sm">
+                                                <button className="text-[10px] font-black uppercase text-gray-400 hover:text-[#000000] transition-colors flex items-center gap-1.5 bg-white border border-gray-100 px-4 py-2 rounded-xl shadow-sm">
                                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25" /></svg>
                                                     Filter
                                                 </button>
-                                                <button className="text-[10px] font-black uppercase text-gray-400 hover:text-[#1F7A6E] transition-colors flex items-center gap-1.5 bg-white border border-gray-100 px-4 py-2 rounded-xl shadow-sm">
+                                                <button className="text-[10px] font-black uppercase text-gray-400 hover:text-[#000000] transition-colors flex items-center gap-1.5 bg-white border border-gray-100 px-4 py-2 rounded-xl shadow-sm">
                                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                     Export
                                                 </button>
@@ -1805,11 +1838,11 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                         <tr key={app.id} className="hover:bg-gray-50/40 transition-colors group cursor-pointer" onClick={() => setDrawerApp(app)}>
                                                             <td className="px-8 py-5">
                                                                 <div className="flex items-center gap-4">
-                                                                    <div className="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 font-black text-xs uppercase shadow-sm">
+                                                                    <div className="w-10 h-10 rounded-xl bg-[#FDF22F] border border-[#FDF22F]/20 flex items-center justify-center text-black font-black text-xs uppercase shadow-sm">
                                                                         {app.name.charAt(0)}
                                                                     </div>
                                                                     <div>
-                                                                        <p className="text-[14px] font-black text-[#1A2B3D] group-hover:text-[#1F7A6E] transition-colors">{app.name}</p>
+                                                                        <p className="text-[14px] font-black text-[#000000] group-hover:text-[#000000] transition-colors">{app.name}</p>
                                                                         <p className="text-[11px] font-black text-gray-300 uppercase tracking-tight">{app.email}</p>
                                                                     </div>
                                                                 </div>
@@ -1817,18 +1850,18 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                             <td className="px-8 py-5 text-[13px] font-black text-gray-600">{app.job_title}</td>
                                                             <td className="px-8 py-5 text-[13px] font-black text-gray-400 capitalize">{new Date(app.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</td>
                                                             <td className="px-8 py-5">
-                                                                <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 w-fit ${app.status === 'hired' ? 'bg-emerald-50 text-emerald-600' :
+                                                                <span className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 w-fit ${app.status === 'hired' ? 'bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10' :
                                                                     app.status === 'rejected' ? 'bg-red-50 text-red-600' :
                                                                         app.status === 'interview' ? 'bg-amber-50 text-amber-600' :
-                                                                            app.status === 'offer' ? 'bg-indigo-50 text-indigo-600' :
+                                                                            app.status === 'offer' ? 'bg-black text-white' :
                                                                                 'bg-gray-100 text-gray-500'
                                                                     }`}>
-                                                                    <div className={`w-1.5 h-1.5 rounded-full ${app.status === 'hired' ? 'bg-emerald-500' : app.status === 'rejected' ? 'bg-red-500' : 'bg-current opacity-40'}`} />
+                                                                    <div className={`w-1.5 h-1.5 rounded-full ${app.status === 'hired' ? 'bg-black' : app.status === 'rejected' ? 'bg-red-500' : 'bg-current opacity-40'}`} />
                                                                     {app.status}
                                                                 </span>
                                                             </td>
                                                             <td className="px-8 py-5">
-                                                                <button className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center hover:bg-[#1F7A6E] hover:text-white">
+                                                                <button className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center hover:bg-[#FDF22F] hover:text-black">
                                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                                                 </button>
                                                             </td>
@@ -1848,12 +1881,12 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8 flex flex-col hover:shadow-md transition-all duration-300">
                                         <div className="flex justify-between items-center mb-8">
                                             <div>
-                                                <h3 className="text-[17px] font-black text-[#1A2B3D]">Candidate Sources</h3>
+                                                <h3 className="text-[17px] font-black text-[#000000]">Candidate Sources</h3>
                                                 <p className="text-[11px] font-black text-gray-300 uppercase mt-1 tracking-widest">Efficiency by channel</p>
                                             </div>
                                             <button
                                                 onClick={() => setAddCandidateModal(true)}
-                                                className="bg-emerald-50 text-[#1F7A6E] px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1F7A6E] hover:text-white transition-all shadow-sm shadow-emerald-100/50 flex items-center gap-2"
+                                                className="bg-[#FDF22F] text-black px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all shadow-xl shadow-[#FDF22F]/20 flex items-center gap-2 border border-[#FDF22F]/50"
                                             >
                                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
                                                 Add Manually
@@ -1869,7 +1902,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                             <div className={`w-8 h-8 rounded-lg ${i === 0 ? 'bg-indigo-50 text-indigo-500' : i === 1 ? 'bg-amber-50 text-amber-500' : 'bg-white text-gray-300'} border border-gray-100 flex items-center justify-center font-black text-[10px]`}>
                                                                 {i + 1}
                                                             </div>
-                                                            <p className="text-[14px] font-black text-[#1A2B3D] tracking-tighter">{pct}%</p>
+                                                            <p className="text-[14px] font-black text-[#000000] tracking-tighter">{pct}%</p>
                                                         </div>
                                                         <p className="text-[11px] font-black text-gray-400 mb-3 uppercase tracking-widest">{src.source || 'Direct'}</p>
                                                         <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
@@ -1905,8 +1938,8 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                         >
                             <div className="p-8 border-b border-gray-100 flex justify-between items-center">
                                 <div>
-                                    <p className="text-[10px] font-black text-[#1F7A6E] tracking-widest uppercase mb-1">REQ{drawerReq.id} Details</p>
-                                    <h2 className="text-2xl font-black text-[#1A2B3D]">{drawerReq.title}</h2>
+                                    <p className="text-[10px] font-black text-[#FDF22F] tracking-widest uppercase mb-1">REQ{drawerReq.id} Details</p>
+                                    <h2 className="text-2xl font-black text-[#000000]">{drawerReq.title}</h2>
                                     <p className="text-gray-400 text-sm mt-1">{drawerReq.department} · {drawerReq.tenant?.name || user.tenant?.name || 'Droga Pharma'}</p>
                                 </div>
                                 <button onClick={() => setDrawerReq(null)} className="text-gray-300 hover:text-gray-500 transition-colors">
@@ -1918,7 +1951,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                 <section className="grid grid-cols-2 gap-6 bg-gray-50 p-6 rounded-xl border border-gray-100">
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Status</p>
-                                        <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${drawerReq.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                                        <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${drawerReq.status === 'approved' ? 'bg-[#FDF22F] text-black' :
                                             drawerReq.status === 'pending' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'
                                             }`}>
                                             {drawerReq.status}
@@ -1926,19 +1959,19 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Requested By</p>
-                                        <p className="text-sm font-bold text-[#1A2B3D]">{drawerReq.requester?.name || 'Hiring Manager'}</p>
+                                        <p className="text-sm font-bold text-[#000000]">{drawerReq.requester?.name || 'Hiring Manager'}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Location / Branch</p>
-                                        <p className="text-sm font-bold text-[#1A2B3D]">{drawerReq.location}</p>
+                                        <p className="text-sm font-bold text-[#000000]">{drawerReq.location}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Priority</p>
-                                        <p className="text-sm font-bold uppercase text-orange-500">{drawerReq.priority}</p>
+                                        <p className="text-sm font-black uppercase text-black bg-[#FDF22F]/20 px-2 py-0.5 rounded inline-block">{drawerReq.priority}</p>
                                     </div>
                                     <div>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 leading-none">Budget Salary</p>
-                                        <p className="text-sm font-black text-[#1A2B3D]">{drawerReq.budget ? drawerReq.budget.toLocaleString() : '15,000'} ETB /mo</p>
+                                        <p className="text-sm font-black text-[#000000]">{drawerReq.budget ? drawerReq.budget.toLocaleString() : '15,000'} ETB /mo</p>
                                     </div>
                                 </section>
 
@@ -1950,7 +1983,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                 href={`${API_URL}/v1/requisitions/${drawerReq.id}/jd?token=${typeof window !== 'undefined' ? localStorage.getItem('auth_token') : ''}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="flex items-center gap-2 text-[10px] font-black text-[#1F7A6E] hover:underline uppercase tracking-widest bg-emerald-50 px-3 py-1.5 rounded-lg transition-all"
+                                                className="flex items-center gap-2 text-[10px] font-black text-black hover:bg-black hover:text-white uppercase tracking-widest bg-[#FDF22F] px-4 py-2 rounded-xl transition-all shadow-lg shadow-[#FDF22F]/10"
                                             >
                                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                                 View JD Document
@@ -1963,13 +1996,13 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                 </section>
 
                                 {drawerReq.status === 'approved' && (
-                                    <div className="p-6 bg-emerald-50 rounded-xl border border-emerald-100 flex items-start gap-4">
-                                        <div className="bg-emerald-500 text-white p-2 rounded-lg">
+                                    <div className="p-6 bg-[#FDF22F]/10 rounded-xl border border-[#FDF22F]/20 flex items-start gap-4">
+                                        <div className="bg-[#FDF22F] text-black p-2 rounded-lg shadow-sm">
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0114 0z" /></svg>
                                         </div>
                                         <div>
-                                            <h4 className="text-[13px] font-black text-emerald-800 uppercase tracking-wide">Approved & Ready</h4>
-                                            <p className="text-xs text-emerald-600 mt-1 leading-relaxed">This requisition has been signed off by HR. You can now publish it to the external careers portal.</p>
+                                            <h4 className="text-[13px] font-black text-black uppercase tracking-wide">Approved & Ready</h4>
+                                            <p className="text-xs text-black/60 mt-1 leading-relaxed font-medium">This requisition has been signed off by HR. You can now publish it to the external careers portal.</p>
                                         </div>
                                     </div>
                                 )}
@@ -1977,14 +2010,34 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
 
                             {/* Requisition Action Bar */}
                             <div className="p-8 border-t border-gray-100 bg-gray-50/30">
+                                {drawerReq.status === 'approved' && (
+                                    <div className="space-y-4 mb-4">
+                                        <div className="p-5 bg-white border border-gray-100 rounded-2xl shadow-sm">
+                                            <div className="flex items-center gap-3 mb-3">
+                                                <div className="w-8 h-8 rounded-lg bg-[#FDF22F]/10 flex items-center justify-center text-black">
+                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                </div>
+                                                <p className="text-[11px] font-black text-[#000000] uppercase tracking-widest">Set Application Deadline</p>
+                                            </div>
+                                            <input
+                                                type="date"
+                                                value={postJobDeadline}
+                                                onChange={(e) => setPostJobDeadline(e.target.value)}
+                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] outline-none text-sm font-black transition-all"
+                                                min={new Date().toISOString().split('T')[0]}
+                                            />
+                                            <p className="text-[10px] text-gray-400 mt-2 italic font-medium">After this date, the vacancy will automatically be removed from the public portal.</p>
+                                        </div>
+                                    </div>
+                                )}
                                 {drawerReq.status === 'approved' ? (
                                     <button
                                         onClick={() => handlePostJob(drawerReq)}
                                         disabled={actionLoading}
-                                        className="w-full py-5 bg-[#1F7A6E] text-white rounded-lg text-[13px] font-black tracking-widest uppercase shadow-xl shadow-[#1F7A6E]/20 hover:bg-[#165C53] transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                        className="w-full py-5 bg-[#FDF22F] text-black rounded-xl text-[13px] font-black tracking-[0.2em] uppercase shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                                     >
                                         {actionLoading ? (
-                                            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                            <div className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
                                         ) : (
                                             <>
                                                 Post Job to Public Portal
@@ -2010,17 +2063,17 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
             <AnimatePresence>
                 {addCandidateModal && (
                     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAddCandidateModal(false)} className="absolute inset-0 bg-[#1A2B3D]/40 backdrop-blur-sm" />
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setAddCandidateModal(false)} className="absolute inset-0 bg-[#000000]/40 backdrop-blur-sm" />
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
                             className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden relative z-10 border border-gray-100 flex flex-col max-h-[90vh]"
                         >
                             <div className="bg-[#F9FAFB] p-8 border-b border-gray-100 relative">
                                 <div className="absolute top-0 right-0 p-8 opacity-5">
-                                    <svg className="w-16 h-16 text-[#1A2B3D]" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
+                                    <svg className="w-16 h-16 text-[#000000]" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" /></svg>
                                 </div>
-                                <h2 className="text-2xl font-black text-[#1A2B3D] flex items-center gap-3 relative z-10">
-                                    <div className="w-2 h-8 bg-[#1F7A6E] rounded-full" />
+                                <h2 className="text-2xl font-black text-[#000000] flex items-center gap-3 relative z-10">
+                                    <div className="w-2 h-8 bg-[#FDF22F] rounded-full" />
                                     MANUAL SOURCING
                                 </h2>
                                 <p className="text-sm font-medium text-gray-500 mt-2 relative z-10">
@@ -2032,20 +2085,20 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     <div className="grid grid-cols-1 gap-6">
                                         <div className="space-y-1.5">
                                             <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Candidate Name <span className="text-red-500">*</span></label>
-                                            <input required type="text" value={candidateForm.name} onChange={e => setCandidateForm({ ...candidateForm, name: e.target.value })} className="w-full bg-white border border-gray-200 text-sm font-bold text-[#1A2B3D] rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#1F7A6E] focus:ring-1 focus:ring-[#1F7A6E]" placeholder="ex. John Doe" />
+                                            <input required type="text" value={candidateForm.name} onChange={e => setCandidateForm({ ...candidateForm, name: e.target.value })} className="w-full bg-white border border-gray-200 text-sm font-bold text-[#000000] rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#FDF22F] focus:ring-1 focus:ring-[#FDF22F]" placeholder="ex. John Doe" />
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Email <span className="text-red-500">*</span></label>
-                                            <input required type="email" value={candidateForm.email} onChange={e => setCandidateForm({ ...candidateForm, email: e.target.value })} className="w-full bg-white border border-gray-200 text-sm font-bold text-[#1A2B3D] rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#1F7A6E] focus:ring-1 focus:ring-[#1F7A6E]" placeholder="john@example.com" />
+                                            <input required type="email" value={candidateForm.email} onChange={e => setCandidateForm({ ...candidateForm, email: e.target.value })} className="w-full bg-white border border-gray-200 text-sm font-bold text-[#000000] rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#FDF22F] focus:ring-1 focus:ring-[#FDF22F]" placeholder="john@example.com" />
                                         </div>
                                         <div className="space-y-1.5">
                                             <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone</label>
-                                            <input type="tel" value={candidateForm.phone} onChange={e => setCandidateForm({ ...candidateForm, phone: e.target.value })} className="w-full bg-white border border-gray-200 text-sm font-bold text-[#1A2B3D] rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#1F7A6E] focus:ring-1 focus:ring-[#1F7A6E]" placeholder="+251 9..." />
+                                            <input type="tel" value={candidateForm.phone} onChange={e => setCandidateForm({ ...candidateForm, phone: e.target.value })} className="w-full bg-white border border-gray-200 text-sm font-bold text-[#000000] rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#FDF22F] focus:ring-1 focus:ring-[#FDF22F]" placeholder="+251 9..." />
                                         </div>
 
                                         <div className="space-y-1.5">
                                             <label className="text-[11px] font-black text-gray-400 uppercase tracking-widest ml-1">Target Job / Open Role <span className="text-red-500">*</span></label>
-                                            <select required value={candidateForm.job_posting_id} onChange={e => setCandidateForm({ ...candidateForm, job_posting_id: e.target.value })} className="w-full bg-white border border-gray-200 text-sm font-bold text-[#1A2B3D] rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#1F7A6E] focus:ring-1 focus:ring-[#1F7A6E]">
+                                            <select required value={candidateForm.job_posting_id} onChange={e => setCandidateForm({ ...candidateForm, job_posting_id: e.target.value })} className="w-full bg-white border border-gray-200 text-sm font-bold text-[#000000] rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#FDF22F] focus:ring-1 focus:ring-[#FDF22F]">
                                                 <option value="" disabled>Select a target position...</option>
                                                 {(jobs || []).filter(j => j.status === 'active').map(j => (
                                                     <option key={j.id} value={j.id}>{j.title} ({j.department})</option>
@@ -2054,14 +2107,14 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         </div>
 
                                         <div className="space-y-1.5">
-                                            <label className="text-[11px] font-black text-[#9B51E0] uppercase tracking-widest ml-1">Sourcing Channel <span className="text-red-500">*</span></label>
+                                            <label className="text-[11px] font-black text-[#FDF22F] uppercase tracking-widest ml-1">Sourcing Channel <span className="text-red-500">*</span></label>
                                             <div className="grid grid-cols-2 gap-3">
                                                 {['LinkedIn', 'Referral', 'Website', 'Job Fair', 'Direct Outsourcing', 'Other'].map(src => (
                                                     <button
                                                         type="button"
                                                         key={src}
                                                         onClick={() => setCandidateForm({ ...candidateForm, source: src })}
-                                                        className={`p-3 text-xs font-black uppercase tracking-widest rounded-xl border transition-all ${candidateForm.source === src ? 'bg-[#9B51E0]/10 border-[#9B51E0] text-[#9B51E0]' : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-200'
+                                                        className={`p-3 text-xs font-black uppercase tracking-widest rounded-xl border transition-all ${candidateForm.source === src ? 'bg-[#FDF22F]/10 border-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10' : 'bg-gray-50 border-gray-100 text-gray-400 hover:border-gray-200'
                                                             }`}
                                                     >
                                                         {src}
@@ -2079,15 +2132,15 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center">
                                                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
                                             </div>
-                                            <p className="text-sm font-black text-[#1A2B3D] uppercase tracking-widest">Candidate Added Successfully!</p>
+                                            <p className="text-sm font-black text-[#000000] uppercase tracking-widest">Candidate Added Successfully!</p>
                                         </div>
                                     </div>
                                 )}
                                 <button type="button" onClick={() => setAddCandidateModal(false)} className="px-6 py-4 flex-1 bg-gray-50 text-gray-500 rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-gray-100 transition-colors">
                                     Cancel
                                 </button>
-                                <button type="submit" form="add-candidate-form" disabled={actionLoading || candidateSuccess || !candidateForm.name || !candidateForm.email || !candidateForm.job_posting_id} className="px-6 py-4 flex-[2] bg-[#1A2B3D] text-white rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-[#1A2B3D]/90 disabled:opacity-50 transition-colors flex justify-center items-center shadow-lg shadow-[#1A2B3D]/20">
-                                    {actionLoading ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Confirm & Add to Pipeline'}
+                                <button type="submit" form="add-candidate-form" disabled={actionLoading || candidateSuccess || !candidateForm.name || !candidateForm.email || !candidateForm.job_posting_id} className="px-6 py-4 flex-[2] bg-[#FDF22F] text-black rounded-xl text-[11px] font-black uppercase tracking-widest hover:bg-black hover:text-white disabled:opacity-50 transition-all flex justify-center items-center shadow-xl shadow-[#FDF22F]/20 border border-[#FDF22F]/30">
+                                    {actionLoading ? <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : 'Confirm & Add to Pipeline'}
                                 </button>
                             </div>
                         </motion.div>
@@ -2102,7 +2155,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                         <motion.div
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             onClick={() => setDrawerApp(null)}
-                            className="fixed inset-0 bg-[#1A2B3D]/40 backdrop-blur-sm z-[150]"
+                            className="fixed inset-0 bg-[#000000]/40 backdrop-blur-sm z-[150]"
                         />
                         <motion.div
                             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
@@ -2111,8 +2164,8 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                         >
                             <div className="flex-1 overflow-y-auto pb-10 flex flex-col">
                                 {/* Premium Profile Header - Now Sticky & Inside Scrollable */}
-                                <div className="sticky top-0 z-[70] h-64 bg-[#1A2B3D] flex items-center px-10 shrink-0">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-[#1F7A6E]/30 to-transparent opacity-40" />
+                                <div className="sticky top-0 z-[70] h-64 bg-[#000000] flex items-center px-10 shrink-0">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-[#000000]/30 to-transparent opacity-40" />
                                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
 
                                     <button
@@ -2131,16 +2184,16 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                     className="w-full h-full object-cover rounded-[30px]"
                                                 />
                                             ) : (
-                                                <div className="w-full h-full bg-gradient-to-br from-[#1F7A6E] to-[#165C53] rounded-[30px] flex items-center justify-center text-white text-4xl font-black shadow-inner">
+                                                <div className="w-full h-full bg-gradient-to-br from-[#000000] to-[#222222] rounded-[30px] flex items-center justify-center text-white text-4xl font-black shadow-inner">
                                                     {drawerApp.name.charAt(0)}
                                                 </div>
                                             )}
                                         </div>
                                         <div className="space-y-1">
                                             <h2 className="text-4xl font-black text-white leading-tight tracking-tight drop-shadow-sm">{drawerApp.name}</h2>
-                                            <div className="inline-flex items-center gap-2 bg-[#1F7A6E] px-3 py-1 rounded-lg">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                                                <p className="text-white font-black text-[10px] uppercase tracking-widest">{drawerApp.job_posting?.title || 'Open Role'}</p>
+                                            <div className="inline-flex items-center gap-2 bg-[#FDF22F] px-3 py-1 rounded-lg shadow-lg shadow-[#FDF22F]/10">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                                                <p className="text-black font-black text-[10px] uppercase tracking-widest">{drawerApp.job_posting?.title || 'Open Role'}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -2151,20 +2204,20 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     <section className="grid grid-cols-3 gap-6 -mt-8 relative z-[75]">
                                         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col justify-center transform hover:scale-[1.02] transition-transform">
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Experience</p>
-                                            <p className="text-2xl font-black text-[#1A2B3D]">{drawerApp.years_of_experience ?? drawerApp.experience ?? 'N/A'} <span className="text-xs text-gray-400 font-bold uppercase ml-1">Years</span></p>
+                                            <p className="text-2xl font-black text-[#000000]">{drawerApp.years_of_experience ?? drawerApp.experience ?? 'N/A'} <span className="text-xs text-gray-400 font-bold uppercase ml-1">Years</span></p>
                                         </div>
                                         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col justify-center transform hover:scale-[1.02] transition-transform">
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Match Score</p>
                                             <div className="flex items-center gap-2.5">
-                                                <p className="text-2xl font-black text-[#1F7A6E]">{drawerApp.match_score || 88}%</p>
+                                                <p className="text-2xl font-black text-[#000000]">{drawerApp.match_score || 88}%</p>
                                                 <div className="flex-1 h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
-                                                    <div className="h-full bg-gradient-to-r from-[#1F7A6E] to-[#2ecc71]" style={{ width: `${drawerApp.match_score || 88}%` }} />
+                                                    <div className="h-full bg-gradient-to-r from-black to-[#FDF22F]" style={{ width: `${drawerApp.match_score || 88}%` }} />
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col justify-center transform hover:scale-[1.02] transition-transform">
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Age / Gender</p>
-                                            <p className="text-lg font-black text-[#1A2B3D]">{drawerApp.age || 'N/A'} <span className="text-gray-300 mx-1">•</span> {drawerApp.gender || 'N/A'}</p>
+                                            <p className="text-lg font-black text-[#000000]">{drawerApp.age || 'N/A'} <span className="text-gray-300 mx-1">•</span> {drawerApp.gender || 'N/A'}</p>
                                         </div>
                                     </section>
 
@@ -2172,26 +2225,26 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     <div className="grid grid-cols-2 gap-8">
                                         <section className="space-y-4">
                                             <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#1F7A6E]" />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
                                                 Candidate Profile
                                             </h3>
                                             <div className="space-y-3">
                                                 <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center gap-4 hover:bg-white transition-colors">
-                                                    <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#1F7A6E]">
+                                                    <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#000000]">
                                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
                                                     </div>
                                                     <div className="flex-1 overflow-hidden">
                                                         <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Email Address</p>
-                                                        <p className="text-sm font-bold text-[#1A2B3D] truncate">{drawerApp.email}</p>
+                                                        <p className="text-sm font-bold text-[#000000] truncate">{drawerApp.email}</p>
                                                     </div>
                                                 </div>
                                                 <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center gap-4 hover:bg-white transition-colors">
-                                                    <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#1F7A6E]">
+                                                    <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#000000]">
                                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                                                     </div>
                                                     <div className="flex-1 overflow-hidden">
                                                         <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">Phone Number</p>
-                                                        <p className="text-sm font-bold text-[#1A2B3D] truncate">{drawerApp.phone || 'N/A'}</p>
+                                                        <p className="text-sm font-bold text-[#000000] truncate">{drawerApp.phone || 'N/A'}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -2199,7 +2252,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
 
                                         <section className="space-y-4">
                                             <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#1F7A6E]" />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
                                                 Professional Links
                                             </h3>
                                             <div className="space-y-3">
@@ -2207,14 +2260,14 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                     <a
                                                         href={drawerApp.portfolio_link}
                                                         target="_blank"
-                                                        className="p-5 bg-[#1F7A6E]/5 rounded-2xl border border-[#1F7A6E]/10 flex items-center gap-4 hover:bg-[#1F7A6E]/10 transition-all group"
+                                                        className="p-5 bg-[#000000]/5 rounded-2xl border border-[#000000]/10 flex items-center gap-4 hover:bg-[#000000]/10 transition-all group"
                                                     >
-                                                        <div className="w-10 h-10 rounded-xl bg-[#1F7A6E] flex items-center justify-center text-white shadow-lg shadow-[#1F7A6E]/20">
+                                                        <div className="w-10 h-10 rounded-xl bg-[#FDF22F] flex items-center justify-center text-black shadow-lg shadow-[#FDF22F]/20">
                                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 019-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
                                                         </div>
                                                         <div className="flex-1">
-                                                            <p className="text-[10px] font-black text-[#1F7A6E] uppercase leading-none mb-1">Portfolio</p>
-                                                            <p className="text-sm font-bold text-[#1A2B3D] group-hover:underline flex items-center gap-1">Visit Portfolio <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg></p>
+                                                            <p className="text-[10px] font-black text-[#000000] uppercase leading-none mb-1">Portfolio</p>
+                                                            <p className="text-sm font-bold text-[#000000] group-hover:underline flex items-center gap-1">Visit Portfolio <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg></p>
                                                         </div>
                                                     </a>
                                                 ) : (
@@ -2228,12 +2281,12 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
 
                                     <section className="space-y-4">
                                         <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#1F7A6E]" />
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
                                             Professional Background
                                         </h3>
-                                        <div className="p-8 bg-gray-50/50 rounded-[32px] border border-gray-100 italic text-[#1A2B3D] leading-relaxed relative overflow-hidden group hover:bg-white hover:shadow-xl transition-all">
-                                            <div className="absolute top-0 left-0 w-1.5 h-full bg-[#1F7A6E]" />
-                                            <div className="absolute top-4 left-4 text-6xl text-gray-200/50 select-none group-hover:text-[#1F7A6E]/10 transition-colors">“</div>
+                                        <div className="p-8 bg-gray-50/50 rounded-[32px] border border-gray-100 italic text-[#000000] leading-relaxed relative overflow-hidden group hover:bg-white hover:shadow-xl transition-all">
+                                            <div className="absolute top-0 left-0 w-1.5 h-full bg-[#FDF22F]" />
+                                            <div className="absolute top-4 left-4 text-6xl text-gray-200/50 select-none group-hover:text-[#000000]/10 transition-colors">“</div>
                                             <p className="relative z-10 pl-6 text-[15px] font-medium opacity-80">{drawerApp.professional_background || "No professional summary provided."}</p>
                                         </div>
                                     </section>
@@ -2241,24 +2294,24 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     {/* Supporting Documents */}
                                     <section className="space-y-4">
                                         <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#1F7A6E]" />
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
                                             Supporting Documents
                                         </h3>
                                         <div className="grid grid-cols-1 gap-4">
-                                            <div className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-[#1F7A6E]/20 hover:bg-gray-50/50 transition-all shadow-sm">
+                                            <div className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-[#000000]/20 hover:bg-gray-50/50 transition-all shadow-sm">
                                                 <div className="flex items-center gap-5">
                                                     <div className="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all shadow-inner">
                                                         <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-black text-[#1A2B3D] uppercase tracking-tighter">Professional Resume</p>
+                                                        <p className="text-sm font-black text-[#000000] uppercase tracking-tighter">Professional Resume</p>
                                                         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">PDF Document</p>
                                                     </div>
                                                 </div>
                                                 <a
                                                     href={`${API_URL}/v1/applicants/${drawerApp.id}/resume`}
                                                     target="_blank"
-                                                    className="px-8 py-3 bg-white border-2 border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1A2B3D] hover:text-white hover:border-[#1A2B3D] transition-all shadow-sm"
+                                                    className="px-8 py-3 bg-white border-2 border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#000000] hover:text-white hover:border-[#000000] transition-all shadow-sm"
                                                 >
                                                     Open Document
                                                 </a>
@@ -2267,18 +2320,18 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             {drawerApp.attachments?.map((file: any, i: number) => (
                                                 <div key={i} className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-[#F7F8FA] hover:bg-[#F7F8FA] transition-all shadow-sm">
                                                     <div className="flex items-center gap-5">
-                                                        <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center group-hover:bg-[#1A2B3D] group-hover:text-white transition-all shadow-inner">
+                                                        <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center group-hover:bg-[#000000] group-hover:text-white transition-all shadow-inner">
                                                             <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" /></svg>
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-black text-[#1A2B3D] uppercase tracking-tighter truncate max-w-[200px]">{file.label || 'Additional File'}</p>
+                                                            <p className="text-sm font-black text-[#000000] uppercase tracking-tighter truncate max-w-[200px]">{file.label || 'Additional File'}</p>
                                                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{file.file_type?.toUpperCase() || 'FILE'}</p>
                                                         </div>
                                                     </div>
                                                     <a
                                                         href={`${API_URL}/v1/attachments/${file.id}/view`}
                                                         target="_blank"
-                                                        className="px-8 py-3 bg-white border-2 border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1A2B3D] hover:text-white hover:border-[#1A2B3D] transition-all shadow-sm"
+                                                        className="px-8 py-3 bg-white border-2 border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#000000] hover:text-white hover:border-[#000000] transition-all shadow-sm"
                                                     >
                                                         Open File
                                                     </a>
@@ -2290,7 +2343,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     {/* Team Collaboration / Mentions */}
                                     <section className="space-y-4">
                                         <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-[#1F7A6E]" />
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
                                             Team Collaboration
                                         </h3>
                                         <div className="bg-gray-50/50 rounded-3xl border border-gray-100 p-6 space-y-4">
@@ -2300,7 +2353,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                 <select
                                                     value={mentionUser}
                                                     onChange={(e) => setMentionUser(e.target.value)}
-                                                    className="w-1/3 bg-white border border-gray-200 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#1F7A6E] focus:ring-1 focus:ring-[#1F7A6E] font-medium"
+                                                    className="w-1/3 bg-white border border-gray-200 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#000000] focus:ring-1 focus:ring-[#000000] font-medium"
                                                 >
                                                     <option value="" disabled>Select Manager</option>
                                                     {departmentUsers.map(u => (
@@ -2313,13 +2366,13 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                     value={mentionNote}
                                                     onChange={(e) => setMentionNote(e.target.value)}
                                                     placeholder="Type your message..."
-                                                    className="flex-1 bg-white border border-gray-200 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#1F7A6E] focus:ring-1 focus:ring-[#1F7A6E]"
+                                                    className="flex-1 bg-white border border-gray-200 text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#000000] focus:ring-1 focus:ring-[#000000]"
                                                 />
 
                                                 <button
                                                     onClick={handleSendMention}
                                                     disabled={mentionLoading || !mentionUser || !mentionNote.trim()}
-                                                    className="px-6 bg-[#1A2B3D] text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-[#1A2B3D]/90 disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#1A2B3D]/10"
+                                                    className="px-6 bg-[#FDF22F] text-black font-black text-xs uppercase tracking-widest rounded-xl hover:bg-black hover:text-white disabled:opacity-50 transition-all flex items-center gap-2 shadow-lg shadow-[#FDF22F]/10"
                                                 >
                                                     {mentionLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'SEND'}
                                                 </button>
@@ -2363,9 +2416,9 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                                     setScheduleModal(true);
                                                 }}
                                                 disabled={actionLoading}
-                                                className="flex-1 py-5 bg-gradient-to-r from-[#1F7A6E] to-[#165C53] text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#1F7A6E]/30 hover:shadow-2xl hover:-translate-y-0.5 transition-all"
+                                                className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
                                             >
-                                                {actionLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : '📅 Schedule Interview'}
+                                                {actionLoading ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mx-auto" /> : '📅 Schedule Interview'}
                                             </button>
                                         )}
 
@@ -2374,7 +2427,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             <button
                                                 onClick={() => setOfferModal(true)}
                                                 disabled={actionLoading}
-                                                className="flex-1 py-5 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-amber-500/30 hover:shadow-2xl hover:-translate-y-0.5 transition-all"
+                                                className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
                                             >
                                                 ✉️ Send Offer Letter
                                             </button>
@@ -2436,10 +2489,10 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                             className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden"
                         >
                             {/* Modal Header */}
-                            <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-8">
-                                <p className="text-[10px] font-black text-white/70 uppercase tracking-widest mb-1">Next Step</p>
-                                <h3 className="text-2xl font-black text-white">Send Offer Letter</h3>
-                                <p className="text-sm text-white/80 mt-1">to {drawerApp.name} · {drawerApp.email}</p>
+                            <div className="bg-[#FDF22F] p-8">
+                                <p className="text-[10px] font-black text-black/50 uppercase tracking-widest mb-1">Next Step</p>
+                                <h3 className="text-2xl font-black text-black">Send Offer Letter</h3>
+                                <p className="text-sm text-black/70 mt-1">to {drawerApp.name} · {drawerApp.email}</p>
                             </div>
 
                             {/* Modal Body */}
@@ -2451,7 +2504,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         placeholder="e.g. ETB 45,000 / month or $3,500 / month"
                                         value={offerForm.salary}
                                         onChange={e => setOfferForm(p => ({ ...p, salary: e.target.value }))}
-                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-amber-400 focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors"
+                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
                                     />
                                 </div>
                                 <div>
@@ -2460,7 +2513,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         type="date"
                                         value={offerForm.startDate}
                                         onChange={e => setOfferForm(p => ({ ...p, startDate: e.target.value }))}
-                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-amber-400 focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors"
+                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
                                     />
                                 </div>
                                 <div>
@@ -2470,11 +2523,11 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         placeholder="e.g. signing bonus, remote work policy, probation period..."
                                         value={offerForm.notes}
                                         onChange={e => setOfferForm(p => ({ ...p, notes: e.target.value }))}
-                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-amber-400 focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors resize-none"
+                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors resize-none"
                                     />
                                 </div>
 
-                                <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 text-[12px] text-amber-700 font-medium">
+                                <div className="bg-[#FDF22F]/5 border border-[#FDF22F]/20 rounded-2xl p-4 text-[12px] text-black font-medium">
                                     📧 A professional offer letter will be emailed directly to <strong>{drawerApp.email}</strong> with all the details above.
                                 </div>
                             </div>
@@ -2490,9 +2543,9 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                 <button
                                     onClick={handleSendOffer}
                                     disabled={actionLoading || !offerForm.salary.trim()}
-                                    className="flex-1 py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-amber-500/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-1 py-4 bg-[#FDF22F] text-black rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {actionLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : '✉️ Send Offer Letter'}
+                                    {actionLoading ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mx-auto" /> : '✉️ Send Offer Letter'}
                                 </button>
                             </div>
                         </motion.div>
@@ -2519,10 +2572,10 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                             className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
                         >
                             {/* Modal Header */}
-                            <div className="bg-gradient-to-r from-[#1F7A6E] to-[#165C53] p-8 shrink-0">
-                                <p className="text-[10px] font-black text-white/70 uppercase tracking-widest mb-1">Schedule Stage</p>
-                                <h3 className="text-2xl font-black text-white">Schedule Interview</h3>
-                                <p className="text-sm text-white/80 mt-1">with {drawerApp.name} · {drawerApp.job_posting?.title || 'Open Role'}</p>
+                            <div className="bg-[#FDF22F] p-8 shrink-0">
+                                <p className="text-[10px] font-black text-black/50 uppercase tracking-widest mb-1">Schedule Stage</p>
+                                <h3 className="text-2xl font-black text-black">Schedule Interview</h3>
+                                <p className="text-sm text-black/70 mt-1">with {drawerApp.name} · {drawerApp.job_posting?.title || 'Open Role'}</p>
                             </div>
 
                             {/* Modal Body (Scrollable if needed) */}
@@ -2534,7 +2587,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             type="date"
                                             value={scheduleForm.date}
                                             onChange={e => setScheduleForm(p => ({ ...p, date: e.target.value }))}
-                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#1F7A6E] focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors"
+                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
                                         />
                                     </div>
                                     <div>
@@ -2543,7 +2596,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             type="time"
                                             value={scheduleForm.time}
                                             onChange={e => setScheduleForm(p => ({ ...p, time: e.target.value }))}
-                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#1F7A6E] focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors"
+                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
                                         />
                                     </div>
                                 </div>
@@ -2554,7 +2607,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         <select
                                             value={scheduleForm.type}
                                             onChange={e => setScheduleForm(p => ({ ...p, type: e.target.value }))}
-                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#1F7A6E] focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors"
+                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
                                         >
                                             <option value="video">Video Call</option>
                                             <option value="phone">Phone Screen</option>
@@ -2568,7 +2621,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             placeholder="e.g. Google Meet link or HQ Address"
                                             value={scheduleForm.location}
                                             onChange={e => setScheduleForm(p => ({ ...p, location: e.target.value }))}
-                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#1F7A6E] focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors"
+                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
                                         />
                                     </div>
                                 </div>
@@ -2578,7 +2631,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                     <select
                                         value={scheduleForm.interviewer_id}
                                         onChange={e => setScheduleForm(p => ({ ...p, interviewer_id: e.target.value }))}
-                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#1F7A6E] focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors"
+                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
                                     >
                                         <option value="" disabled>Select Interviewer</option>
                                         {departmentUsers.map(u => (
@@ -2594,11 +2647,11 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         placeholder="Add instructions, details about the format, what to prepare, etc."
                                         value={scheduleForm.message}
                                         onChange={e => setScheduleForm(p => ({ ...p, message: e.target.value }))}
-                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#1F7A6E] focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors resize-none"
+                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#000000] focus:outline-none text-[#000000] font-bold text-sm transition-colors resize-none"
                                     />
                                 </div>
 
-                                <div className="bg-[#1F7A6E]/5 border border-[#1F7A6E]/20 rounded-2xl p-4 text-[12px] text-[#1F7A6E] font-medium flex gap-3">
+                                <div className="bg-[#FDF22F]/5 border border-[#FDF22F]/20 rounded-2xl p-4 text-[12px] text-black font-medium flex gap-3">
                                     <span className="text-base text-xl leading-none">📧</span>
                                     <p>An official interview invitation will be emailed to <strong>{drawerApp.email}</strong> and the selected interviewer immediately. They will also receive a 24-hour reminder before the scheduled time.</p>
                                 </div>
@@ -2615,9 +2668,9 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                 <button
                                     onClick={handleScheduleInterview}
                                     disabled={actionLoading || !scheduleForm.date || !scheduleForm.time || !scheduleForm.interviewer_id}
-                                    className="flex-[2] py-4 bg-gradient-to-r from-[#1F7A6E] to-[#165C53] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#1F7A6E]/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-[2] py-4 bg-[#FDF22F] text-black rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {actionLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : '📅 Schedule & Send Invites'}
+                                    {actionLoading ? <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mx-auto" /> : '📅 Schedule & Send Invites'}
                                 </button>
                             </div>
                         </motion.div>
@@ -2632,7 +2685,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#1A2B3D]/80 backdrop-blur-sm"
+                        className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#000000]/80 backdrop-blur-sm"
                     >
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0, y: 20 }}
@@ -2642,7 +2695,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                         >
                             <div className="px-8 pt-8 pb-6 bg-[#F9FAFB] border-b border-gray-100 flex justify-between items-center shrink-0">
                                 <div className="space-y-1">
-                                    <h2 className="text-xl font-black text-[#1A2B3D] tracking-tight">MANAGE STATUS</h2>
+                                    <h2 className="text-xl font-black text-[#000000] tracking-tight">MANAGE STATUS</h2>
                                     <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Update employment for {selectedEmployee.name}</p>
                                 </div>
                                 <button onClick={() => setEmployeeStatusModal(false)} className="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-red-400 transition-colors">
@@ -2657,7 +2710,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         <select
                                             value={employeeStatusForm.status}
                                             onChange={e => setEmployeeStatusForm({ ...employeeStatusForm, status: e.target.value })}
-                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#1F7A6E] focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors"
+                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#000000] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
                                         >
                                             <option value="active">Active</option>
                                             <option value="resigned">Resigned</option>
@@ -2670,7 +2723,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                             type="date"
                                             value={employeeStatusForm.date}
                                             onChange={e => setEmployeeStatusForm({ ...employeeStatusForm, date: e.target.value })}
-                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#1F7A6E] focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors"
+                                            className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#000000] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
                                             disabled={employeeStatusForm.status === 'active'}
                                         />
                                     </div>
@@ -2683,7 +2736,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                         value={employeeStatusForm.reason}
                                         onChange={e => setEmployeeStatusForm({ ...employeeStatusForm, reason: e.target.value })}
                                         placeholder="Briefly describe the reason for separation..."
-                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#1F7A6E] focus:outline-none text-[#1A2B3D] font-bold text-sm transition-colors resize-none"
+                                        className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#000000] focus:outline-none text-[#000000] font-bold text-sm transition-colors resize-none"
                                         disabled={employeeStatusForm.status === 'active'}
                                     />
                                 </div>
@@ -2706,7 +2759,7 @@ export default function TADashboard({ user, activeTab: initialTab, onLogout }: {
                                 <button
                                     onClick={handleUpdateEmployeeStatus}
                                     disabled={actionLoading}
-                                    className="flex-[2] py-4 bg-gradient-to-r from-[#1F7A6E] to-[#165C53] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#1F7A6E]/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex-[2] py-4 bg-gradient-to-r from-[#000000] to-[#222222] text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#000000]/30 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {actionLoading ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" /> : 'Confirm Status Update'}
                                 </button>
