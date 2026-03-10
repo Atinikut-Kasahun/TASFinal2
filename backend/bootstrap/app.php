@@ -12,8 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
+        // ── Custom CORS middleware — runs on every request ──
+        $middleware->prepend(\App\Http\Middleware\CorsMiddleware::class);
+
         $middleware->alias([
-            'mock.auth' => \App\Http\Middleware\MockApiAuth::class,
+            'mock.auth'    => \App\Http\Middleware\MockApiAuth::class,
             'tenant.scope' => \App\Http\Middleware\TenantScopeMiddleware::class,
         ]);
     })

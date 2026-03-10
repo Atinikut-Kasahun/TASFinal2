@@ -180,8 +180,6 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
             {/* Page Header */}
             <div className="flex justify-between items-end mb-4">
                 <div className="space-y-4">
-                    <h1 className="text-[32px] font-bold text-[#000000] tracking-tight">{user.tenant?.name || 'Droga Pharma'}</h1>
-
                     {/* Sub Tabs */}
                     <div className="flex gap-8 border-b border-gray-100">
                         {['JOBS', 'HIRING PLAN', 'REPORTS'].map((t) => (
@@ -299,14 +297,14 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                             className="accent-[#FDF22F] rounded-lg w-4 h-4 cursor-pointer"
                                         />
                                     </th>
-                                    {['REQUISITION', 'COMPANY', 'GENERAL MANAGER (GM)', 'LOCATION', 'SALARY', 'SUBMITTED ON', 'POSTED TO PORTAL', 'STATUS'].map(h => (
+                                    {['REQUISITION', 'GENERAL MANAGER (GM)', 'LOCATION', 'SALARY', 'SUBMITTED ON', 'POSTED TO PORTAL', 'STATUS'].map(h => (
                                         <th key={h} className="px-6 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {requisitions.length === 0 ? (
-                                    <tr><td colSpan={9} className="px-8 py-20 text-center text-gray-400 italic text-sm">No requisitions in the plan.</td></tr>
+                                    <tr><td colSpan={8} className="px-8 py-20 text-center text-gray-400 italic text-sm">No requisitions in the plan.</td></tr>
                                 ) : requisitions.map((req) => (
                                     <tr key={req.id} className="hover:bg-gray-50 transition-colors group cursor-pointer">
                                         <td className="pl-6 py-6" onClick={(e) => e.stopPropagation()}>
@@ -326,11 +324,6 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                             <p className="text-[11px] text-gray-400 mt-0.5 tracking-tight font-bold">
                                                 {req.department}
                                             </p>
-                                        </td>
-                                        <td className="px-6 py-6">
-                                            <span className="text-[10px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 px-2 py-1 rounded">
-                                                {req.tenant?.name || '—'}
-                                            </span>
                                         </td>
                                         <td className="px-6 py-6 text-[13px] text-gray-600">
                                             {req.requester?.name || 'General Manager'}
@@ -542,7 +535,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                 <div>
                                     <p className="text-[10px] font-black text-[#000000] tracking-widest uppercase mb-1">REQ{drawerReq.id}</p>
                                     <h2 className="text-2xl font-black text-[#000000]">{drawerReq.title}</h2>
-                                    <p className="text-gray-400 text-sm mt-1">{drawerReq.department} · {drawerReq.tenant?.name || user.tenant?.name || 'Droga Pharma'}</p>
+                                    <p className="text-gray-400 text-sm mt-1">{drawerReq.department}</p>
                                 </div>
                                 <button onClick={() => { setDrawerReq(null); setFeedbackTarget(null); setActionType(null); }} className="text-gray-300 hover:text-gray-500 transition-colors">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>

@@ -655,61 +655,52 @@ export default function MyApplicationsPage() {
                             className="bg-white rounded-[32px] shadow-2xl shadow-black/5 border border-gray-100 overflow-hidden"
                         >
                             {/* Auth Header */}
-                            <div className="bg-black px-10 pt-10 pb-8">
+                            <div className="bg-[#FDF22F] px-10 pt-10 pb-8 rounded-t-[32px]">
                                 <div className="flex items-center gap-3 mb-6">
-                                    <div className="w-10 h-10 bg-[#FDF22F] rounded-xl flex items-center justify-center">
-                                        <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                                    <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center">
+                                        <svg className="w-5 h-5 text-[#FDF22F]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                                     </div>
                                     <div>
-                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Applicant Portal</span>
-                                        <span className="text-[10px] font-bold text-[#FDF22F]/60">Track your application status in real time</span>
+                                        <span className="text-[10px] font-black text-black/40 uppercase tracking-widest block">Applicant Portal</span>
+                                        <span className="text-[10px] font-bold text-black/60">Track your application status in real time</span>
                                     </div>
                                 </div>
-                                <h1 className="text-2xl font-black text-white">
-                                    {authMode === 'login' ? 'Welcome back 👋' : 'Set Your Password'}
+                                <h1 className="text-2xl font-black text-black">
+                                    Welcome back
                                 </h1>
-                                <p className="text-sm text-gray-400 font-medium mt-1">
-                                    {authMode === 'login'
-                                        ? 'Sign in with the email and password you created when you applied.'
-                                        : 'Enter the email you applied with and create a password.'}
+                                <p className="text-sm text-black/50 font-medium mt-1">
+                                    Sign in with the email and password you created when you applied.
                                 </p>
                             </div>
 
-                            {/* Tab Toggle — Sign In | Set Password */}
-                            <div className="flex border-b border-gray-100">
-                                <button
-                                    onClick={() => setAuthMode('login')}
-                                    className={`flex-1 py-4 text-[11px] font-black uppercase tracking-widest transition-all ${authMode === 'login' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-500'}`}
-                                >
-                                    Sign In
-                                </button>
-                                <button
-                                    onClick={() => setAuthMode('register')}
-                                    className={`flex-1 py-4 text-[11px] font-black uppercase tracking-widest transition-all ${authMode === 'register' ? 'text-black border-b-2 border-black' : 'text-gray-300 hover:text-gray-500'}`}
-                                >
-                                    Set Password
-                                </button>
-                            </div>
 
                             {/* Form */}
                             <div className="p-10">
-                                {/* Contextual hint */}
-                                {authMode === 'register' && (
-                                    <div className="mb-5 bg-[#FDF22F]/10 border border-[#FDF22F]/30 rounded-2xl px-5 py-4 flex items-start gap-3">
-                                        <svg className="w-4 h-4 text-black mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        <p className="text-[11px] font-bold text-gray-600 leading-relaxed">
-                                            Use this if you already applied for a job and need to set or reset your portal password.
-                                        </p>
-                                    </div>
-                                )}
-
                                 <AuthForm mode={authMode} onSuccess={handleAuthSuccess} />
-
                                 <p className="mt-5 text-center text-[11px] font-bold text-gray-400">
-                                    {authMode === 'login'
-                                        ? <>Password not working? <button onClick={() => setAuthMode('register')} className="text-black font-black hover:underline">Set your password →</button></>
-                                        : <>Already have a password? <button onClick={() => setAuthMode('login')} className="text-black font-black hover:underline">Sign in</button></>
-                                    }
+                                    Password not working? <button 
+                                        type="button"
+                                        onClick={async () => {
+                                            const email = (document.querySelector('input[type="email"]') as HTMLInputElement)?.value;
+                                            if (!email) {
+                                                alert("Please enter your email address first.");
+                                                return;
+                                            }
+                                            try {
+                                                const cleanBase = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+                                                const res = await fetch(`${cleanBase}/v1/applicant/forgot-password`, {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify({ email }),
+                                                });
+                                                const data = await res.json();
+                                                alert(data.message);
+                                            } catch (err) {
+                                                alert("Failed to send reset link.");
+                                            }
+                                        }} 
+                                        className="text-black font-black hover:underline"
+                                    >Reset your password →</button>
                                 </p>
 
                                 <div className="mt-6 pt-6 border-t border-gray-50">

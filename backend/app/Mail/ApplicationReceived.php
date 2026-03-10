@@ -18,19 +18,13 @@ class ApplicationReceived extends Mailable
     public $job;
     public $tenant;
 
-    /**
-     * Create a new message instance.
-     */
     public function __construct(Applicant $applicant, JobPosting $job)
     {
         $this->applicant = $applicant;
-        $this->job = $job;
-        $this->tenant = $job->tenant;
+        $this->job       = $job;
+        $this->tenant    = $job->tenant;
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
@@ -38,9 +32,6 @@ class ApplicationReceived extends Mailable
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
@@ -48,11 +39,6 @@ class ApplicationReceived extends Mailable
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];

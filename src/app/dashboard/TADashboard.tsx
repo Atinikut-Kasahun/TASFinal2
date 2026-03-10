@@ -91,15 +91,27 @@ export default function TADashboard({
     search: "",
   });
 
-  // Interview Scheduling Modal State
-  const [scheduleModal, setScheduleModal] = useState(false);
-  const [scheduleForm, setScheduleForm] = useState({
+
+
+  // Unified Scheduling State
+  const [globalScheduleModal, setGlobalScheduleModal] = useState(false);
+  const [scheduleContext, setScheduleContext] = useState({
+    targetStatus: "",
+    interviewType: "",
+    title: "",
+    label: "",
+  });
+  const [globalScheduleForm, setGlobalScheduleForm] = useState({
     date: "",
     time: "",
-    type: "video",
-    location: "",
+    location: "Main Office",
     interviewer_id: "",
-    message: "",
+    message: "You are invited for the next stage of the recruitment process.",
+    // Extra fields for Offer/Hired/Rejected
+    offered_salary: "",
+    start_date: "",
+    offer_notes: "",
+    rejection_note: "",
   });
 
   // Scoring & Results Modal State
@@ -651,58 +663,137 @@ export default function TADashboard({
     }
   };
 
-  const handleScheduleInterview = async () => {
+
+
+  interface ScheduleContext {
+    targetStatus: string;
+    interviewType: string;
+    title: string;
+    label: string;
+  }
+
+  const openStageScheduleModal = (targetStatus: string) => {
+    const contexts: { [key: string]: ScheduleContext } = {
+      written_exam: {
+        targetStatus: "written_exam",
+        interviewType: "written_exam",
+        title: "WRITTEN EXAM",
+        label: "Written Assessment",
+      },
+      technical_interview: {
+        targetStatus: "technical_interview",
+        interviewType: "technical",
+        title: "TECH INTERVIEW",
+        label: "Technical Assessment",
+      },
+      final_interview: {
+        targetStatus: "final_interview",
+        interviewType: "final",
+        title: "FINAL INTERVIEW",
+        label: "Final Selection Round",
+      },
+      offer: {
+        targetStatus: "offer",
+        interviewType: "offer_meeting",
+        title: "OFFER MEETING",
+        label: "Offer Negotiation/Discussion",
+      },
+      hired: {
+        targetStatus: "hired",
+        interviewType: "onboarding",
+        title: "ONBOARDING",
+        label: "Hire & Start Onboarding",
+      },
+      rejected: {
+        targetStatus: "rejected",
+        interviewType: "rejection_call",
+        title: "CLOSURE CALL",
+        label: "Rejection / Feedback Session",
+      },
+    };
+
+    const ctx = contexts[targetStatus];
+    if (ctx) {
+      setScheduleContext(ctx);
+      setGlobalScheduleForm({
+        date: "",
+        time: "",
+        location: "Main Office",
+        interviewer_id: "",
+        message: `You are invited for the ${ctx.label} stage.`,
+        // Resetting extended fields
+        offered_salary: "",
+        start_date: "",
+        offer_notes: "",
+        rejection_note: "",
+      });
+      setGlobalScheduleModal(true);
+    }
+  };
+
+  const handleGlobalSchedule = async () => {
     if (
-      !scheduleForm.date ||
-      !scheduleForm.time ||
-      !scheduleForm.interviewer_id
-    )
+      !globalScheduleForm.date ||
+      !globalScheduleForm.time ||
+      !globalScheduleForm.interviewer_id
+    ) {
+      showToast("Please fill in date, time and assigned staff", "error");
       return;
+    }
     setActionLoading(true);
     try {
-      // Combine date and time to ISO format (assume local timezone)
       const scheduledAt = new Date(
-        `${scheduleForm.date}T${scheduleForm.time}`,
+        `${globalScheduleForm.date}T${globalScheduleForm.time}`,
       ).toISOString();
 
+      // 1. Create the 'interview' / event record
       await apiFetch("/v1/interviews", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           applicant_id: drawerApp.id,
-          interviewer_id: scheduleForm.interviewer_id,
+          interviewer_id: globalScheduleForm.interviewer_id,
           scheduled_at: scheduledAt,
-          type: scheduleForm.type,
-          location: scheduleForm.location,
-          message: scheduleForm.message,
+          type: scheduleContext.interviewType,
+          location: globalScheduleForm.location,
+          message: globalScheduleForm.message,
         }),
       });
 
-      // Also update applicant status to technical_interview
+      // 2. Update applicant status with extended data
       await apiFetch(`/v1/applicants/${drawerApp.id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "technical_interview" }),
+        body: JSON.stringify({
+          status: scheduleContext.targetStatus,
+          // Conditionally include offer/rejection fields
+          ...(scheduleContext.targetStatus === "offer" && {
+            offered_salary: globalScheduleForm.offered_salary,
+            start_date: globalScheduleForm.start_date,
+            offer_notes: globalScheduleForm.offer_notes,
+          }),
+          ...(scheduleContext.targetStatus === "rejected" && {
+            rejection_note: globalScheduleForm.rejection_note,
+          }),
+        }),
       });
 
       showToast(
-        `Interview successfully scheduled for ${drawerApp.name}`,
+        `${scheduleContext.title} scheduled for ${drawerApp.name}`,
         "success",
       );
-      setDrawerApp((prev: any) => ({ ...prev, status: "technical_interview" }));
-      setScheduleModal(false);
-      setScheduleForm({
-        date: "",
-        time: "",
-        type: "video",
-        location: "",
-        interviewer_id: "",
-        message: "",
-      });
+      setDrawerApp((prev: any) => ({
+        ...prev,
+        status: scheduleContext.targetStatus,
+      }));
+      setGlobalScheduleModal(false);
       fetchData(currentPage);
     } catch (e) {
       console.error(e);
-      showToast("Failed to schedule interview", "error");
+      showToast(
+        `Failed to schedule ${scheduleContext.title.toLowerCase()}`,
+        "error",
+      );
     } finally {
       setActionLoading(false);
     }
@@ -713,7 +804,8 @@ export default function TADashboard({
     try {
       const formData = new FormData();
       formData.append("_method", "PATCH");
-      formData.append("status", advanceToStatus || drawerApp.status);
+      // Use current status for saving scores; let the scheduling modal handle the transition.
+      formData.append("status", drawerApp.status);
       formData.append("written_exam_score", scoringForm.written_exam_score);
       formData.append(
         "technical_interview_score",
@@ -734,15 +826,8 @@ export default function TADashboard({
       setScoringModal(false);
 
       if (advanceToStatus) {
-        const statusLabels: { [key: string]: string } = {
-          technical_interview: "Technical Interview",
-          final_interview: "Final Interview",
-          offer: "Offer",
-        };
-        showToast(
-          `Scores saved & candidate moved to ${statusLabels[advanceToStatus] || advanceToStatus}`,
-          "success",
-        );
+        // After saving scores, trigger the scheduling modal for the next stage
+        openStageScheduleModal(advanceToStatus);
       } else {
         showToast("Scores saved successfully!", "success");
       }
@@ -756,62 +841,7 @@ export default function TADashboard({
     }
   };
 
-  const handleSendOffer = async () => {
-    if (!offerForm.salary.trim()) return;
-    setActionLoading(true);
-    try {
-      await apiFetch(`/v1/applicants/${drawerApp.id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "offer",
-          offered_salary: offerForm.salary,
-          start_date: offerForm.startDate,
-          offer_notes: offerForm.notes,
-        }),
-      });
-      showToast(
-        `Offer letter has been successfully sent to ${drawerApp.name}`,
-        "success",
-      );
-      setDrawerApp((prev: any) => ({ ...prev, status: "offer" }));
-      setOfferModal(false);
-      setOfferForm({ salary: "", startDate: "", notes: "" });
-      fetchData(currentPage);
-    } catch (e) {
-      console.error(e);
-      showToast("Failed to send offer letter", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
-  const handleSendRejection = async () => {
-    setActionLoading(true);
-    try {
-      await apiFetch(`/v1/applicants/${drawerApp.id}/status`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "rejected",
-          rejection_note: rejectionNote,
-        }),
-      });
-      showToast(
-        `Application for ${drawerApp.name} has been closed/rejected`,
-        "success",
-      );
-      setDrawerApp((prev: any) => ({ ...prev, status: "rejected" }));
-      setRejectModal(false);
-      setRejectionNote("");
-      fetchData(currentPage);
-    } catch (e) {
-      console.error(e);
-      showToast("Failed to process rejection", "error");
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const handleToggleJobStatus = async (jobId: string, newStatus: string) => {
     setActionLoading(true);
@@ -955,91 +985,7 @@ export default function TADashboard({
 
       <div className="flex justify-between items-end mb-4">
         <div className="space-y-4">
-          {/* Breadcrumb trail */}
-          {(() => {
-            const tabLabels: { [key: string]: string } = {
-              Candidates: "Candidates",
-              Jobs: "Jobs",
-              HiringPlan: "Salary & Hiring",
-              Employees: "Employees",
-              Reports: "Reports",
-            };
-            const subLabels: { [key: string]: string } = {
-              NEW: "New",
-              "WRITTEN EXAM": "Written Exam",
-              "TECHNICAL INTERVIEW": "Technical Interview",
-              "FINAL INTERVIEW": "Final Interview",
-              OFFERS: "Offers",
-              REJECTED: "Rejected",
-              HIRED: "Hired",
-              ACTIVE: "Active Pipeline",
-              STAFF: "Professional Staff",
-              ARCHIVED: "Archived",
-              REQUISITIONS: "Requisitions",
-              OVERVIEW: "Overview",
-            };
-            return (
-              <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                <span className="hover:text-[#000000] cursor-pointer transition-colors">
-                  Sister Companies
-                </span>
-                <svg
-                  className="w-2.5 h-2.5 text-gray-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="3"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-                <span className="text-[#000000]">
-                  {user.tenant?.name || "Droga Pharma"}
-                </span>
-                <svg
-                  className="w-2.5 h-2.5 text-gray-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="3"
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-                <span>{tabLabels[initialTab] || initialTab}</span>
-                {subLabels[subTab] && (
-                  <>
-                    <svg
-                      className="w-2.5 h-2.5 text-gray-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="3"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                    <span className="text-[#000000] font-black">
-                      {subLabels[subTab]}
-                    </span>
-                  </>
-                )}
-              </div>
-            );
-          })()}
 
-          <h1 className="text-[32px] font-bold text-[#000000] tracking-tight">
-            {user.tenant?.name || "Droga Pharma"}
-          </h1>
 
           {/* Hierarchical Sub Tabs - Contextual Logic */}
           <div className="flex gap-10 border-b border-gray-100 mt-2">
@@ -5344,9 +5290,7 @@ export default function TADashboard({
                       {/* NEW → Move to Written Exam */}
                       {drawerApp.status === "new" && (
                         <button
-                          onClick={() =>
-                            handleStatusUpdate(drawerApp.id, "written_exam")
-                          }
+                          onClick={() => openStageScheduleModal("written_exam")}
                           disabled={actionLoading}
                           className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
                         >
@@ -5383,10 +5327,7 @@ export default function TADashboard({
                         drawerApp.written_exam_score && (
                           <button
                             onClick={() =>
-                              handleStatusUpdate(
-                                drawerApp.id,
-                                "technical_interview",
-                              )
+                              openStageScheduleModal("technical_interview")
                             }
                             disabled={actionLoading}
                             className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
@@ -5420,10 +5361,7 @@ export default function TADashboard({
                         drawerApp.technical_interview_score && (
                           <button
                             onClick={() =>
-                              handleStatusUpdate(
-                                drawerApp.id,
-                                "final_interview",
-                              )
+                              openStageScheduleModal("final_interview")
                             }
                             disabled={actionLoading}
                             className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
@@ -5456,7 +5394,7 @@ export default function TADashboard({
                       {drawerApp.status === "final_interview" &&
                         drawerApp.technical_interview_score && (
                           <button
-                            onClick={() => setOfferModal(true)}
+                            onClick={() => openStageScheduleModal("offer")}
                             disabled={actionLoading}
                             className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
                           >
@@ -5467,9 +5405,7 @@ export default function TADashboard({
                       {/* OFFER → Hire Candidate */}
                       {drawerApp.status === "offer" && (
                         <button
-                          onClick={() =>
-                            handleStatusUpdate(drawerApp.id, "hired")
-                          }
+                          onClick={() => openStageScheduleModal("hired")}
                           disabled={actionLoading}
                           className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
                         >
@@ -5481,12 +5417,9 @@ export default function TADashboard({
                         </button>
                       )}
 
-                      {/* Reject always visible (unless already final) */}
-                      <button
-                        onClick={() =>
-                          handleStatusUpdate(drawerApp.id, "rejected")
-                        }
-                        disabled={actionLoading}
+                        <button
+                          onClick={() => openStageScheduleModal("rejected")}
+                          disabled={actionLoading}
                         className="flex-1 py-5 bg-white text-red-500 border-2 border-red-50 rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] hover:bg-red-50 hover:border-red-100 transition-all"
                       >
                         {actionLoading ? (
@@ -5513,300 +5446,7 @@ export default function TADashboard({
         )}
       </AnimatePresence>
 
-      {/* Offer Letter Modal */}
-      <AnimatePresence>
-        {offerModal && drawerApp && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-6"
-            style={{
-              background: "rgba(26,43,61,0.6)",
-              backdropFilter: "blur(8px)",
-            }}
-            onClick={() => setOfferModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.92, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.92, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-[32px] shadow-2xl w-full max-w-lg overflow-hidden"
-            >
-              {/* Modal Header */}
-              <div className="bg-[#FDF22F] p-8">
-                <p className="text-[10px] font-black text-black/50 uppercase tracking-widest mb-1">
-                  Next Step
-                </p>
-                <h3 className="text-2xl font-black text-black">
-                  Send Offer Letter
-                </h3>
-                <p className="text-sm text-black/70 mt-1">
-                  to {drawerApp.name} · {drawerApp.email}
-                </p>
-              </div>
 
-              {/* Modal Body */}
-              <div className="p-8 space-y-6">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                    Offered Salary <span className="text-red-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. ETB 45,000 / month or $3,500 / month"
-                    value={offerForm.salary}
-                    onChange={(e) =>
-                      setOfferForm((p) => ({ ...p, salary: e.target.value }))
-                    }
-                    className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                    Proposed Start Date
-                  </label>
-                  <input
-                    type="date"
-                    value={offerForm.startDate}
-                    onChange={(e) =>
-                      setOfferForm((p) => ({ ...p, startDate: e.target.value }))
-                    }
-                    className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                    Additional Notes (optional)
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="e.g. signing bonus, remote work policy, probation period..."
-                    value={offerForm.notes}
-                    onChange={(e) =>
-                      setOfferForm((p) => ({ ...p, notes: e.target.value }))
-                    }
-                    className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors resize-none"
-                  />
-                </div>
-
-                <div className="bg-[#FDF22F]/5 border border-[#FDF22F]/20 rounded-2xl p-4 text-[12px] text-black font-medium">
-                  📧 A professional offer letter will be emailed directly to{" "}
-                  <strong>{drawerApp.email}</strong> with all the details above.
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="px-8 pb-8 flex gap-4">
-                <button
-                  onClick={() => setOfferModal(false)}
-                  className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSendOffer}
-                  disabled={actionLoading || !offerForm.salary.trim()}
-                  className="flex-1 py-4 bg-[#FDF22F] text-black rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {actionLoading ? (
-                    <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mx-auto" />
-                  ) : (
-                    "✉️ Send Offer Letter"
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Schedule Interview Modal */}
-      <AnimatePresence>
-        {scheduleModal && drawerApp && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-6"
-            style={{
-              background: "rgba(26,43,61,0.6)",
-              backdropFilter: "blur(8px)",
-            }}
-            onClick={() => setScheduleModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.92, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.92, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              {/* Modal Header */}
-              <div className="bg-[#FDF22F] p-8 shrink-0">
-                <p className="text-[10px] font-black text-black/50 uppercase tracking-widest mb-1">
-                  Schedule Stage
-                </p>
-                <h3 className="text-2xl font-black text-black">
-                  Schedule Interview
-                </h3>
-                <p className="text-sm text-black/70 mt-1">
-                  with {drawerApp.name} ·{" "}
-                  {drawerApp.job_posting?.title || "Open Role"}
-                </p>
-              </div>
-
-              {/* Modal Body (Scrollable if needed) */}
-              <div className="p-8 space-y-6 overflow-y-auto flex-1">
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                      Date <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      value={scheduleForm.date}
-                      onChange={(e) =>
-                        setScheduleForm((p) => ({ ...p, date: e.target.value }))
-                      }
-                      className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                      Time <span className="text-red-400">*</span>
-                    </label>
-                    <input
-                      type="time"
-                      value={scheduleForm.time}
-                      onChange={(e) =>
-                        setScheduleForm((p) => ({ ...p, time: e.target.value }))
-                      }
-                      className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                      Format <span className="text-red-400">*</span>
-                    </label>
-                    <select
-                      value={scheduleForm.type}
-                      onChange={(e) =>
-                        setScheduleForm((p) => ({ ...p, type: e.target.value }))
-                      }
-                      className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
-                    >
-                      <option value="video">Video Call</option>
-                      <option value="phone">Phone Screen</option>
-                      <option value="in-person">In-Person</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                      Location / Link
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Google Meet link or HQ Address"
-                      value={scheduleForm.location}
-                      onChange={(e) =>
-                        setScheduleForm((p) => ({
-                          ...p,
-                          location: e.target.value,
-                        }))
-                      }
-                      className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                    Interviewer <span className="text-red-400">*</span>
-                  </label>
-                  <select
-                    value={scheduleForm.interviewer_id}
-                    onChange={(e) =>
-                      setScheduleForm((p) => ({
-                        ...p,
-                        interviewer_id: e.target.value,
-                      }))
-                    }
-                    className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#FDF22F] focus:outline-none text-[#000000] font-bold text-sm transition-colors"
-                  >
-                    <option value="" disabled>
-                      Select Interviewer
-                    </option>
-                    {departmentUsers.map((u) => (
-                      <option key={u.id} value={u.id}>
-                        {u.name} ({u.email})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                    Custom Message to Candidate
-                  </label>
-                  <textarea
-                    rows={4}
-                    placeholder="Add instructions, details about the format, what to prepare, etc."
-                    value={scheduleForm.message}
-                    onChange={(e) =>
-                      setScheduleForm((p) => ({
-                        ...p,
-                        message: e.target.value,
-                      }))
-                    }
-                    className="w-full px-4 py-3.5 rounded-2xl border-2 border-gray-100 focus:border-[#000000] focus:outline-none text-[#000000] font-bold text-sm transition-colors resize-none"
-                  />
-                </div>
-
-                <div className="bg-[#FDF22F]/5 border border-[#FDF22F]/20 rounded-2xl p-4 text-[12px] text-black font-medium flex gap-3">
-                  <span className="text-base text-xl leading-none">📧</span>
-                  <p>
-                    An official interview invitation will be emailed to{" "}
-                    <strong>{drawerApp.email}</strong> and the selected
-                    interviewer immediately. They will also receive a 24-hour
-                    reminder before the scheduled time.
-                  </p>
-                </div>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="px-8 pb-8 shrink-0 flex gap-4 pt-4 bg-white border-t border-gray-50">
-                <button
-                  onClick={() => setScheduleModal(false)}
-                  className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black text-[11px] uppercase tracking-widest hover:bg-gray-200 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleScheduleInterview}
-                  disabled={
-                    actionLoading ||
-                    !scheduleForm.date ||
-                    !scheduleForm.time ||
-                    !scheduleForm.interviewer_id
-                  }
-                  className="flex-[2] py-4 bg-[#FDF22F] text-black rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {actionLoading ? (
-                    <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mx-auto" />
-                  ) : (
-                    "📅 Schedule & Send Invites"
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Scoring & Results Modal */}
       <AnimatePresence>
@@ -6045,7 +5685,7 @@ export default function TADashboard({
 
                 {drawerApp.status === "final_interview" && (
                   <button
-                    onClick={() => setOfferModal(true)}
+                    onClick={() => openStageScheduleModal("offer")}
                     className="flex-[2] py-5 bg-black text-[#FDF22F] rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-black/20 hover:scale-[1.02] hover:bg-[#FDF22F] hover:text-black transition-all"
                   >
                     ✉️ Proceed to Offer Stage
@@ -6196,6 +5836,257 @@ export default function TADashboard({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Global Scheduling Modal */}
+      <AnimatePresence>
+        {globalScheduleModal && drawerApp && (
+          <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 text-black pointer-events-auto">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setGlobalScheduleModal(false)}
+              className="fixed inset-0 bg-black/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 30 }}
+              className="bg-white w-full max-w-xl rounded-[40px] shadow-2xl relative z-10 overflow-hidden flex flex-col"
+            >
+              <div className="p-10 pb-6 flex justify-between items-start">
+                <div className="space-y-1 text-black">
+                  <h2 className="text-3xl font-black text-black tracking-tight uppercase">
+                    SCHEDULE {scheduleContext.title}
+                  </h2>
+                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+                    {scheduleContext.label} for {drawerApp.name}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setGlobalScheduleModal(false)}
+                  className="w-12 h-12 rounded-2xl bg-gray-50 flex items-center justify-center text-gray-400 hover:text-black hover:bg-gray-100 transition-all"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="px-10 pb-10 space-y-8 overflow-y-auto max-h-[60vh]">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      Event Date
+                    </label>
+                    <input
+                      type="date"
+                      value={globalScheduleForm.date}
+                      onChange={(e) =>
+                        setGlobalScheduleForm({
+                          ...globalScheduleForm,
+                          date: e.target.value,
+                        })
+                      }
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-black focus:bg-white transition-all text-sm font-bold text-black"
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      Start Time
+                    </label>
+                    <input
+                      type="time"
+                      value={globalScheduleForm.time}
+                      onChange={(e) =>
+                        setGlobalScheduleForm({
+                          ...globalScheduleForm,
+                          time: e.target.value,
+                        })
+                      }
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-black focus:bg-white transition-all text-sm font-bold text-black"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      Venue / Location
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Training Room B, HQ"
+                      value={globalScheduleForm.location}
+                      onChange={(e) =>
+                        setGlobalScheduleForm({
+                          ...globalScheduleForm,
+                          location: e.target.value,
+                        })
+                      }
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-black focus:bg-white transition-all text-sm font-bold text-black"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      Assigned Staff / Invigilator
+                    </label>
+                    <select
+                      value={globalScheduleForm.interviewer_id}
+                      onChange={(e) =>
+                        setGlobalScheduleForm({
+                          ...globalScheduleForm,
+                          interviewer_id: e.target.value,
+                        })
+                      }
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-black focus:bg-white transition-all text-sm font-bold text-black appearance-none"
+                    >
+                      <option value="">Select Staff...</option>
+                      {departmentUsers.map((u: { id: string; name: string; role_slug?: string }) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} ({u.role_slug || "Staff"})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                      Instructions / Message
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="Special instructions or items to bring..."
+                      value={globalScheduleForm.message}
+                      onChange={(e) =>
+                        setGlobalScheduleForm({
+                          ...globalScheduleForm,
+                          message: e.target.value,
+                        })
+                      }
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-black focus:bg-white transition-all text-sm font-bold text-black resize-none"
+                    />
+                  </div>
+                </div>
+
+                {/* Conditional Fields for Offer */}
+                {scheduleContext.targetStatus === "offer" && (
+                  <div className="space-y-6 pt-4 border-t border-gray-100">
+                    <label className="text-[10px] font-black text-black bg-[#FDF22F] px-4 py-1.5 rounded-full uppercase tracking-widest inline-block mb-2">
+                      Offer Specifics
+                    </label>
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                          Offered Salary
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. ETB 50,000"
+                          value={globalScheduleForm.offered_salary}
+                          onChange={(e) =>
+                            setGlobalScheduleForm({
+                              ...globalScheduleForm,
+                              offered_salary: e.target.value,
+                            })
+                          }
+                          className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#FDF22F] focus:bg-white transition-all text-sm font-bold text-black"
+                        />
+                      </div>
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                          Proposed Start Date
+                        </label>
+                        <input
+                          type="date"
+                          value={globalScheduleForm.start_date}
+                          onChange={(e) =>
+                            setGlobalScheduleForm({
+                              ...globalScheduleForm,
+                              start_date: e.target.value,
+                            })
+                          }
+                          className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#FDF22F] focus:bg-white transition-all text-sm font-bold text-black"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                        Offer Notes
+                      </label>
+                      <textarea
+                        rows={2}
+                        placeholder="Additional details..."
+                        value={globalScheduleForm.offer_notes}
+                        onChange={(e) =>
+                          setGlobalScheduleForm({
+                            ...globalScheduleForm,
+                            offer_notes: e.target.value,
+                          })
+                        }
+                        className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-[#FDF22F] focus:bg-white transition-all text-sm font-bold text-black resize-none"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Conditional Fields for Rejection */}
+                {scheduleContext.targetStatus === "rejected" && (
+                  <div className="space-y-4 pt-4 border-t border-gray-100">
+                    <label className="text-[10px] font-black text-red-500 bg-red-50 px-4 py-1.5 rounded-full uppercase tracking-widest inline-block mb-2">
+                      Rejection Details
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Feedback or internal rejection note..."
+                      value={globalScheduleForm.rejection_note}
+                      onChange={(e) =>
+                        setGlobalScheduleForm({
+                          ...globalScheduleForm,
+                          rejection_note: e.target.value,
+                        })
+                      }
+                      className="w-full px-6 py-4 rounded-2xl bg-gray-50 border-2 border-transparent focus:border-red-500 focus:bg-white transition-all text-sm font-bold text-black resize-none"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="p-10 pt-4 bg-white border-t border-gray-50 flex gap-4 shrink-0">
+                <button
+                  onClick={() => setGlobalScheduleModal(false)}
+                  className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-[24px] font-black text-[11px] uppercase tracking-widest hover:bg-gray-100 hover:text-black transition-all"
+                >
+                  Discard
+                </button>
+                <button
+                  onClick={handleGlobalSchedule}
+                  disabled={actionLoading}
+                  className="flex-[2] py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-2xl shadow-[#FDF22F]/40 hover:bg-black hover:text-white hover:-translate-y-1 transition-all disabled:opacity-50"
+                >
+                  {actionLoading ? (
+                    <div className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin mx-auto" />
+                  ) : (
+                    "Confirm & Notify"
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence>
         {deleteConfirmId && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-6">

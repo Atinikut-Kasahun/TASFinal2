@@ -4,6 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DeptManagerDashboard from './DeptManagerDashboard';
 import HRManagerDashboard from './HRManagerDashboard';
+import MDDashboard from './MDDashboard';
 import TADashboard from './TADashboard';
 import Navbar from '@/components/Navbar';
 import { apiFetch } from '@/lib/api';
@@ -77,8 +78,10 @@ function DashboardContent() {
                     <TADashboard user={user} activeTab={activeTab} onLogout={handleLogout} />
                 ) : roleSlug === 'hiring_manager' ? (
                     <DeptManagerDashboard user={user} activeTab={activeTab} onLogout={handleLogout} />
-                ) : roleSlug === 'hr_manager' || roleSlug === 'managing_director' ? (
+                ) : roleSlug === 'hr_manager' ? (
                     <HRManagerDashboard user={user} activeTab={activeTab} onLogout={handleLogout} />
+                ) : roleSlug === 'managing_director' ? (
+                    <MDDashboard user={user} activeTab={activeTab} onLogout={handleLogout} />
                 ) : (
                     <TADashboard user={user} activeTab={activeTab} onLogout={handleLogout} />
                 )}

@@ -15,7 +15,7 @@ class JobPostingController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = JobPosting::with('requisition');
+        $query = JobPosting::with('requisition')->withCount('applicants');
         if (!$user->hasRole('admin')) {
             $query->where('tenant_id', $user->tenant_id);
         }

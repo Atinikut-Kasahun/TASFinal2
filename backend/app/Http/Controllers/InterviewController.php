@@ -20,7 +20,7 @@ class InterviewController extends Controller
     {
         $user = $request->user();
         $query = Interview::where('tenant_id', $user->tenant_id)
-            ->with(['applicant', 'interviewer']);
+            ->with(['applicant.jobPosting', 'interviewer']);
 
         if ($request->has('status')) {
             $query->where('status', $request->status);
@@ -39,7 +39,7 @@ class InterviewController extends Controller
             'interviewer_id' => 'required|exists:users,id',
             'scheduled_at' => 'required|date',
             'location' => 'nullable|string',
-            'type' => 'required|in:phone,video,in-person',
+            'type' => 'required|in:phone,video,in-person,written_exam,technical,final,offer_meeting,onboarding,rejection_call',
             'message' => 'nullable|string',
         ]);
 

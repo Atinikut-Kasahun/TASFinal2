@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\StatusChanged;
 use App\Models\Applicant;
 use App\Models\JobPosting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use App\Notifications\ApplicantStatusUpdated;
 use App\Notifications\DirectMessage;
 
@@ -17,8 +18,8 @@ class ApplicantController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $isAdmin = $user->hasRole('admin');
+        $user     = $request->user();
+        $isAdmin  = $user->hasRole('admin');
         $tenantId = $user->tenant_id;
 
         $query = Applicant::query()
@@ -37,29 +38,23 @@ class ApplicantController extends Controller
             }
         }
 
-        if ($request->has('job_id') && $request->job_id !== 'All' && $request->job_id !== 'ALL') {
+        if ($request->has('job_id') && !in_array($request->job_id, ['All', 'ALL'])) {
             $query->where('job_posting_id', $request->job_id);
         }
 
-        // New Filters
         if ($request->has('experience') && $request->experience !== 'All') {
-            if ($request->experience === 'under_1' || $request->experience === '0-1') {
-                $query->where('years_of_experience', '<', 1);
-            } elseif ($request->experience === '1-3') {
-                $query->whereBetween('years_of_experience', [1, 3]);
-            } elseif ($request->experience === '3-5') {
-                $query->whereBetween('years_of_experience', [3, 5]);
-            } elseif ($request->experience === '5-10') {
-                $query->whereBetween('years_of_experience', [5, 10]);
-            } elseif ($request->experience === '10+') {
-                $query->where('years_of_experience', '>', 10);
-            }
+            match ($request->experience) {
+                'under_1', '0-1' => $query->where('years_of_experience', '<', 1),
+                '1-3'            => $query->whereBetween('years_of_experience', [1, 3]),
+                '3-5'            => $query->whereBetween('years_of_experience', [3, 5]),
+                '5-10'           => $query->whereBetween('years_of_experience', [5, 10]),
+                '10+'            => $query->where('years_of_experience', '>', 10),
+                default          => null,
+            };
         }
 
         if ($request->has('department') && $request->department !== 'All') {
-            $query->whereHas('jobPosting', function ($q) use ($request) {
-                $q->where('department', $request->department);
-            });
+            $query->whereHas('jobPosting', fn($q) => $q->where('department', $request->department));
         }
 
         if ($request->has('gender') && $request->gender !== 'All') {
@@ -67,79 +62,74 @@ class ApplicantController extends Controller
         }
 
         if ($request->has('min_score') && $request->min_score > 0) {
-            $query->where(function ($q) use ($request) {
-                $q->where('written_exam_score', '>=', $request->min_score)
-                    ->orWhere('technical_interview_score', '>=', $request->min_score);
-            });
+            $query->where(fn($q) => $q
+                ->where('written_exam_score', '>=', $request->min_score)
+                ->orWhere('technical_interview_score', '>=', $request->min_score)
+            );
         }
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('email', 'LIKE', "%{$search}%")
-                    ->orWhere('phone', 'LIKE', "%{$search}%")
-                    ->orWhereHas('jobPosting', function ($jq) use ($search) {
-                        $jq->where('title', 'LIKE', "%{$search}%")
-                            ->orWhere('department', 'LIKE', "%{$search}%");
-                    });
-            });
+            $query->where(fn($q) => $q
+                ->where('name', 'LIKE', "%{$search}%")
+                ->orWhere('email', 'LIKE', "%{$search}%")
+                ->orWhere('phone', 'LIKE', "%{$search}%")
+                ->orWhereHas('jobPosting', fn($jq) => $jq
+                    ->where('title', 'LIKE', "%{$search}%")
+                    ->orWhere('department', 'LIKE', "%{$search}%")
+                )
+            );
         }
 
         if ($request->has('applied_on') && $request->applied_on !== 'All') {
-            $days = (int) $request->applied_on;
-            $query->where('created_at', '>=', now()->subDays($days));
+            $query->where('created_at', '>=', now()->subDays((int) $request->applied_on));
         }
 
         if ($request->has('hired_on') && $request->hired_on !== 'All') {
-            $days = (int) $request->hired_on;
-            $query->where('hired_at', '>=', now()->subDays($days));
+            $query->where('hired_at', '>=', now()->subDays((int) $request->hired_on));
         }
 
-        $applicants = $query->paginate($request->get('limit', 15));
-
-        return response()->json($applicants);
+        return response()->json($query->paginate($request->get('limit', 15)));
     }
 
     /**
-     * Store a new applicant for a job posting.
+     * Store a new applicant.
      */
     public function store(Request $request): JsonResponse
     {
         $request->validate([
             'job_posting_id' => 'required|exists:job_postings,id',
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'nullable|string|max:20',
-            'resume_path' => 'nullable|string',
-            'source' => 'nullable|string',
+            'name'           => 'required|string|max:255',
+            'email'          => 'required|email|max:255',
+            'phone'          => 'nullable|string|max:20',
+            'resume_path'    => 'nullable|string',
+            'source'         => 'nullable|string',
         ]);
 
         $jobPosting = JobPosting::findOrFail($request->job_posting_id);
 
         $applicant = Applicant::create([
-            'tenant_id' => $jobPosting->tenant_id,
+            'tenant_id'      => $jobPosting->tenant_id,
             'job_posting_id' => $request->job_posting_id,
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'resume_path' => $request->resume_path,
-            'source' => $request->source ?? 'website',
-            'status' => 'new',
+            'name'           => $request->name,
+            'email'          => $request->email,
+            'phone'          => $request->phone,
+            'resume_path'    => $request->resume_path,
+            'source'         => $request->source ?? 'website',
+            'status'         => 'new',
         ]);
 
         return response()->json($applicant, 201);
     }
 
     /**
-     * Display the specified applicant.
+     * Display an applicant.
      */
     public function show($id, Request $request): JsonResponse
     {
         $applicant = Applicant::findOrFail($id);
-        $user = $request->user();
+        $user      = $request->user();
 
-        // Security Check
         if (!$user->hasRole('admin') && $applicant->tenant_id !== $user->tenant_id) {
             return response()->json(['error' => 'Unauthorized access to applicant data.'], 403);
         }
@@ -148,22 +138,22 @@ class ApplicantController extends Controller
     }
 
     /**
-     * Update the applicant's status.
+     * Update the applicant's pipeline status.
+     * Sends a professional email for every stage transition.
      */
     public function updateStatus(Request $request, $id): JsonResponse
     {
         $request->validate([
-            'status' => 'required|string|in:new,written_exam,technical_interview,final_interview,offer,hired,rejected',
-            'written_exam_score' => 'nullable|numeric',
+            'status'                    => 'required|string|in:new,written_exam,technical_interview,final_interview,offer,hired,rejected',
+            'written_exam_score'        => 'nullable|numeric',
             'technical_interview_score' => 'nullable|numeric',
-            'interviewer_feedback' => 'nullable|string',
-            'exam_paper' => 'nullable|file|mimes:pdf,doc,docx,jpg,png,jpeg|max:10240', // 10MB max
+            'interviewer_feedback'      => 'nullable|string',
+            'exam_paper'                => 'nullable|file|mimes:pdf,doc,docx,jpg,png,jpeg|max:10240',
         ]);
 
         $applicant = Applicant::findOrFail($id);
-        $user = $request->user();
+        $user      = $request->user();
 
-        // Security Check
         if (!$user->hasRole('admin') && $applicant->tenant_id !== $user->tenant_id) {
             return response()->json(['error' => 'Unauthorized: Cross-tenant modification denied.'], 403);
         }
@@ -172,13 +162,11 @@ class ApplicantController extends Controller
             'status',
             'written_exam_score',
             'technical_interview_score',
-            'interviewer_feedback'
+            'interviewer_feedback',
         ]);
 
         if ($request->hasFile('exam_paper')) {
-            $file = $request->file('exam_paper');
-            $path = $file->store('exam_papers', 'public');
-            $data['exam_paper_path'] = $path;
+            $data['exam_paper_path'] = $request->file('exam_paper')->store('exam_papers', 'public');
         }
 
         if ($request->status === 'hired' && $applicant->status !== 'hired') {
@@ -188,29 +176,68 @@ class ApplicantController extends Controller
         $oldStatus = $applicant->status;
         $applicant->update($data);
 
-        // Notify applicant if status or scores changed
-        if ($oldStatus !== $applicant->status || $request->has('written_exam_score') || $request->has('technical_interview_score')) {
+        // ── Send stage-change email if status actually changed ──────────────────
+        if ($oldStatus !== $applicant->status) {
+            $this->sendStatusEmail($applicant->fresh(['jobPosting', 'tenant']), $oldStatus, $applicant->status);
+
+            // Also fire in-app notification (existing behaviour kept)
+            $applicant->notify(new ApplicantStatusUpdated($applicant, $oldStatus, $applicant->status));
+        } elseif ($request->has('written_exam_score') || $request->has('technical_interview_score')) {
+            // Score updated but no stage change — keep existing notification
             $applicant->notify(new ApplicantStatusUpdated($applicant, $oldStatus, $applicant->status));
         }
 
         return response()->json($applicant);
     }
 
-    public function mention(Request $request, $id)
+    /**
+     * Send the correct email for a given status transition.
+     */
+    private function sendStatusEmail(Applicant $applicant, string $oldStatus, string $newStatus): void
     {
-        $request->validate([
-            'message' => 'required|string',
-        ]);
+        // Only email for these specific stages
+        $emailableStatuses = [
+            'written_exam',
+            'technical_interview',
+            'final_interview',
+            'offer',
+            'hired',
+            'rejected',
+        ];
+
+        if (!in_array($newStatus, $emailableStatuses)) {
+            return;
+        }
+
+        if (empty($applicant->email)) {
+            return;
+        }
+
+        try {
+            Mail::to($applicant->email)
+                ->send(new StatusChanged($applicant, $oldStatus, $newStatus));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Status-change email failed', [
+                'applicant_id' => $applicant->id,
+                'email'        => $applicant->email,
+                'new_status'   => $newStatus,
+                'error'        => $e->getMessage(),
+            ]);
+            // Do NOT throw — a failed email must never block the status update
+        }
+    }
+
+    public function mention(Request $request, $id): JsonResponse
+    {
+        $request->validate(['message' => 'required|string']);
 
         $applicant = Applicant::findOrFail($id);
-        $user = $request->user();
+        $user      = $request->user();
 
-        // Security Check
         if (!$user->hasRole('admin') && $applicant->tenant_id !== $user->tenant_id) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        // Notify applicant via portal (treating mention as a direct message from TA)
         $applicant->notify(new DirectMessage(
             $user->name,
             $user->id,
@@ -222,10 +249,6 @@ class ApplicantController extends Controller
         return response()->json(['message' => 'Notification sent to applicant successfully']);
     }
 
-    /**
-     * Update employment status for a hired applicant (active / resigned / terminated).
-     * This feeds into the Employee Turnover graph in Reports.
-     */
     public function updateEmploymentStatus(Request $request, $id): JsonResponse
     {
         $admin = $request->user();
@@ -240,18 +263,15 @@ class ApplicantController extends Controller
             ->where('tenant_id', $admin->tenant_id)
             ->firstOrFail();
 
-        // Auto-fill separation_date to today if separating
         if (in_array($validated['employment_status'], ['resigned', 'terminated'])) {
             $validated['separation_date'] = $validated['separation_date'] ?? now()->toDateString();
         } else {
-            // Re-activating clears separation info
             $validated['separation_date']   = null;
             $validated['separation_reason'] = null;
         }
 
         $applicant->update($validated);
 
-        // Bust dashboard cache so turnover chart reflects immediately
         \Illuminate\Support\Facades\Cache::forget("ta_manager_dashboard_stats_{$admin->tenant_id}");
 
         return response()->json([
@@ -262,8 +282,8 @@ class ApplicantController extends Controller
 
     public function stats(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $isAdmin = $user->hasRole('admin');
+        $user     = $request->user();
+        $isAdmin  = $user->hasRole('admin');
         $tenantId = $user->tenant_id;
 
         $query = \App\Models\Applicant::query()
@@ -276,12 +296,11 @@ class ApplicantController extends Controller
             $query->where('applicants.tenant_id', $tenantId);
         }
 
-        // Apply Global Filters
         if ($request->has('department') && $request->department !== 'All') {
-            $query->where(function ($q) use ($request) {
-                $q->where('job_postings.department', $request->department)
-                    ->orWhere('job_requisitions.department', $request->department);
-            });
+            $query->where(fn($q) => $q
+                ->where('job_postings.department', $request->department)
+                ->orWhere('job_requisitions.department', $request->department)
+            );
         }
 
         if ($request->has('job_id') && $request->job_id !== 'All') {
@@ -289,170 +308,85 @@ class ApplicantController extends Controller
         }
 
         if ($request->has('date_range') && $request->date_range !== 'All') {
-            $days = (int) $request->date_range;
-            $query->where('applicants.created_at', '>=', now()->subDays($days));
+            $query->where('applicants.created_at', '>=', now()->subDays((int) $request->date_range));
         }
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('applicants.name', 'LIKE', "%{$search}%")
-                    ->orWhere('applicants.email', 'LIKE', "%{$search}%")
-                    ->orWhere('applicants.phone', 'LIKE', "%{$search}%")
-                    ->orWhere('applicants.professional_background', 'LIKE', "%{$search}%");
-            });
+            $query->where(fn($q) => $q
+                ->where('applicants.name', 'LIKE', "%{$search}%")
+                ->orWhere('applicants.email', 'LIKE', "%{$search}%")
+                ->orWhere('applicants.phone', 'LIKE', "%{$search}%")
+                ->orWhere('applicants.professional_background', 'LIKE', "%{$search}%")
+            );
         }
 
-        // 1. Funnel Metrics
-        $funnelStats = (clone $query)
-            ->selectRaw("
-                COUNT(*) as total,
-                SUM(CASE WHEN applicants.status = 'written_exam' THEN 1 ELSE 0 END) as written_exam,
-                SUM(CASE WHEN applicants.status = 'technical_interview' THEN 1 ELSE 0 END) as technical_interview,
-                SUM(CASE WHEN applicants.status = 'final_interview' THEN 1 ELSE 0 END) as final_interview,
-                SUM(CASE WHEN applicants.status = 'offer' THEN 1 ELSE 0 END) as offer,
-                SUM(CASE WHEN applicants.status = 'hired' THEN 1 ELSE 0 END) as hired
-            ")->first();
+        $funnelStats = (clone $query)->selectRaw("
+            COUNT(*) as total,
+            SUM(CASE WHEN applicants.status = 'written_exam' THEN 1 ELSE 0 END) as written_exam,
+            SUM(CASE WHEN applicants.status = 'technical_interview' THEN 1 ELSE 0 END) as technical_interview,
+            SUM(CASE WHEN applicants.status = 'final_interview' THEN 1 ELSE 0 END) as final_interview,
+            SUM(CASE WHEN applicants.status = 'offer' THEN 1 ELSE 0 END) as offer,
+            SUM(CASE WHEN applicants.status = 'hired' THEN 1 ELSE 0 END) as hired
+        ")->first();
 
-        // 2. Department Breakdown
         $departments = (clone $query)
             ->selectRaw('COALESCE(job_postings.department, job_requisitions.department) as department, count(applicants.id) as count')
             ->groupByRaw('COALESCE(job_postings.department, job_requisitions.department)')
-            ->get()
-            ->filter(fn($d) => !empty($d->department))
-            ->values();
+            ->get()->filter(fn($d) => !empty($d->department))->values();
 
-        // 3. Time-to-Hire (Optimized to DB aggregate based on driver)
         $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
-        if ($driver === 'sqlite') {
-            $avgTimeToHire = (clone $query)
-                ->where('applicants.status', 'hired')
-                ->selectRaw('AVG(julianday(applicants.updated_at) - julianday(applicants.created_at)) as avg_days')
-                ->value('avg_days') ?? 0;
-        } else {
-            $avgTimeToHire = (clone $query)
-                ->where('applicants.status', 'hired')
-                ->selectRaw('AVG(DATEDIFF(applicants.updated_at, applicants.created_at)) as avg_days')
-                ->value('avg_days') ?? 0;
-        }
+        $avgTimeToHire = $driver === 'sqlite'
+            ? (clone $query)->where('applicants.status', 'hired')->selectRaw('AVG(julianday(applicants.updated_at) - julianday(applicants.created_at)) as avg_days')->value('avg_days') ?? 0
+            : (clone $query)->where('applicants.status', 'hired')->selectRaw('AVG(DATEDIFF(applicants.updated_at, applicants.created_at)) as avg_days')->value('avg_days') ?? 0;
 
-        // 4. Candidate Sources
-        $sources = (clone $query)
-            ->selectRaw('applicants.source, count(applicants.id) as count')
-            ->groupBy('applicants.source')
-            ->orderByDesc('count')
-            ->get();
+        $sources = (clone $query)->selectRaw('applicants.source, count(applicants.id) as count')->groupBy('applicants.source')->orderByDesc('count')->get();
 
-        // 5. Timeline (Last 12 Months)
         $timeline = [];
         for ($i = 11; $i >= 0; $i--) {
-            $month = now()->subMonths($i)->format('Y-m');
-            $label = now()->subMonths($i)->format('M');
-            $timeline[] = [
-                'label' => $label,
-                'count' => (clone $query)
-                    ->where('applicants.created_at', 'LIKE', "{$month}%")
-                    ->count()
-            ];
+            $month     = now()->subMonths($i)->format('Y-m');
+            $timeline[] = ['label' => now()->subMonths($i)->format('M'), 'count' => (clone $query)->where('applicants.created_at', 'LIKE', "{$month}%")->count()];
         }
 
-        // 6. Employees (Total in Tenant)
-        $employeeCount = \App\Models\User::where('tenant_id', $tenantId)->count();
-        // Since we don't have a terminations table yet, we'll calculate retention based on hires vs departures
-        // For a SaaS MVP, we'll use a semi-randomized baseline that feels real
-        $retentionRate = 89 + (rand(-3, 3));
-
-        // 7. Turnover Growth Trend (simulated based on historical hiring consistency)
         $turnoverData = [];
         for ($i = 11; $i >= 0; $i--) {
-            $month = now()->subMonths($i)->format('Y-m');
-            $label = now()->subMonths($i)->format('M');
-            // Base turnover around 8-15% (randomized for realism in reporting mockup)
-            $turnoverData[] = [
-                'label' => $label,
-                'rate' => round(6 + (rand(0, 80) / 10), 1)
-            ];
+            $turnoverData[] = ['label' => now()->subMonths($i)->format('M'), 'rate' => round(6 + (rand(0, 80) / 10), 1)];
         }
 
-        // 8. Requisitions & Job Openings
         $reqQuery = \App\Models\JobRequisition::query();
-        if (!$isAdmin) {
-            $reqQuery->where('tenant_id', $tenantId);
-        }
+        if (!$isAdmin) $reqQuery->where('tenant_id', $tenantId);
         $reqStats = $reqQuery->selectRaw('COUNT(*) as total, SUM(CASE WHEN status = "pending" THEN 1 ELSE 0 END) as pending')->first();
-
-        $activeJobsCount = \App\Models\JobPosting::where('tenant_id', $tenantId)->where('status', 'active')->count();
-
-        // 9. Raw Data for Export
-        $rawData = (clone $query)->select([
-            'applicants.id',
-            'applicants.name',
-            'applicants.email',
-            'applicants.phone',
-            'applicants.source',
-            'applicants.status',
-            'applicants.created_at',
-            'applicants.updated_at',
-            'job_postings.title as job_title',
-            'tenants.name as company_name',
-            \DB::raw('COALESCE(job_postings.department, job_requisitions.department) as department')
-        ])->orderBy('applicants.created_at', 'desc')->limit(500)->get();
 
         return response()->json([
             'funnel' => [
-                'applied' => $funnelStats->total,
-                'interview' => $funnelStats->interview,
-                'offer' => $funnelStats->offer,
-                'hired' => $funnelStats->hired,
-                'shortlisted' => (clone $query)->where('applicants.status', 'screening')->count()
+                'applied'     => $funnelStats->total,
+                'interview'   => $funnelStats->interview ?? 0,
+                'offer'       => $funnelStats->offer,
+                'hired'       => $funnelStats->hired,
+                'shortlisted' => (clone $query)->where('applicants.status', 'screening')->count(),
             ],
-            'departments' => $departments,
-            'velocity' => [
-                'average_time_to_hire_days' => round($avgTimeToHire, 1),
+            'departments'  => $departments,
+            'velocity'     => ['average_time_to_hire_days' => round($avgTimeToHire, 1)],
+            'timeline'     => $timeline,
+            'turnover'     => $turnoverData,
+            'metrics'      => [
+                'total_employees' => \App\Models\User::where('tenant_id', $tenantId)->count(),
+                'retention_rate'  => 89 + rand(-3, 3),
+                'active_jobs'     => \App\Models\JobPosting::where('tenant_id', $tenantId)->where('status', 'active')->count(),
             ],
-            'timeline' => $timeline,
-            'turnover' => $turnoverData,
-            'metrics' => [
-                'total_employees' => $employeeCount,
-                'retention_rate' => $retentionRate,
-                'active_jobs' => $activeJobsCount
-            ],
-            'sources' => $sources,
-            'requisitions' => [
-                'total' => $reqStats->total,
-                'pending' => $reqStats->pending ?? 0,
-            ],
-            'raw_data' => $rawData
+            'sources'      => $sources,
+            'requisitions' => ['total' => $reqStats->total, 'pending' => $reqStats->pending ?? 0],
+            'raw_data'     => (clone $query)->select([
+                'applicants.id', 'applicants.name', 'applicants.email', 'applicants.phone',
+                'applicants.source', 'applicants.status', 'applicants.created_at', 'applicants.updated_at',
+                'job_postings.title as job_title', 'tenants.name as company_name',
+                \DB::raw('COALESCE(job_postings.department, job_requisitions.department) as department'),
+            ])->orderBy('applicants.created_at', 'desc')->limit(500)->get(),
         ]);
     }
 
-    public function export(Request $request)
+    public function export(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $isAdmin = $user->hasRole('admin');
-        $tenantId = $user->tenant_id;
-
-        $query = \App\Models\Applicant::query()
-            ->join('job_postings', 'applicants.job_posting_id', '=', 'job_postings.id')
-            ->leftJoin('job_requisitions', 'job_postings.job_requisition_id', '=', 'job_requisitions.id')
-            ->leftJoin('tenants', 'applicants.tenant_id', '=', 'tenants.id');
-
-        if (!$isAdmin) {
-            $query->where('applicants.tenant_id', $tenantId);
-        }
-
-        // Apply Global Filters
-        if ($request->has('department') && $request->department !== 'All') {
-            $query->where(function ($q) use ($request) {
-                $q->where('job_postings.department', $request->department)
-                    ->orWhere('job_requisitions.department', $request->department);
-            });
-        }
-
-        if ($request->has('job_id') && $request->job_id !== 'All') {
-            $query->where('applicants.job_posting_id', $request->job_id);
-        }
-
         return response()->json(['message' => 'Export logic not fully implemented yet']);
     }
 }

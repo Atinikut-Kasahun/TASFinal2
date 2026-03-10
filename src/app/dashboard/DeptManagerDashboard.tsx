@@ -188,8 +188,6 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
             {/* Page Header */}
             <div className="flex justify-between items-end mb-4">
                 <div className="space-y-4">
-                    <h1 className="text-[32px] font-bold text-[#000000] tracking-tight">{user.tenant?.name || 'Droga Pharma'}</h1>
-
                     {/* Sub Tabs */}
                     <div className="flex gap-10 border-b border-gray-100 mt-2">
                         {['JOBS', 'HIRING PLAN'].map((t) => {

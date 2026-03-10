@@ -46,6 +46,13 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                     { label: 'HIRING PLAN', href: '/dashboard?tab=HiringPlan' },
                     { label: 'REPORTS', href: '/dashboard?tab=Reports' },
                 ];
+            case 'managing_director':
+                return [
+                    { label: 'HOME', href: '/dashboard?tab=Home' },
+                    { label: 'JOBS', href: '/dashboard?tab=Jobs' },
+                    { label: 'HIRING PLAN', href: '/dashboard?tab=HiringPlan' },
+                    { label: 'REPORTS', href: '/dashboard?tab=Reports' },
+                ];
             default: // TA Team
                 return [
                     { label: 'JOBS', href: '/dashboard?tab=Jobs' },
@@ -646,28 +653,29 @@ export default function Navbar({ user, onLogout }: { user: User; onLogout: () =>
                     </AnimatePresence>
                 </div>
 
-                <div className="h-6 w-px bg-black/10 mx-1" />
+                {roleSlug !== 'managing_director' && (
+                    <>
+                        <div className="h-6 w-px bg-black/10 mx-1" />
 
-                {/* User Info */}
-                <div className="flex items-center gap-3 group relative cursor-pointer">
-                    <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-[11px] font-black text-[#FDF22F] border border-black/10 group-hover:border-black/30 transition-all">
-                        {user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="text-right flex flex-col items-end">
-                        <p className="text-[10px] font-black text-black leading-none mb-1">{user.name}</p>
-                        <p className="text-[9px] font-bold text-black/50 uppercase tracking-tighter">
-                            {user.tenant?.name || (roleSlug === 'admin' ? 'Droga Group' : 'Droga Pharma')}
-                        </p>
-                    </div>
+                        {/* User Info */}
+                        <div className="flex items-center gap-3 group relative cursor-pointer">
+                            <div className="w-8 h-8 rounded-full bg-black flex items-center justify-center text-[11px] font-black text-[#FDF22F] border border-black/10 group-hover:border-black/30 transition-all">
+                                {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="text-right flex flex-col items-end">
+                                <p className="text-[10px] font-black text-black leading-none">{user.name}</p>
+                            </div>
 
-                    {/* Logout Tooltip/Dropdown Placeholder */}
-                    <button
-                        onClick={onLogout}
-                        className="opacity-0 group-hover:opacity-100 absolute -bottom-10 right-0 bg-black text-[#FDF22F] px-4 py-2 rounded shadow-xl text-[10px] font-black tracking-widest border border-black/10 hover:bg-red-500 transition-all z-[110]"
-                    >
-                        LOGOUT
-                    </button>
-                </div>
+                            {/* Logout Tooltip/Dropdown Placeholder */}
+                            <button
+                                onClick={onLogout}
+                                className="opacity-0 group-hover:opacity-100 absolute -bottom-10 right-0 bg-black text-[#FDF22F] px-4 py-2 rounded shadow-xl text-[10px] font-black tracking-widest border border-black/10 hover:bg-red-500 transition-all z-[110]"
+                            >
+                                LOGOUT
+                            </button>
+                        </div>
+                    </>
+                )}
             </div>
         </nav>
     );

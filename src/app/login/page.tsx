@@ -37,8 +37,9 @@ export default function LoginPage() {
             } else {
                 router.push("/dashboard");
             }
-        } catch (err: any) {
-            setError(err.message || "Invalid credentials");
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Invalid credentials";
+            setError(message);
         } finally {
             setLoading(false);
         }
@@ -53,7 +54,7 @@ export default function LoginPage() {
                 className="w-full max-w-md bg-white rounded-[32px] shadow-2xl shadow-primary/5 border border-primary/5 px-6 py-8 sm:p-10"
             >
                 <div className="text-center mb-10 relative">
-                    {/* Back to Site Button - Pro Level */}
+                    {/* Back to Site Button */}
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -111,9 +112,15 @@ export default function LoginPage() {
                         />
                     </div>
                     <div>
-                        <div className="flex justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2">
                             <label className="block text-sm font-bold text-primary">Password</label>
-                            <a href="#" className="text-xs font-black text-[#FDF22F] hover:underline uppercase tracking-wide">Forgot?</a>
+                            {/* ── Reset your password link ── */}
+                            <Link
+                                href="/applicant/forgot-password"
+                                className="text-xs text-primary/50 hover:text-black font-medium transition-colors hover:underline underline-offset-2"
+                            >
+                                Reset your password →
+                            </Link>
                         </div>
                         <input
                             type="password"
@@ -132,37 +139,19 @@ export default function LoginPage() {
                     >
                         {loading ? "Signing in..." : "Sign In"}
                     </button>
+
+                    {/* ── Applicant portal link ── */}
+                    <p className="text-center text-xs text-primary/40 pt-2">
+                        Are you an applicant?{" "}
+                        <Link
+                            href="/applicant/login"
+                            className="text-primary/60 font-semibold hover:text-black hover:underline underline-offset-2 transition-colors"
+                        >
+                            Sign in to your portal →
+                        </Link>
+                    </p>
                 </form>
 
-                <div className="mt-8 text-center">
-                    <p className="text-sm text-primary/60 mb-4">
-                        Don&apos;t have an account?{" "}
-                        <a href="#" className="text-[#FDF22F] font-black hover:underline uppercase tracking-wide">Contact Admin</a>
-                    </p>
-                    <div className="pt-6 border-t border-primary/5">
-                        <p className="text-[10px] font-bold text-primary/30 uppercase tracking-widest mb-3">Demo Accounts</p>
-                        <div className="flex flex-wrap justify-center gap-2">
-                            {[
-                                { label: 'Global Admin', email: 'admin@droga.com' },
-                                { label: 'HR Manager', email: 'hr.droga@droga.com' },
-                                { label: 'Pharma MD', email: 'md.droga-pharma@droga.com' },
-                                { label: 'Pharma GM', email: 'gm.droga-pharma@droga.com' },
-                                { label: 'Pharma TA', email: 'ta.droga-pharma@droga.com' },
-                                { label: 'Physio TA', email: 'ta.droga-physiotherapy@droga.com' },
-                                { label: 'Health TA', email: 'ta.droga-health@droga.com' },
-                                { label: 'Coffee TA', email: 'ta.droga-coffee@droga.com' },
-                            ].map((acc) => (
-                                <button
-                                    key={acc.email}
-                                    onClick={() => { setEmail(acc.email); setPassword("password"); }}
-                                    className="px-3 py-1.5 rounded-lg bg-primary/5 text-primary/60 text-[10px] font-bold hover:bg-accent hover:text-white transition-all"
-                                >
-                                    {acc.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
             </motion.div>
         </div>
     );
