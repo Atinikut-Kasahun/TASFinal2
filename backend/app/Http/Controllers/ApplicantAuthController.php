@@ -274,6 +274,27 @@ class ApplicantAuthController extends Controller
         ]);
     }
 
+    public function changePassword(Request $request): JsonResponse
+    {
+        $applicant = $this->authApplicant($request);
+        if (!$applicant) return response()->json(['message' => 'Unauthenticated.'], 401);
+
+        $request->validate([
+            'current_password' => 'required',
+            'password'         => 'required|string|min:6|confirmed',
+        ]);
+
+        if (!Hash::check($request->current_password, $applicant->password)) {
+            return response()->json(['message' => 'The current password you entered is incorrect.'], 422);
+        }
+
+        $applicant->update([
+            'password' => Hash::make($request->password),
+        ]);
+
+        return response()->json(['message' => 'Password changed successfully.']);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────────
     // NOTIFICATIONS
     // ─────────────────────────────────────────────────────────────────────────────

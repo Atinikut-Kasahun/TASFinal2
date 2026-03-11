@@ -205,7 +205,7 @@ class JobRequisitionController extends Controller
         $request->validate(['ids' => 'required|array', 'ids.*' => 'integer']);
 
         $query = JobRequisition::whereIn('id', $request->ids)
-            ->where('status', 'pending');
+            ->where('status', 'pending_hr');
 
         if (!$user->hasRole('admin')) {
             $query->where('tenant_id', $user->tenant_id);

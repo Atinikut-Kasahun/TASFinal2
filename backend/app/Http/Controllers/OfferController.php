@@ -2,40 +2,49 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OfferLetter;
 use App\Models\Applicant;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Mail;
 
 class OfferController extends Controller
 {
     /**
-     * Generate a draft offer letter (simulated).
+     * Send an offer letter email to the applicant.
      */
     public function generate(Request $request): JsonResponse
     {
         $request->validate([
             'applicant_id' => 'required|exists:applicants,id',
-            'salary' => 'required|numeric',
-            'start_date' => 'required|date',
+            'salary'       => 'required|numeric',
+            'start_date'   => 'required|date',
+            'notes'        => 'nullable|string',
         ]);
 
         $applicant = Applicant::where('id', $request->applicant_id)
             ->where('tenant_id', $request->user()->tenant_id)
-            ->with('jobPosting')
+            ->with(['jobPosting', 'tenant'])
             ->firstOrFail();
 
-        $offerLetter = [
-            'applicant_name' => $applicant->name,
-            'job_title' => $applicant->jobPosting->title,
-            'company' => $request->user()->tenant->name,
-            'salary' => $request->salary,
-            'start_date' => $request->start_date,
-            'content' => "Dear {$applicant->name},\n\nWe are pleased to offer you the position of {$applicant->jobPosting->title} at {$request->user()->tenant->name}..."
-        ];
+        // Send the offer letter email
+        Mail::to($applicant->email)->send(new OfferLetter(
+            applicant:      $applicant,
+            jobPosting:     $applicant->jobPosting,
+            offeredSalary:  (string) $request->salary,
+            startDate:      $request->start_date,
+            notes:          $request->notes,
+        ));
 
         return response()->json([
-            'message' => 'Offer letter generated successfully (Draft)',
-            'offer' => $offerLetter
+            'message' => 'Offer letter sent successfully to ' . $applicant->email,
+            'offer'   => [
+                'applicant_name' => $applicant->name,
+                'job_title'      => $applicant->jobPosting->title,
+                'salary'         => number_format((float) $request->salary),
+                'start_date'     => $request->start_date,
+                'email_sent_to'  => $applicant->email,
+            ],
         ]);
     }
 }

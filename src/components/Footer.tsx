@@ -11,28 +11,20 @@ const socials = [
 
 export default function Footer() {
     return (
-        <footer className="bg-[#FDF22F] pt-16 md:pt-20 pb-10" id="contact">
-            <div className="max-w-7xl mx-auto px-6 md:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-20 pb-12 md:pb-16 border-b border-black/10">
+        <footer className="bg-[#FDF22F] pt-14 sm:pt-16 md:pt-20 pb-10" id="contact">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 md:gap-20 pb-10 md:pb-16 border-b border-black/10">
                     {/* Brand */}
                     <div className="text-center md:text-left flex flex-col items-center md:items-start">
                         <Link href="/" className="flex flex-col group relative mb-6 md:mb-8">
                             <div className="flex items-center">
-                                <span className="text-black font-black text-2xl tracking-tighter">
-                                    DROGA
-                                </span>
-                                <span className="text-black/60 font-light text-2xl tracking-normal ml-1.5">
-                                    GROUP
-                                </span>
+                                <span className="text-black font-black text-2xl tracking-tighter">DROGA</span>
+                                <span className="text-black/60 font-light text-2xl tracking-normal ml-1.5">GROUP</span>
                             </div>
                             <div className="flex items-center gap-2 -mt-0.5 justify-center md:justify-start">
                                 <div className="h-[1px] w-3 bg-black/30" />
-                                <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-black/60">
-                                    Hiring Hub
-                                </span>
+                                <span className="text-[9px] font-bold uppercase tracking-[0.4em] text-black/60">Hiring Hub</span>
                             </div>
-
-                            {/* Hover Effect Underline */}
                             <div className="absolute -bottom-1 left-0 w-0 h-[1.5px] bg-black transition-all duration-300 md:group-hover:w-1/2" />
                         </Link>
                         <p className="text-black/50 text-sm font-medium leading-relaxed max-w-56 text-center md:text-left">
@@ -55,7 +47,7 @@ export default function Footer() {
                     </div>
 
                     {/* Quick Links */}
-                    <div className="text-center md:text-left">
+                    <div className="text-center sm:text-left">
                         <h4 className="font-bold text-black mb-4 md:mb-6">Quick Links</h4>
                         <div className="flex flex-col gap-3 md:gap-4">
                             {quickLinks.map((link) => (
@@ -71,7 +63,7 @@ export default function Footer() {
                     </div>
 
                     {/* Contact */}
-                    <div className="text-center md:text-left">
+                    <div className="text-center sm:text-left">
                         <h4 className="font-bold text-black mb-4 md:mb-6">Contact</h4>
                         <div className="flex flex-col gap-3 md:gap-4 text-sm text-black/60">
                             <a href="http://www.drogapharma.com/" target="_blank" rel="noopener noreferrer" className="hover:text-black transition-colors">www.drogapharma.com</a>
@@ -79,10 +71,8 @@ export default function Footer() {
                             <a href="mailto:pharmadroga@gmail.com" className="hover:text-black transition-colors">pharmadroga@gmail.com</a>
                             <p>+251 91 366 7537</p>
                             <p>
-                                Addis Ketema Subcity, Woreda 06
-                                <br />
-                                House No. 670, Pasteur Square
-                                <br />
+                                Addis Ketema Subcity, Woreda 06<br />
+                                House No. 670, Pasteur Square<br />
                                 Addis Ababa, Ethiopia
                             </p>
                         </div>
@@ -90,8 +80,7 @@ export default function Footer() {
                 </div>
 
                 <div className="pt-8 text-center text-sm text-black/40">
-                    &copy; {new Date().getFullYear()} Droga Group (Hiring Hub). All rights
-                    reserved.
+                    &copy; {new Date().getFullYear()} Droga Group (Hiring Hub). All rights reserved.
                 </div>
             </div>
         </footer>

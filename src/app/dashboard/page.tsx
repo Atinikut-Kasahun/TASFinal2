@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -72,7 +72,7 @@ function DashboardContent() {
         <div className="min-h-screen bg-[#F5F6FA]">
             <Navbar user={user} onLogout={handleLogout} />
 
-            <div className="max-w-[1400px] mx-auto pt-10 px-8">
+            <div className="max-w-[1400px] mx-auto pt-6 sm:pt-10 px-4 sm:px-8">
                 {/* Dashboard Switch based on Role & Current Tab */}
                 {activeTab === 'Calendar' ? (
                     <TADashboard user={user} activeTab={activeTab} onLogout={handleLogout} />

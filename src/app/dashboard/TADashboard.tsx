@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -776,7 +776,6 @@ export default function TADashboard({
 
       // 2. Update applicant status — use FormData when an offer letter PDF is attached
       if (scheduleContext.targetStatus === "offer" && globalScheduleForm.offer_letter) {
-        // Multipart request so the PDF gets uploaded
         const fd = new FormData();
         fd.append("status", scheduleContext.targetStatus);
         if (globalScheduleForm.offered_salary) fd.append("offered_salary", globalScheduleForm.offered_salary);
@@ -786,12 +785,10 @@ export default function TADashboard({
         fd.append("interview_message", globalScheduleForm.message || "");
         fd.append("interview_location", globalScheduleForm.location || "");
         fd.append("offer_letter", globalScheduleForm.offer_letter);
-        // Laravel needs _method spoofing for PATCH with FormData
         fd.append("_method", "PATCH");
         await apiFetch(`/v1/applicants/${drawerApp.id}/status`, {
           method: "POST",
           body: fd,
-          // ⚠️ Don't set Content-Type — browser sets it with the correct boundary
         });
       } else {
         await apiFetch(`/v1/applicants/${drawerApp.id}/status`, {
@@ -811,6 +808,29 @@ export default function TADashboard({
             }),
           }),
         });
+      }
+
+      // 3. ✅ Send formal offer letter email (only when moving to offer stage)
+      if (
+        scheduleContext.targetStatus === "offer" &&
+        globalScheduleForm.offered_salary &&
+        globalScheduleForm.start_date
+      ) {
+        try {
+          await apiFetch("/v1/offers/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              applicant_id: drawerApp.id,
+              salary: globalScheduleForm.offered_salary.replace(/[^0-9.]/g, ""),
+              start_date: globalScheduleForm.start_date,
+              notes: globalScheduleForm.offer_notes || null,
+            }),
+          });
+        } catch (offerErr) {
+          console.error("Offer email failed (non-blocking):", offerErr);
+          // Non-blocking — status already updated, don't fail the whole flow
+        }
       }
 
       showToast(
@@ -1023,7 +1043,7 @@ export default function TADashboard({
 
 
           {/* Hierarchical Sub Tabs - Contextual Logic */}
-          <div className="flex gap-10 border-b border-gray-100 mt-2">
+          <div className="flex gap-4 sm:gap-10 border-b border-gray-100 mt-2 overflow-x-auto no-scrollbar whitespace-nowrap pb-2 sm:pb-0">
             {(() => {
               let items: string[] = [];
               if (initialTab === "Candidates")
@@ -1083,7 +1103,7 @@ export default function TADashboard({
             })()}
 
             {(initialTab === "Jobs" || initialTab === "HiringPlan") && (
-              <div className="flex gap-6 ml-4 border-l border-gray-100 pl-10 h-6 self-start mt-0.5 items-center">
+              <div className="hidden sm:flex self-start mt-0.5 items-center gap-6 ml-4 border-l border-gray-100 pl-10 h-6">
                 {(initialTab === "Jobs"
                   ? ["ACTIVE", "ARCHIVED"]
                   : ["REQUISITIONS"]
@@ -1244,137 +1264,46 @@ export default function TADashboard({
       ) : initialTab === "Jobs" ? (
         <div className="flex flex-col gap-6">
           {/* Professional Filter Bar for Jobs */}
-          <div className="px-10 py-5 bg-gray-50/30 border-b border-gray-100 flex items-center gap-6 overflow-x-auto relative z-[10]">
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2 shrink-0">
-                  <svg
-                    className="w-4 h-4 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2.5"
-                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"
-                    />
-                  </svg>
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    Filters
-                  </span>
-                </div>
+          <div className="px-4 sm:px-10 py-4 sm:py-5 bg-gray-50/30 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 relative z-[10]">
+            <div className="flex items-center gap-2 shrink-0">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" /></svg>
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filters</span>
+            </div>
 
-                <div className="flex items-center gap-3">
-                  {/* Position Search */}
-                  <div className="relative">
-                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Search titles..."
-                      value={jobFilters.position}
-                      onChange={(e) =>
-                        setJobFilters({
-                          ...jobFilters,
-                          position: e.target.value,
-                        })
-                      }
-                      className="bg-white border border-gray-100 rounded-xl pl-9 pr-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all w-48 placeholder:text-gray-400"
-                    />
-                  </div>
-
-                  {/* Dynamic Location Filter */}
-                  <select
-                    value={jobFilters.location}
-                    onChange={(e) =>
-                      setJobFilters({ ...jobFilters, location: e.target.value })
-                    }
-                    className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer"
-                  >
-                    <option value="All">All Locations</option>
-                    {Array.from(
-                      new Set(
-                        (jobs || []).map((j) => j.location).filter(Boolean),
-                      ),
-                    ).map((loc) => (
-                      <option key={loc} value={loc}>
-                        {loc}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Dynamic Department Filter */}
-                  <select
-                    value={jobFilters.department}
-                    onChange={(e) =>
-                      setJobFilters({
-                        ...jobFilters,
-                        department: e.target.value,
-                      })
-                    }
-                    className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer"
-                  >
-                    <option value="All">All Departments</option>
-                    {Array.from(
-                      new Set(
-                        (jobs || [])
-                          .map((j) => j.department || j.requisition?.department)
-                          .filter(Boolean),
-                      ),
-                    ).map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Status Filter */}
-                  <select
-                    value={jobFilters.status}
-                    onChange={(e) =>
-                      setJobFilters({ ...jobFilters, status: e.target.value })
-                    }
-                    className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer"
-                  >
-                    <option value="All">All Statuses</option>
-                    <option value="Active">Active</option>
-                    <option value="Archived">Archived</option>
-                  </select>
-
-                  <button
-                    onClick={() =>
-                      setJobFilters({
-                        position: "",
-                        location: "All",
-                        department: "All",
-                        status: "All",
-                      })
-                    }
-                    className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest ml-2 transition-colors flex items-center gap-1.5"
-                  >
-                    <svg
-                      className="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2.5"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                    Reset
-                  </button>
-                </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              {/* Position Search */}
+              <div className="relative w-full sm:w-auto">
+                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input type="text" placeholder="Search titles..." value={jobFilters.position} onChange={(e) => setJobFilters({...jobFilters, position: e.target.value})} className="bg-white border border-gray-100 rounded-xl pl-9 pr-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all w-full sm:w-48 placeholder:text-gray-400" />
               </div>
+
+              <select value={jobFilters.location} onChange={(e) => setJobFilters({ ...jobFilters, location: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
+                <option value="All">All Locations</option>
+                {Array.from(new Set((jobs || []).map((j) => j.location).filter(Boolean))).map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
+              </select>
+
+              <select value={jobFilters.department} onChange={(e) => setJobFilters({ ...jobFilters, department: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
+                <option value="All">All Departments</option>
+                {Array.from(new Set((jobs || []).map((j) => j.department || j.requisition?.department).filter(Boolean))).map((dept) => (<option key={dept} value={dept}>{dept}</option>))}
+              </select>
+
+              <select value={jobFilters.status} onChange={(e) => setJobFilters({ ...jobFilters, status: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
+                <option value="All">All Statuses</option>
+                <option value="Active">Active</option>
+                <option value="Archived">Archived</option>
+              </select>
+
+              <button onClick={() => setJobFilters({ position: "", location: "All", department: "All", status: "All" })} className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest ml-1 sm:ml-2 transition-colors flex items-center gap-1.5 w-full sm:w-auto mt-2 sm:mt-0 justify-end sm:justify-start">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                Reset
+              </button>
             </div>
           </div>
 
           <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
-            <table className="w-full text-left">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left">
               <thead className="bg-[#F9FAFB] border-b border-gray-100">
                 <tr>
                   {[
@@ -1502,24 +1431,11 @@ export default function TADashboard({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setDeleteConfirmId(job.id);
+                              handleDeleteJob(job.id);
                             }}
-                            className="px-4 py-2 bg-gray-50 text-gray-400 border border-gray-100 rounded-xl hover:bg-red-500 hover:text-white hover:border-red-500 transition-all group/del"
-                            title="Delete permanently"
+                            className="px-4 py-2 border border-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all"
                           >
-                            <svg
-                              className="w-3.5 h-3.5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2.5"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
+                            Delete
                           </button>
                         </div>
                       </td>
@@ -1528,6 +1444,118 @@ export default function TADashboard({
                 )}
               </tbody>
             </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden flex flex-col gap-4 p-4">
+              {jobs === null ? null : jobs.length === 0 ? (
+                <div className="py-12 text-center text-gray-400 italic text-sm border border-dashed border-gray-200 rounded-3xl">
+                  No {subTab.toLowerCase()} jobs found for{" "}
+                  {user.tenant?.name || "this company"}.
+                </div>
+              ) : (
+                jobs.map((job: any) => (
+                  <div
+                    key={job.id}
+                    className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="font-bold text-[#000000]">{job.title}</p>
+                      <span
+                        className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === "active" ? "bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10" : job.status === "closed" ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-400"}`}
+                      >
+                        {job.status}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 text-sm text-gray-500">
+                      <p>
+                        <span className="font-semibold">Location:</span>{" "}
+                        {job.location || "—"}
+                      </p>
+                      <p>
+                        <span className="font-semibold">Department:</span>{" "}
+                        {job.department || job.requisition?.department || "General"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      {job.published_at &&
+                        (() => {
+                          const d = new Date(job.published_at);
+                          const now = new Date();
+                          const diffDays = Math.floor(
+                            (now.getTime() - d.getTime()) /
+                            (1000 * 60 * 60 * 24),
+                          );
+                          const relative =
+                            diffDays === 0
+                              ? "Today"
+                              : diffDays === 1
+                                ? "Yesterday"
+                                : `${diffDays}d ago`;
+                          return (
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                              Posted {relative}
+                            </span>
+                          );
+                        })()}
+                      {job.deadline &&
+                        (() => {
+                          const d = new Date(job.deadline);
+                          const now = new Date();
+                          const exactDate = d.toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          });
+                          const diffTime = d.getTime() - now.getTime();
+                          const diffDays = Math.ceil(
+                            diffTime / (1000 * 60 * 60 * 24),
+                          );
+                          return (
+                            <span
+                              className={`text-[10px] font-black uppercase tracking-widest ${diffDays <= 3 ? "text-red-500 animate-pulse" : "text-amber-600"}`}
+                            >
+                              {exactDate} (
+                              {diffDays <= 0 ? "Today" : `${diffDays}d left`})
+                            </span>
+                          );
+                        })()}
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      {job.status === "active" ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleJobStatus(job.id, "closed");
+                          }}
+                          className="px-4 py-2 border border-red-200 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-50 transition-all flex-1"
+                        >
+                          Close Job
+                        </button>
+                      ) : job.status === "closed" ? (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleToggleJobStatus(job.id, "active");
+                          }}
+                          className="px-4 py-2 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-50 transition-all flex-1"
+                        >
+                          Re-open
+                        </button>
+                      ) : null}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteJob(job.id);
+                        }}
+                        className="px-4 py-2 border border-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all flex-1"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
 
             {/* Jobs Pagination Controls */}
             {jobsPagination && jobsPagination.last_page > 1 && (
@@ -1618,42 +1646,30 @@ export default function TADashboard({
         </div>
       ) : null}
 
-      {["Candidates", "Employees"].includes(initialTab) && (
+      {(initialTab === "Candidates" || initialTab === "Employees") && (
         <div className="flex flex-col">
           {/* Header Section without inner filters */}
-          <div className="px-10 py-8 border-b border-gray-100 flex justify-between items-center bg-white">
+          <div className="px-4 sm:px-10 py-6 sm:py-8 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 bg-white">
             <div className="space-y-1">
-              <h2 className="text-2xl font-black text-[#000000] flex items-center gap-3">
-                <div className="w-2 h-8 bg-[#FDF22F] rounded-full" />
+              <h2 className="text-xl sm:text-2xl font-black text-[#000000] flex items-center gap-2 sm:gap-3">
+                <div className="w-1.5 sm:w-2 h-6 sm:h-8 bg-[#FDF22F] rounded-full" />
                 {subTab} PIPELINE
               </h2>
-              <p className="text-xs font-medium text-gray-400">
+              <p className="text-[10px] sm:text-xs font-medium text-gray-400">
                 Manage talent through the {subTab.toLowerCase()} stage
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              {initialTab === "Candidates" && (
+            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+              {(initialTab === "Candidates" || initialTab === "Employees") && (
                 <button
                   onClick={() => setAddCandidateModal(true)}
-                  className="bg-[#FDF22F] hover:bg-black text-black hover:text-white px-4 py-2 rounded-xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20 transition-all flex items-center gap-2"
+                  className="flex-1 sm:flex-none justify-center bg-[#FDF22F] hover:bg-black text-black hover:text-white px-3 sm:px-4 py-2 rounded-xl font-black text-[10px] sm:text-[11px] uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20 transition-all flex items-center gap-1.5 sm:gap-2"
                 >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2.5"
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  Add Candidate
+                  <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4" /></svg>
+                  Add <span className="hidden sm:inline">Candidate</span>
                 </button>
               )}
-              <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
+              <p className="text-[10px] sm:text-[11px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-3 sm:px-4 py-2 rounded-full border border-gray-100 whitespace-nowrap">
                 Total:{" "}
                 <span className="text-[#000000]">
                   {loading
@@ -1669,159 +1685,49 @@ export default function TADashboard({
 
           {/* Professional Filter Bar for Candidates */}
           {initialTab === "Candidates" && (
-            <div className="px-10 py-5 bg-gray-50/30 border-b border-gray-100 flex items-center gap-6 overflow-x-auto">
+            <div className="px-4 sm:px-10 py-4 sm:py-5 bg-gray-50/30 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 relative z-[10]">
               <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 w-full">
                   <div className="flex items-center gap-2 shrink-0">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2.5"
-                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"
-                      />
-                    </svg>
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                      Filters
-                    </span>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" /></svg>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filters</span>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <select
-                        value={applicantFilters.experience}
-                        onChange={(e) =>
-                          setApplicantFilters((p) => ({
-                            ...p,
-                            experience: e.target.value,
-                          }))
-                        }
-                        className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all"
-                      >
-                        <option value="All">All Experience</option>
-                        <option value="0-1">Under 1 Year</option>
-                        <option value="1-3">1 - 3 Years</option>
-                        <option value="3-5">3 - 5 Years</option>
-                        <option value="5-10">5 - 10 Years</option>
-                        <option value="10+">10+ Years</option>
-                      </select>
-                    </div>
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                    <select value={applicantFilters.experience} onChange={(e) => setApplicantFilters((p) => ({ ...p, experience: e.target.value }))} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all">
+                      <option value="All">All Experience</option>
+                      <option value="0-1">Under 1 Year</option>
+                      <option value="1-3">1 - 3 Years</option>
+                      <option value="3-5">3 - 5 Years</option>
+                      <option value="5-10">5 - 10 Years</option>
+                      <option value="10+">10+ Years</option>
+                    </select>
 
-                    <div>
-                      <select
-                        value={applicantFilters.department}
-                        onChange={(e) =>
-                          setApplicantFilters((p) => ({
-                            ...p,
-                            department: e.target.value,
-                          }))
-                        }
-                        className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all"
-                      >
-                        <option value="All">All Departments</option>
-                        {Array.from(
-                          new Set(
-                            (jobs || [])
-                              .map((j) => j.department)
-                              .filter(Boolean),
-                          ),
-                        ).map((dept) => (
-                          <option key={dept} value={dept}>
-                            {dept}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select value={applicantFilters.department} onChange={(e) => setApplicantFilters((p) => ({ ...p, department: e.target.value }))} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all">
+                      <option value="All">All Departments</option>
+                      {Array.from(new Set((jobs || []).map((j) => j.department).filter(Boolean))).map((dept) => (<option key={dept} value={dept}>{dept}</option>))}
+                    </select>
 
-                    <div>
-                      <select
-                        value={applicantFilters.gender}
-                        onChange={(e) =>
-                          setApplicantFilters((p) => ({
-                            ...p,
-                            gender: e.target.value,
-                          }))
-                        }
-                        className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all"
-                      >
-                        <option value="All">All Genders</option>
-                        <option value="Male">Male</option>
-                        <option value="Female">Female</option>
-                      </select>
-                    </div>
+                    <select value={applicantFilters.gender} onChange={(e) => setApplicantFilters((p) => ({ ...p, gender: e.target.value }))} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all">
+                      <option value="All">All Genders</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                    </select>
 
-                    <div>
-                      <input
-                        type="number"
-                        placeholder="Min % Score"
-                        value={applicantFilters.minScore}
-                        onChange={(e) =>
-                          setApplicantFilters((p) => ({
-                            ...p,
-                            minScore: e.target.value,
-                          }))
-                        }
-                        className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all w-28"
-                      />
-                    </div>
+                    <input type="number" placeholder="Min % Score" value={applicantFilters.minScore} onChange={(e) => setApplicantFilters((p) => ({ ...p, minScore: e.target.value }))} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all w-full sm:w-28" />
 
-                    <button
-                      onClick={() =>
-                        setApplicantFilters({
-                          experience: "All",
-                          department: "All",
-                          gender: "All",
-                          minScore: "",
-                        })
-                      }
-                      className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest ml-2"
-                    >
+                    <button onClick={() => setApplicantFilters({ experience: "All", department: "All", gender: "All", minScore: "" })} className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest ml-1 sm:ml-2 w-full sm:w-auto mt-2 sm:mt-0 text-right sm:text-left">
                       Reset
                     </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1 bg-white border border-gray-100 p-1 rounded-xl shadow-sm">
-                  <button
-                    onClick={() => setCandidateViewMode("table")}
-                    className={`p-2 rounded-lg transition-all ${candidateViewMode === "table" ? "bg-[#FDF22F] text-black" : "text-gray-400 hover:text-black"}`}
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M4 6h16M4 10h16M4 14h16M4 18h16"
-                      />
-                    </svg>
+                <div className="flex flex-row items-center gap-1 bg-white border border-gray-100 p-1 rounded-xl shadow-sm self-end sm:self-auto mt-4 sm:mt-0">
+                  <button onClick={() => setCandidateViewMode("table")} className={`p-2 rounded-lg transition-all ${candidateViewMode === "table" ? "bg-[#FDF22F] text-black" : "text-gray-400 hover:text-black"}`}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                   </button>
-                  <button
-                    onClick={() => setCandidateViewMode("grid")}
-                    className={`p-2 rounded-lg transition-all ${candidateViewMode === "grid" ? "bg-[#FDF22F] text-black" : "text-gray-400 hover:text-black"}`}
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                      />
-                    </svg>
+                  <button onClick={() => setCandidateViewMode("grid")} className={`p-2 rounded-lg transition-all ${candidateViewMode === "grid" ? "bg-[#FDF22F] text-black" : "text-gray-400 hover:text-black"}`}>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
                   </button>
                 </div>
               </div>
@@ -1830,193 +1736,45 @@ export default function TADashboard({
 
           {/* Professional Filter Bar for Employees (Hired/Staff) */}
           {initialTab === "Employees" && (
-            <div className="px-10 py-5 bg-gray-50/30 border-b border-gray-100 flex items-center gap-6 overflow-x-auto">
+            <div className="px-4 sm:px-10 py-4 sm:py-5 bg-gray-50/30 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 relative z-[10]">
               <div className="flex items-center justify-between w-full">
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 w-full">
                   <div className="flex items-center gap-2 shrink-0">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2.5"
-                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"
-                      />
-                    </svg>
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                      Filters
-                    </span>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" /></svg>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filters</span>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     {/* Name Search for Employees */}
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto">
                       <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                      <input
-                        type="text"
-                        placeholder="Search employees..."
-                        value={employeeFilters.search}
-                        onChange={(e) =>
-                          setEmployeeFilters((p) => ({
-                            ...p,
-                            search: e.target.value,
-                          }))
-                        }
-                        className="bg-white border border-gray-100 rounded-xl pl-9 pr-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all w-48 placeholder:text-gray-400"
-                      />
+                      <input type="text" placeholder="Search employees..." value={employeeFilters.search} onChange={(e) => setEmployeeFilters((p) => ({ ...p, search: e.target.value }))} className="bg-white border border-gray-100 rounded-xl pl-9 pr-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all w-full sm:w-48 placeholder:text-gray-400" />
                     </div>
 
                     {/* Applied For (Job) Filter */}
                     {subTab === "HIRED" && (
-                      <div>
-                        <select
-                          value={employeeFilters.jobId}
-                          onChange={(e) =>
-                            setEmployeeFilters((p) => ({
-                              ...p,
-                              jobId: e.target.value,
-                            }))
-                          }
-                          className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer min-w-[150px]"
-                        >
-                          <option value="All">
-                            {loading && !jobs
-                              ? "Loading Jobs..."
-                              : "Applied For (All)"}
-                          </option>
-                          {(jobs || []).map((j) => (
-                            <option key={j.id} value={j.id}>
-                              {j.title}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <select value={employeeFilters.jobId} onChange={(e) => setEmployeeFilters((p) => ({ ...p, jobId: e.target.value }))} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer min-w-[150px]">
+                        <option value="All">{loading && !jobs ? "Loading Jobs..." : "Applied For (All)"}</option>
+                        {(jobs || []).map((j) => (<option key={j.id} value={j.id}>{j.title}</option>))}
+                      </select>
                     )}
 
                     {/* Department Filter */}
-                    <div>
-                      <select
-                        value={employeeFilters.department}
-                        onChange={(e) =>
-                          setEmployeeFilters((p) => ({
-                            ...p,
-                            department: e.target.value,
-                          }))
-                        }
-                        className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer min-w-[140px]"
-                      >
-                        <option value="All">
-                          {loading && !jobs
-                            ? "Loading Depts..."
-                            : "All Departments"}
-                        </option>
-                        {Array.from(
-                          new Set(
-                            [
-                              ...(jobs || []).map((j) => j.department),
-                              ...(employees || []).map((e) => e.department),
-                            ].filter(Boolean),
-                          ),
-                        ).map((dept) => (
-                          <option key={dept} value={dept}>
-                            {dept}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                    <select value={employeeFilters.department} onChange={(e) => setEmployeeFilters((p) => ({ ...p, department: e.target.value }))} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
+                      <option value="All">Department (All)</option>
+                      {Array.from(new Set((employees || []).map((e) => e.department).filter(Boolean))).map((dept) => (<option key={dept} value={dept}>{dept}</option>))}
+                    </select>
 
-                    {/* Experience Filter */}
-                    {subTab === "HIRED" && (
-                      <div>
-                        <select
-                          value={employeeFilters.experience}
-                          onChange={(e) =>
-                            setEmployeeFilters((p) => ({
-                              ...p,
-                              experience: e.target.value,
-                            }))
-                          }
-                          className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer"
-                        >
-                          <option value="All">All Experience</option>
-                          <option value="0-1">Under 1 Year</option>
-                          <option value="1-3">1 - 3 Years</option>
-                          <option value="3-5">3 - 5 Years</option>
-                          <option value="5-10">5 - 10 Years</option>
-                          <option value="10+">10+ Years</option>
-                        </select>
-                      </div>
-                    )}
+                    {/* Applied/Hired On Filter */}
+                    <select value={subTab === "HIRED" ? employeeFilters.appliedOn : employeeFilters.hiredOn} onChange={(e) => setEmployeeFilters((p) => subTab === "HIRED" ? { ...p, appliedOn: e.target.value } : { ...p, hiredOn: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer min-w-[120px]">
+                      <option value="All">{subTab === "HIRED" ? "Applied (All Time)" : "Hired (All Time)"}</option>
+                      <option value="today">Today</option>
+                      <option value="week">This Week</option>
+                      <option value="month">This Month</option>
+                    </select>
 
-                    {/* Hired On Filter */}
-                    {subTab === "HIRED" && (
-                      <select
-                        value={employeeFilters.hiredOn}
-                        onChange={(e) =>
-                          setEmployeeFilters((p) => ({
-                            ...p,
-                            hiredOn: e.target.value,
-                          }))
-                        }
-                        className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer"
-                      >
-                        <option value="All">Hired (All Time)</option>
-                        <option value="7">Last 7 Days</option>
-                        <option value="30">Last 30 Days</option>
-                        <option value="90">Last 90 Days</option>
-                        <option value="365">This Year</option>
-                      </select>
-                    )}
-
-                    {/* Applied On Filter */}
-                    {subTab === "HIRED" && (
-                      <select
-                        value={employeeFilters.appliedOn}
-                        onChange={(e) =>
-                          setEmployeeFilters((p) => ({
-                            ...p,
-                            appliedOn: e.target.value,
-                          }))
-                        }
-                        className="bg-white border border-gray-100 rounded-xl px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer"
-                      >
-                        <option value="All">Applied (All Time)</option>
-                        <option value="7">Last 7 Days</option>
-                        <option value="30">Last 30 Days</option>
-                        <option value="90">Last 90 Days</option>
-                      </select>
-                    )}
-
-                    <button
-                      onClick={() =>
-                        setEmployeeFilters({
-                          experience: "All",
-                          department: "All",
-                          search: "",
-                          jobId: "All",
-                          hiredOn: "All",
-                          appliedOn: "All",
-                        })
-                      }
-                      className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest ml-2 transition-colors flex items-center gap-1.5"
-                    >
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2.5"
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
+                    <button onClick={() => setEmployeeFilters({ search: "", experience: "All", department: "All", jobId: "All", hiredOn: "All", appliedOn: "All" })} className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest flex items-center gap-1.5 ml-1 sm:ml-2 mt-2 sm:mt-0 w-full sm:w-auto justify-end sm:justify-start">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                       Reset
                     </button>
                   </div>
@@ -2150,7 +1908,8 @@ export default function TADashboard({
               )}
             </div>
           ) : (
-            <table className="w-full text-left">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
               <thead className="bg-[#F9FAFB] border-b border-gray-100">
                 <tr>
                   {initialTab === "Employees" && subTab === "STAFF"
@@ -2468,6 +2227,7 @@ export default function TADashboard({
                 )}
               </tbody>
             </table>
+            </div>
           )}
 
           {(() => {

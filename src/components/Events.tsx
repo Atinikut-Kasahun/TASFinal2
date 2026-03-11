@@ -23,16 +23,16 @@ export default function Events() {
     if (events.length === 0) return null;
 
     return (
-        <section className="py-24 bg-white" id="events">
-            <div className="max-w-7xl mx-auto px-8">
-                <div className="flex justify-between items-end mb-12">
+        <section className="py-16 md:py-24 bg-white" id="events">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end mb-8 md:mb-12 gap-4">
                     <div>
-                        <h2 className="text-4xl font-black text-[#000000] mb-4">Upcoming Events</h2>
-                        <p className="text-gray-500 font-medium">Join us in our latest activities across the group</p>
+                        <h2 className="text-3xl md:text-4xl font-black text-[#000000] mb-3 md:mb-4">Upcoming Events</h2>
+                        <p className="text-gray-500 font-medium text-sm md:text-base">Join us in our latest activities across the group</p>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-8">
                     {events.map((event, index) => (
                         <motion.div
                             key={event.id}
@@ -57,8 +57,8 @@ export default function Events() {
                                     {event.tenant?.name}
                                 </div>
                             </div>
-                            <div className="p-8">
-                                <div className="flex items-center gap-4 text-xs font-bold text-accent uppercase tracking-widest mb-4">
+                            <div className="p-5 md:p-8">
+                                <div className="flex flex-wrap items-center gap-3 md:gap-4 text-xs font-bold text-accent uppercase tracking-widest mb-3 md:mb-4">
                                     <span className="flex items-center gap-1.5">
                                         <Calendar size={14} />
                                         {new Date(event.event_date).toLocaleDateString()}
@@ -70,10 +70,10 @@ export default function Events() {
                                         </span>
                                     )}
                                 </div>
-                                <h3 className="text-xl font-bold text-[#000000] mb-3 group-hover:text-accent transition-colors">
+                                <h3 className="text-lg md:text-xl font-bold text-[#000000] mb-2 md:mb-3 group-hover:text-accent transition-colors">
                                     {event.title}
                                 </h3>
-                                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-6">
+                                <p className="text-gray-500 text-sm leading-relaxed line-clamp-2 mb-4 md:mb-6">
                                     {event.description}
                                 </p>
                                 <button className="text-primary font-bold text-sm border-b-2 border-primary/10 hover:border-accent transition-all pb-0.5">

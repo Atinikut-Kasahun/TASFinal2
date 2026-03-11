@@ -12,7 +12,7 @@ export default function Impact({ settings }: { settings?: any }) {
             className="py-20 md:py-32 bg-[#000000] text-center"
             id="positions"
         >
-            <div className="max-w-4xl mx-auto px-6 md:px-8">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
                 <motion.span
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -26,7 +26,7 @@ export default function Impact({ settings }: { settings?: any }) {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: false, amount: 0.1 }}
                     transition={{ duration: 0.6 }}
-                    className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 md:mb-8"
+                    className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-6 md:mb-8"
                 >
                     Ready to Make an Impact?
                 </motion.h2>

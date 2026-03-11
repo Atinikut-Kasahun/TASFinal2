@@ -13,9 +13,9 @@ function Toast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className={`fixed bottom-8 right-8 z-[200] px-6 py-4 rounded-2xl shadow-2xl text-[13px] font-black uppercase tracking-widest text-[#FDF22F] flex items-center gap-3 border border-[#FDF22F]/20 bg-black animate-in slide-in-from-bottom-5 duration-300`}
+            className={`fixed bottom-4 right-4 left-4 sm:left-auto sm:bottom-8 sm:right-8 z-[200] px-6 py-4 rounded-2xl shadow-2xl text-[13px] font-black uppercase tracking-widest text-[#FDF22F] flex items-center gap-3 border border-[#FDF22F]/20 bg-black animate-in slide-in-from-bottom-5 duration-300`}
         >
-            <CheckCircle2 size={18} className="text-[#FDF22F]" />
+            <CheckCircle2 size={18} className="text-[#FDF22F] shrink-0" />
             <span>{msg}</span>
         </motion.div>
     );
@@ -186,10 +186,10 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
     return (
         <div className="space-y-6 pb-20">
             {/* Page Header */}
-            <div className="flex justify-between items-end mb-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4 mb-4">
                 <div className="space-y-4">
                     {/* Sub Tabs */}
-                    <div className="flex gap-10 border-b border-gray-100 mt-2">
+                    <div className="flex gap-6 sm:gap-10 border-b border-gray-100 mt-2">
                         {['JOBS', 'HIRING PLAN'].map((t) => {
                             const isSectionActive = (t === 'JOBS' && initialTab === 'Jobs') || (t === 'HIRING PLAN' && initialTab === 'HiringPlan');
                             const isSubActive = localTab === t;
@@ -207,7 +207,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                             setLocalTab(t);
                                         }
                                     }}
-                                    className={`pb-4 text-[12px] font-black tracking-[0.15em] transition-all relative ${isActive
+                                    className={`pb-4 text-[11px] sm:text-[12px] font-black tracking-[0.1em] sm:tracking-[0.15em] transition-all relative ${isActive
                                         ? 'text-[#000000]'
                                         : 'text-gray-400 hover:text-gray-600'
                                         }`}
@@ -228,7 +228,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                 {localTab === 'HIRING PLAN' && (
                     <button
                         onClick={() => { setEditingReqId(null); setFormData(INITIAL_FORM_DATA); setDrawerOpen(true); }}
-                        className="bg-[#FDF22F] hover:bg-black text-[#000000] hover:text-[#FDF22F] px-8 py-3.5 rounded-2xl font-black text-[13px] tracking-widest uppercase shadow-xl shadow-[#FDF22F]/10 transition-all flex items-center gap-2 group"
+                        className="w-full sm:w-auto bg-[#FDF22F] hover:bg-black text-[#000000] hover:text-[#FDF22F] px-6 sm:px-8 py-3.5 rounded-2xl font-black text-[12px] sm:text-[13px] tracking-widest uppercase shadow-xl shadow-[#FDF22F]/10 transition-all flex items-center justify-center gap-2 group"
                     >
                         <svg className="w-4 h-4 transition-transform group-hover:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
                         Create new requisition
@@ -243,42 +243,69 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                 </div>
             ) : (
                 <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
+
+                    {/* ── JOBS TAB ── */}
                     {localTab === 'JOBS' && (
                         <>
-                            <table className="w-full text-left">
-                                <thead className="bg-[#F9FAFB] border-b border-gray-100">
-                                    <tr>
-                                        {['POSITION', 'LOCATION', 'DEPARTMENT', 'STATUS', 'POSTED ON'].map(h => (
-                                            <th key={h} className="px-8 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {jobs === null ? null : jobs.length === 0 ? (
-                                        <tr><td colSpan={5} className="px-8 py-20 text-center text-gray-400 italic text-sm">No active jobs posted yet for {user.tenant?.name || 'this company'}.</td></tr>
-                                    ) : jobs.map((job: any) => (
-                                        <tr key={job.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
-                                            <td className="px-8 py-6">
-                                                <p className="font-bold text-[#000000] group-hover:text-[#000000] transition-colors">{job.title}</p>
-                                            </td>
-                                            <td className="px-8 py-6 text-sm text-gray-500">{job.location || '—'}</td>
-                                            <td className="px-8 py-6 text-sm text-gray-500">
-                                                {job.department || job.requisition?.department || 'General'}
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === 'active' ? 'bg-emerald-50 text-emerald-600' : job.status === 'closed' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-400'}`}>
-                                                    {job.status}
-                                                </span>
-                                            </td>
-                                            <td className="px-8 py-6 text-[13px] text-gray-600">
-                                                {new Date(job.created_at).toLocaleDateString()}
-                                            </td>
+                            {/* Desktop table */}
+                            <div className="hidden sm:block overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-[#F9FAFB] border-b border-gray-100">
+                                        <tr>
+                                            {['POSITION', 'LOCATION', 'DEPARTMENT', 'STATUS', 'POSTED ON'].map(h => (
+                                                <th key={h} className="px-8 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
+                                            ))}
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {jobs === null ? null : jobs.length === 0 ? (
+                                            <tr><td colSpan={5} className="px-8 py-20 text-center text-gray-400 italic text-sm">No active jobs posted yet for {user.tenant?.name || 'this company'}.</td></tr>
+                                        ) : jobs.map((job: any) => (
+                                            <tr key={job.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
+                                                <td className="px-8 py-6">
+                                                    <p className="font-bold text-[#000000] group-hover:text-[#000000] transition-colors">{job.title}</p>
+                                                </td>
+                                                <td className="px-8 py-6 text-sm text-gray-500">{job.location || '—'}</td>
+                                                <td className="px-8 py-6 text-sm text-gray-500">
+                                                    {job.department || job.requisition?.department || 'General'}
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === 'active' ? 'bg-emerald-50 text-emerald-600' : job.status === 'closed' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                        {job.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-8 py-6 text-[13px] text-gray-600">
+                                                    {new Date(job.created_at).toLocaleDateString()}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile cards */}
+                            <div className="sm:hidden divide-y divide-gray-50">
+                                {jobs === null ? null : jobs.length === 0 ? (
+                                    <p className="px-5 py-16 text-center text-gray-400 italic text-sm">No active jobs posted yet for {user.tenant?.name || 'this company'}.</p>
+                                ) : jobs.map((job: any) => (
+                                    <div key={job.id} className="px-5 py-4 hover:bg-gray-50 transition-colors">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <p className="font-bold text-[#000000] text-[14px] leading-snug">{job.title}</p>
+                                            <span className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === 'active' ? 'bg-emerald-50 text-emerald-600' : job.status === 'closed' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-400'}`}>
+                                                {job.status}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
+                                            <span className="text-[12px] text-gray-400">{job.location || '—'}</span>
+                                            <span className="text-[12px] text-gray-400">{job.department || job.requisition?.department || 'General'}</span>
+                                            <span className="text-[12px] text-gray-400">{new Date(job.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
                             {jobsMeta?.last_page > 1 && (
-                                <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+                                <div className="px-5 sm:px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
                                     <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
                                         Page {jobsPage} of {jobsMeta.last_page}
                                     </span>
@@ -287,133 +314,205 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                             disabled={jobsPage === 1}
                                             onClick={() => setJobsPage(p => p - 1)}
                                             className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-400 disabled:opacity-30"
-                                        >
-                                            ←
-                                        </button>
+                                        >←</button>
                                         <button
                                             disabled={jobsPage === jobsMeta.last_page}
                                             onClick={() => setJobsPage(p => p + 1)}
                                             className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-400 disabled:opacity-30"
-                                        >
-                                            →
-                                        </button>
+                                        >→</button>
                                     </div>
                                 </div>
                             )}
                         </>
                     )}
 
+                    {/* ── HIRING PLAN TAB ── */}
                     {localTab === 'HIRING PLAN' && (
                         <>
-                            <table className="w-full text-left">
-                                <thead className="bg-[#F9FAFB] border-b border-gray-100">
-                                    <tr>
-                                        {['REQUISITION', 'GENERAL MANAGER (GM)', 'LOCATION', 'SALARY', 'SUBMITTED ON', 'POSTED TO PORTAL', 'STATUS'].map(h => (
-                                            <th key={h} className="px-8 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50">
-                                    {requisitions === null ? null : requisitions.length === 0 ? (
-                                        <tr><td colSpan={7} className="px-8 py-20 text-center text-gray-400 italic text-sm">No requisitions created yet for {user.tenant?.name || 'this company'}.</td></tr>
-                                    ) : requisitions.map((req: any) => (
-                                        <tr key={req.id} className="hover:bg-gray-50 transition-colors group cursor-pointer">
-                                            <td className="px-8 py-6">
-                                                <p className="font-black text-[13px] text-[#000000] hover:text-[#FDF22F] transition-colors">
-                                                    REQ{req.id} {req.title}
-                                                </p>
-                                                <p className="text-[11px] text-gray-400 mt-0.5 tracking-tight">
-                                                    {req.department} · {req.position_type === 'replacement' ? '↺ Replacement' : '✦ New'}
-                                                </p>
-                                            </td>
-                                            <td className="px-8 py-6 text-[13px] text-gray-600">
-                                                {user.name} (You)
-                                            </td>
-                                            <td className="px-8 py-6 text-[13px] text-gray-600">
-                                                {req.location || '—'}
-                                            </td>
-                                            <td className="px-8 py-6 text-[13px] text-[#000000] font-black">
-                                                {req.budget ? req.budget.toLocaleString() : '15,000'} ETB /mo
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                {req.created_at ? (() => {
-                                                    const d = new Date(req.created_at);
-                                                    return (
-                                                        <div>
-                                                            <p className="text-[12px] font-bold text-[#000000]">
-                                                                {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                            </p>
-                                                            <p className="text-[11px] text-gray-400 mt-0.5">
-                                                                {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                                                            </p>
-                                                        </div>
-                                                    );
-                                                })() : <span className="text-gray-300">—</span>}
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                {req.job_posting?.created_at ? (() => {
-                                                    const d = new Date(req.job_posting.published_at || req.job_posting.created_at);
-                                                    const deadline = req.job_posting.deadline ? new Date(req.job_posting.deadline) : null;
-                                                    return (
-                                                        <div className="space-y-1">
+                            {/* Desktop table */}
+                            <div className="hidden lg:block overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-[#F9FAFB] border-b border-gray-100">
+                                        <tr>
+                                            {['REQUISITION', 'GENERAL MANAGER (GM)', 'LOCATION', 'SALARY', 'SUBMITTED ON', 'POSTED TO PORTAL', 'STATUS'].map(h => (
+                                                <th key={h} className="px-8 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-50">
+                                        {requisitions === null ? null : requisitions.length === 0 ? (
+                                            <tr><td colSpan={7} className="px-8 py-20 text-center text-gray-400 italic text-sm">No requisitions created yet for {user.tenant?.name || 'this company'}.</td></tr>
+                                        ) : requisitions.map((req: any) => (
+                                            <tr key={req.id} className="hover:bg-gray-50 transition-colors group cursor-pointer">
+                                                <td className="px-8 py-6">
+                                                    <p className="font-black text-[13px] text-[#000000] hover:text-[#FDF22F] transition-colors">
+                                                        REQ{req.id} {req.title}
+                                                    </p>
+                                                    <p className="text-[11px] text-gray-400 mt-0.5 tracking-tight">
+                                                        {req.department} · {req.position_type === 'replacement' ? '↺ Replacement' : '✦ New'}
+                                                    </p>
+                                                </td>
+                                                <td className="px-8 py-6 text-[13px] text-gray-600">
+                                                    {user.name} (You)
+                                                </td>
+                                                <td className="px-8 py-6 text-[13px] text-gray-600">
+                                                    {req.location || '—'}
+                                                </td>
+                                                <td className="px-8 py-6 text-[13px] text-[#000000] font-black">
+                                                    {req.budget ? req.budget.toLocaleString() : '15,000'} ETB /mo
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    {req.created_at ? (() => {
+                                                        const d = new Date(req.created_at);
+                                                        return (
                                                             <div>
                                                                 <p className="text-[12px] font-bold text-[#000000]">
                                                                     {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                                                 </p>
-                                                                <p className="text-[11px] text-emerald-600 font-bold">
+                                                                <p className="text-[11px] text-gray-400 mt-0.5">
                                                                     {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                                                 </p>
                                                             </div>
-                                                            {deadline && (
-                                                                <div className="pt-1 border-t border-gray-100">
-                                                                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Deadline</p>
-                                                                    <p className="text-[10px] font-black text-amber-600">
-                                                                        {deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                        );
+                                                    })() : <span className="text-gray-300">—</span>}
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    {req.job_posting?.created_at ? (() => {
+                                                        const d = new Date(req.job_posting.published_at || req.job_posting.created_at);
+                                                        const deadline = req.job_posting.deadline ? new Date(req.job_posting.deadline) : null;
+                                                        return (
+                                                            <div className="space-y-1">
+                                                                <div>
+                                                                    <p className="text-[12px] font-bold text-[#000000]">
+                                                                        {d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                                    </p>
+                                                                    <p className="text-[11px] text-emerald-600 font-bold">
+                                                                        {d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                                                     </p>
                                                                 </div>
+                                                                {deadline && (
+                                                                    <div className="pt-1 border-t border-gray-100">
+                                                                        <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Deadline</p>
+                                                                        <p className="text-[10px] font-black text-amber-600">
+                                                                            {deadline.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })() : (
+                                                        <span className="px-2 py-1 bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded">
+                                                            Not Posted
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <div className="flex items-center justify-between gap-4">
+                                                        <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                                                            req.status === 'amendment_required' ? 'bg-amber-50 text-amber-600' :
+                                                                (req.status === 'pending_md' || req.status === 'pending_hr') ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'
+                                                            }`}>
+                                                            {req.status.replace('_', ' ')}
+                                                        </span>
+                                                        <div className="flex gap-2">
+                                                            {(req.status === 'amendment_required' || req.status === 'pending_md') && (
+                                                                <button
+                                                                    onClick={(e) => { e.stopPropagation(); handleEdit(req); }}
+                                                                    className="opacity-0 group-hover:opacity-100 p-1.5 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-all"
+                                                                    title="Edit / Amend"
+                                                                >
+                                                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                                </button>
                                                             )}
-                                                        </div>
-                                                    );
-                                                })() : (
-                                                    <span className="px-2 py-1 bg-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded">
-                                                        Not Posted
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-8 py-6">
-                                                <div className="flex items-center justify-between gap-4">
-                                                    <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
-                                                        req.status === 'amendment_required' ? 'bg-amber-50 text-amber-600' :
-                                                            (req.status === 'pending_md' || req.status === 'pending_hr') ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'
-                                                        }`}>
-                                                        {req.status.replace('_', ' ')}
-                                                    </span>
-                                                    <div className="flex gap-2">
-                                                        {(req.status === 'amendment_required' || req.status === 'pending_md') && (
                                                             <button
-                                                                onClick={(e) => { e.stopPropagation(); handleEdit(req); }}
-                                                                className="opacity-0 group-hover:opacity-100 p-1.5 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-all"
-                                                                title="Edit / Amend"
+                                                                onClick={(e) => { e.stopPropagation(); handleDuplicate(req.id); }}
+                                                                className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-[#000000] transition-all"
+                                                                title="Duplicate"
                                                             >
-                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                                                             </button>
-                                                        )}
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDuplicate(req.id); }}
-                                                            className="opacity-0 group-hover:opacity-100 p-1.5 text-gray-400 hover:text-[#000000] transition-all"
-                                                            title="Duplicate"
-                                                        >
-                                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
-                                                        </button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile + Tablet cards */}
+                            <div className="lg:hidden divide-y divide-gray-50">
+                                {requisitions === null ? null : requisitions.length === 0 ? (
+                                    <p className="px-5 py-16 text-center text-gray-400 italic text-sm">No requisitions created yet for {user.tenant?.name || 'this company'}.</p>
+                                ) : requisitions.map((req: any) => (
+                                    <div key={req.id} className="px-4 py-5 hover:bg-gray-50 transition-colors group">
+                                        {/* Top row: title + status */}
+                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                            <div>
+                                                <p className="font-black text-[13px] text-[#000000] leading-snug">REQ{req.id} {req.title}</p>
+                                                <p className="text-[11px] text-gray-400 mt-0.5">{req.department} · {req.position_type === 'replacement' ? '↺ Replacement' : '✦ New'}</p>
+                                            </div>
+                                            <span className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                                                req.status === 'amendment_required' ? 'bg-amber-50 text-amber-600' :
+                                                    (req.status === 'pending_md' || req.status === 'pending_hr') ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'
+                                                }`}>
+                                                {req.status.replace('_', ' ')}
+                                            </span>
+                                        </div>
+
+                                        {/* Details grid */}
+                                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 mb-3">
+                                            <div>
+                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Location</p>
+                                                <p className="text-[12px] text-gray-600">{req.location || '—'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Salary</p>
+                                                <p className="text-[12px] font-black text-[#000000]">{req.budget ? req.budget.toLocaleString() : '15,000'} ETB /mo</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Submitted</p>
+                                                <p className="text-[12px] text-gray-600">
+                                                    {req.created_at ? new Date(req.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">Posted</p>
+                                                {req.job_posting?.created_at ? (
+                                                    <p className="text-[12px] text-emerald-600 font-bold">
+                                                        {new Date(req.job_posting.published_at || req.job_posting.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                    </p>
+                                                ) : (
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase">Not Posted</span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Actions — always visible on mobile (no hover-only) */}
+                                        <div className="flex gap-2 pt-3 border-t border-gray-100">
+                                            {(req.status === 'amendment_required' || req.status === 'pending_md') && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleEdit(req); }}
+                                                    className="flex items-center gap-1.5 px-3 py-2 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all"
+                                                >
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                    Amend
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleDuplicate(req.id); }}
+                                                className="flex items-center gap-1.5 px-3 py-2 text-gray-400 hover:text-[#000000] bg-gray-50 hover:bg-gray-100 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all"
+                                            >
+                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                                                Duplicate
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
                             {reqsMeta?.last_page > 1 && (
-                                <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+                                <div className="px-5 sm:px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
                                     <span className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
                                         Page {reqsPage} of {reqsMeta.last_page}
                                     </span>
@@ -422,16 +521,12 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                             disabled={reqsPage === 1}
                                             onClick={() => setReqsPage(p => p - 1)}
                                             className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-400 disabled:opacity-30"
-                                        >
-                                            ←
-                                        </button>
+                                        >←</button>
                                         <button
                                             disabled={reqsPage === reqsMeta.last_page}
                                             onClick={() => setReqsPage(p => p + 1)}
                                             className="w-8 h-8 rounded border border-gray-200 flex items-center justify-center text-gray-400 disabled:opacity-30"
-                                        >
-                                            →
-                                        </button>
+                                        >→</button>
                                     </div>
                                 </div>
                             )}
@@ -452,11 +547,11 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                         <motion.div
                             initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="fixed right-0 top-0 bottom-0 w-full max-w-xl bg-white shadow-2xl z-[120] flex flex-col"
+                            className="fixed right-0 top-0 bottom-0 w-full sm:max-w-xl bg-white shadow-2xl z-[120] flex flex-col"
                         >
-                            <div className="p-8 border-b border-gray-100 flex justify-between items-center">
+                            <div className="p-5 sm:p-8 border-b border-gray-100 flex justify-between items-center">
                                 <div>
-                                    <h2 className="text-2xl font-black text-[#000000]">{editingReqId ? 'Edit Requisition' : 'New Requisition'}</h2>
+                                    <h2 className="text-xl sm:text-2xl font-black text-[#000000]">{editingReqId ? 'Edit Requisition' : 'New Requisition'}</h2>
                                     <div className="flex items-center gap-2 mt-2">
                                         <div className="w-24 h-1 bg-gray-100 rounded-full overflow-hidden">
                                             <div className="h-full bg-[#FDF22F] transition-all duration-500 shadow-[0_0_8px_rgba(253,242,47,0.6)]" style={{ width: wizardStep === 1 ? '50%' : '100%' }} />
@@ -464,16 +559,16 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Step {wizardStep} of 2</span>
                                     </div>
                                 </div>
-                                <button onClick={() => setDrawerOpen(false)} className="text-gray-300 hover:text-gray-500 transition-colors">
+                                <button onClick={() => setDrawerOpen(false)} className="text-gray-300 hover:text-gray-500 transition-colors p-1">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>
 
-                            <div className="flex-1 overflow-y-auto p-8 space-y-8">
+                            <div className="flex-1 overflow-y-auto p-5 sm:p-8 space-y-8">
                                 {(formData as any).amendment_comment && editingReqId && (
                                     <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 shadow-sm">
                                         <div className="flex items-center gap-2 text-amber-700 mb-2">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                            <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                                             <h4 className="text-[11px] font-black uppercase tracking-widest">Required Amendment Feedback</h4>
                                         </div>
                                         <p className="text-sm font-medium text-amber-900 leading-relaxed bg-white/50 p-4 rounded-lg">
@@ -524,12 +619,12 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                             <div className="grid grid-cols-2 gap-4">
                                                 <div className="col-span-2">
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-2 leading-none">Priority Level</label>
-                                                    <div className="flex gap-2">
+                                                    <div className="grid grid-cols-4 gap-1.5 sm:flex sm:gap-2">
                                                         {['low', 'medium', 'high', 'urgent'].map(p => (
                                                             <button
                                                                 key={p}
                                                                 onClick={() => setFormData({ ...formData, priority: p })}
-                                                                className={`flex-1 py-3.5 rounded-xl text-[10px] font-black uppercase border transition-all ${formData.priority === p
+                                                                className={`py-3 sm:py-3.5 rounded-xl text-[10px] font-black uppercase border transition-all ${formData.priority === p
                                                                     ? 'bg-[#FDF22F] text-[#000000] border-[#FDF22F] shadow-lg shadow-[#FDF22F]/20'
                                                                     : 'bg-white text-gray-400 border-gray-200 hover:border-black hover:text-black'
                                                                     }`}
@@ -582,7 +677,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                 <div>
                                                     <label className="block text-[11px] font-black text-gray-400 uppercase tracking-widest mb-1.5 leading-none">Internal Notes / Justification</label>
                                                     <textarea
-                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] transition-all text-sm font-medium h-40 leading-relaxed placeholder:text-gray-300 text-black"
+                                                        className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/20 focus:border-[#FDF22F] transition-all text-sm font-medium h-36 sm:h-40 leading-relaxed placeholder:text-gray-300 text-black"
                                                         placeholder="Provide context for HR regarding why this role is needed now..."
                                                         value={formData.description}
                                                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -593,7 +688,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                         <span>Job Description (JD) Content</span>
                                                         <span className="text-[9px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full animate-pulse">Rich Layout Active</span>
                                                     </label>
-                                                    <div className="relative group/jd bg-white rounded-[32px] border border-gray-200 shadow-xl overflow-hidden min-h-[500px] flex flex-col">
+                                                    <div className="relative group/jd bg-white rounded-[24px] sm:rounded-[32px] border border-gray-200 shadow-xl overflow-hidden min-h-[400px] sm:min-h-[500px] flex flex-col">
                                                         {/* Toolbar Decoration */}
                                                         <div className="px-6 py-3 border-b border-gray-50 bg-[#F9FAFB] flex gap-4 items-center">
                                                             <div className="flex gap-1.5">
@@ -616,7 +711,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                                 const html = e.currentTarget.innerHTML;
                                                                 setFormData(prev => ({ ...prev, jd_content: html }));
                                                             }}
-                                                            className="flex-1 px-10 py-10 outline-none text-sm font-medium leading-relaxed text-black overflow-y-auto max-h-[600px] prose prose-sm max-w-none"
+                                                            className="flex-1 px-5 sm:px-10 py-6 sm:py-10 outline-none text-sm font-medium leading-relaxed text-black overflow-y-auto max-h-[400px] sm:max-h-[600px] prose prose-sm max-w-none"
                                                             dangerouslySetInnerHTML={{ __html: formData.jd_content }}
                                                         />
 
@@ -639,13 +734,14 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                 )}
                             </div>
 
-                            <div className="p-8 border-t border-gray-100 flex gap-4 bg-gray-50/50">
+                            <div className="p-5 sm:p-8 border-t border-gray-100 flex gap-3 sm:gap-4 bg-gray-50/50">
                                 {wizardStep === 2 && (
                                     <button
                                         onClick={() => setWizardStep(1)}
                                         className="flex-1 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest border border-gray-200 hover:bg-white rounded-lg transition-all"
                                     >
-                                        Back to Details
+                                        <span className="hidden sm:inline">Back to Details</span>
+                                        <span className="sm:hidden">Back</span>
                                     </button>
                                 )}
                                 <button
@@ -657,7 +753,8 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     ) : (
                                         <>
-                                            {wizardStep === 1 ? 'Continue to Financials' : 'Submit for Approval'}
+                                            <span className="hidden sm:inline">{wizardStep === 1 ? 'Continue to Financials' : 'Submit for Approval'}</span>
+                                            <span className="sm:hidden">{wizardStep === 1 ? 'Continue' : 'Submit'}</span>
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                                         </>
                                     )}

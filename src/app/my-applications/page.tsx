@@ -321,6 +321,8 @@ export default function MyApplicationsPage() {
     const [loading, setLoading] = useState(true);
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [activeSection, setActiveSection] = useState<'applications' | 'profile' | 'settings' | 'jobs'>('profile');
+    const [profileBannerVisible, setProfileBannerVisible] = useState(true);
+    const [profileStatus, setProfileStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
     // Notifications state
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -423,8 +425,24 @@ export default function MyApplicationsPage() {
         }
     };
 
+    const fetchAvailableJobs = async () => {
+        try {
+            const cleanBase = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+            const res = await fetch(`${cleanBase}/v1/public/jobs`);
+            if (res.ok) {
+                const data = await res.json();
+                setAvailableJobs(data.jobs || []);
+            }
+        } catch (error) {
+            console.error("Failed to fetch jobs", error);
+        }
+    };
+
     useEffect(() => {
-        if (token) fetchProfile();
+        if (token) {
+            fetchProfile();
+            fetchAvailableJobs();
+        }
     }, [token]);
 
     const fetchNotifications = async () => {
@@ -551,15 +569,24 @@ export default function MyApplicationsPage() {
     };
 
     const filteredJobs = availableJobs.filter(job => {
-        const matchesQuery = !searchQuery || job.title.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesLocation = !searchLocation || (job.location && job.location.toLowerCase().includes(searchLocation.toLowerCase()));
-        return matchesQuery && matchesLocation;
+        const query = searchQuery.toLowerCase().trim();
+        const loc = searchLocation.toLowerCase().trim();
+        
+        const titleMatch = !query || (job.title && job.title.toLowerCase().includes(query));
+        const deptMatch = !query || (job.department && job.department.toLowerCase().includes(query));
+        const companyMatch = !query || (job.company && job.company.toLowerCase().includes(query));
+        const keywordMatch = titleMatch || deptMatch || companyMatch;
+
+        const locationMatch = !loc || (job.location && job.location.toLowerCase().includes(loc));
+        
+        return keywordMatch && locationMatch;
     });
 
     const handleAuthSuccess = (newToken: string, newApplicant: any) => {
         localStorage.setItem('applicant_token', newToken);
         setToken(newToken);
         setApplicant(newApplicant);
+        setProfileBannerVisible(true); // reset banner on new login session
         const splitName = newApplicant.name?.split(' ') || [];
         setProfileForm({
             first_name: splitName[0] || '',
@@ -615,16 +642,57 @@ export default function MyApplicationsPage() {
             if (res.ok) {
                 const data = await res.json();
                 setApplicant(data.applicant);
-                alert("Profile updated successfully!");
+                setProfileStatus({ type: 'success', message: 'Profile updated successfully!' });
+                setTimeout(() => setProfileStatus(null), 5000);
             } else {
                 const errData = await res.json();
-                alert(errData.message || 'Failed to update profile.');
+                setProfileStatus({ type: 'error', message: errData.message || 'Failed to update profile.' });
             }
         } catch (err) {
             console.error(err);
-            alert('An error occurred while saving.');
+            setProfileStatus({ type: 'error', message: 'An error occurred while saving.' });
         } finally {
             setIsProfileSaving(false);
+        }
+    };
+
+    const handleSavePassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!token) return;
+
+        if (passwordForm.password !== passwordForm.password_confirmation) {
+            setPasswordStatus({ type: 'error', message: 'New passwords do not match.' });
+            return;
+        }
+
+        setIsPasswordSaving(true);
+        setPasswordStatus(null);
+
+        try {
+            const cleanBase = API_URL.endsWith('/') ? API_URL.slice(0, -1) : API_URL;
+            const res = await fetch(`${cleanBase}/v1/applicant/change-password`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(passwordForm),
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setPasswordStatus({ type: 'success', message: 'Password changed successfully!' });
+                setPasswordForm({ current_password: '', password: '', password_confirmation: '' });
+                setTimeout(() => setPasswordStatus(null), 5000);
+            } else {
+                setPasswordStatus({ type: 'error', message: data.message || 'Failed to change password.' });
+            }
+        } catch (err) {
+            console.error(err);
+            setPasswordStatus({ type: 'error', message: 'An error occurred.' });
+        } finally {
+            setIsPasswordSaving(false);
         }
     };
 
@@ -1183,7 +1251,17 @@ export default function MyApplicationsPage() {
                                         </div>
                                     ) : (
                                         <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-                                            {applications.map((app, i) => {
+                                            {/* De-duplicate: keep one entry per job_posting_id (latest by date) */}
+                                            {(() => {
+                                                const seen = new Map<string, any>();
+                                                [...applications]
+                                                  .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                                                  .forEach(app => {
+                                                    const key = app.job_posting_id ?? app.job_posting?.id ?? app.id;
+                                                    if (!seen.has(key)) seen.set(key, app);
+                                                  });
+                                                return [...seen.values()];
+                                            })().map((app) => {
                                                 const st = getStatus(app.status);
                                                 return (
                                                     <div key={app.id} className="p-6 flex gap-6 hover:bg-[#F9F9FB] transition-colors">
@@ -1222,6 +1300,24 @@ export default function MyApplicationsPage() {
                             {activeSection === 'profile' && (
                                 <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
 
+                                    {profileStatus && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: -10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className={`p-4 rounded-xl border flex items-center gap-3 ${profileStatus.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-600'}`}
+                                        >
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${profileStatus.type === 'success' ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
+                                                {profileStatus.type === 'success' ? (
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+                                                ) : (
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                )}
+                                            </div>
+                                            <p className="text-[13px] font-black uppercase tracking-tight">{profileStatus.message}</p>
+                                        </motion.div>
+                                    )}
+
+                                    {profileBannerVisible && (
                                     <div className="bg-[#EAF5F4] border border-[#B3E1E0] rounded-lg p-4 flex justify-between items-start">
                                         <div>
                                             <h4 className="text-[15px] font-bold text-gray-900 mb-1">We've updated your profile</h4>
@@ -1229,15 +1325,16 @@ export default function MyApplicationsPage() {
                                                 To enhance your experience and save you time, make sure your profile details are accurate and up to date.
                                             </p>
                                         </div>
-                                        <button className="text-gray-400 hover:text-gray-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                                        <button onClick={() => setProfileBannerVisible(false)} className="text-gray-400 hover:text-gray-600"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
                                     </div>
+                                    )}
 
                                     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                                         <div className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
                                             <h3 className="text-lg font-normal text-gray-900">Personal information</h3>
                                             <button className="text-sm font-bold text-gray-500 flex items-center gap-1 hover:text-gray-700">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                Clear
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                                                Edit
                                             </button>
                                         </div>
                                         <div className="p-8 space-y-6">
@@ -1442,9 +1539,15 @@ export default function MyApplicationsPage() {
 
                             {/* Jobs for you Tab */}
                             {activeSection === 'jobs' && (
-                                <motion.div key="jobs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+                                <motion.div 
+                                    key="jobs" 
+                                    initial={{ opacity: 0 }} 
+                                    animate={{ opacity: 1 }} 
+                                    exit={{ opacity: 0 }} 
+                                    className="space-y-6"
+                                    onViewportEnter={() => { if (availableJobs.length === 0) fetchAvailableJobs(); }}
+                                >
 
-                                    {/* Search block mimicking Workable */}
                                     <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
                                         <div className="flex flex-col md:flex-row gap-4">
                                             <div className="flex-1 relative">
@@ -1456,6 +1559,7 @@ export default function MyApplicationsPage() {
                                                     placeholder="Job title or keyword"
                                                     value={searchQuery}
                                                     onChange={(e) => setSearchQuery(e.target.value)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') setSearchQuery(e.currentTarget.value); }}
                                                     className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded focus:border-[#0D625C] focus:ring-1 focus:ring-[#0D625C] outline-none text-[14px]"
                                                 />
                                             </div>
@@ -1465,13 +1569,16 @@ export default function MyApplicationsPage() {
                                                 </div>
                                                 <input
                                                     type="text"
-                                                    placeholder="Location"
+                                                    placeholder="Location (e.g. Addis Ababa)"
                                                     value={searchLocation}
                                                     onChange={(e) => setSearchLocation(e.target.value)}
+                                                    onKeyDown={(e) => { if (e.key === 'Enter') setSearchLocation(e.currentTarget.value); }}
                                                     className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded focus:border-[#0D625C] focus:ring-1 focus:ring-[#0D625C] outline-none text-[14px]"
                                                 />
                                             </div>
-                                            <button className="px-8 py-2.5 bg-[#FDF22F] text-black rounded font-black text-[14px] uppercase tracking-wider hover:bg-black hover:text-[#FDF22F] transition-all whitespace-nowrap">
+                                            <button
+                                                onClick={() => { /* filteredJobs already reacts to state, this just triggers re-render */ setSearchQuery(q => q); }}
+                                                className="px-8 py-2.5 bg-[#FDF22F] text-black rounded font-black text-[14px] uppercase tracking-wider hover:bg-black hover:text-[#FDF22F] transition-all whitespace-nowrap">
                                                 Search jobs
                                             </button>
                                         </div>

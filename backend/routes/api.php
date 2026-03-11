@@ -137,6 +137,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/applicant/forgot-password', [\App\Http\Controllers\ApplicantAuthController::class, 'sendResetLink']);
     Route::post('/applicant/reset-password', [\App\Http\Controllers\ApplicantAuthController::class, 'resetPassword']);
     Route::post('/applicant/update', [\App\Http\Controllers\ApplicantAuthController::class, 'updateProfile']);
+    Route::post('/applicant/change-password', [\App\Http\Controllers\ApplicantAuthController::class, 'changePassword']);
     Route::post('/applicant/send-message', [\App\Http\Controllers\ApplicantAuthController::class, 'sendMessage']);
     Route::get('/applicant/notifications/{id}/attachment', [\App\Http\Controllers\ApplicantAuthController::class, 'downloadNotificationAttachment']);
 
