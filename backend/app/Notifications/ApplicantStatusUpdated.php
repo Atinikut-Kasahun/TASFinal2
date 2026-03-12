@@ -33,7 +33,7 @@ class ApplicantStatusUpdated extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        return ['database']; // Emails are handled directly in ApplicantController with try-catch
     }
 
     /**

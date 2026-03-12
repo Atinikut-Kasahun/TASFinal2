@@ -183,15 +183,13 @@ function AuthForm({ mode, onSuccess }: { mode: 'login' | 'register'; onSuccess: 
                 {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : (resetStep === 'email' ? 'Send Reset Code' : 'Save Password & Sign In')}
             </button>
 
-            {mode === 'register' && resetStep === 'code' && (
                 <button
                     type="button"
                     onClick={() => { setResetStep('email'); setError(''); setSuccessMsg(''); }}
                     className="w-full text-center text-[10px] font-bold text-gray-400 hover:text-black mt-2"
                 >
-                    Didn't receive a code? Try again
+                    Didn&apos;t receive a code? Try again
                 </button>
-            )}
         </form>
     );
 }
@@ -1318,7 +1316,7 @@ export default function MyApplicationsPage() {
 
                                     {applications.length === 0 ? (
                                         <div className="bg-white rounded-lg border border-gray-200 p-10 text-center">
-                                            <p className="text-gray-600 mb-4">You haven't applied to any jobs yet.</p>
+                                            <p className="text-gray-600 mb-4">You haven&apos;t applied to any jobs yet.</p>
                                             <Link href="/careers" className="inline-flex px-6 py-2 bg-black text-white rounded text-sm font-bold hover:bg-gray-800 transition-colors">
                                                 Search jobs
                                             </Link>
@@ -1575,7 +1573,7 @@ export default function MyApplicationsPage() {
                                                         </div>
                                                     </div>
                                                     <a
-                                                        href={`${API_URL.split('/api')[0]}/storage/${applicant.resume_path}`}
+                                                        href={`${API_URL}/v1/applicants/${applicant.id}/resume`}
                                                         target="_blank"
                                                         className="px-4 py-2 border border-gray-200 text-gray-600 rounded-lg text-[12px] font-bold hover:bg-white hover:shadow-sm transition-all"
                                                     >
@@ -1692,7 +1690,7 @@ export default function MyApplicationsPage() {
                                         </div>
                                     ) : (
                                         <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
-                                            {filteredJobs.map((job, i) => (
+                                            {filteredJobs.map((job) => (
                                                 <div key={job.id} className="p-6 flex gap-6 hover:bg-[#F9F9FB] transition-colors relative group bg-white">
                                                     <div className="w-12 h-12 bg-black rounded-lg shadow-sm border border-gray-200 flex items-center justify-center shrink-0">
                                                         <span className="text-[#FDF22F] font-black text-lg">D</span>
@@ -1739,7 +1737,7 @@ export default function MyApplicationsPage() {
                                                 <svg className="w-4 h-4 absolute right-3 top-2.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                                             </div>
                                             <p className="text-[11px] text-gray-500 mt-2 max-w-sm">
-                                                You can't change your email because it is used to sign you in and to be contacted by employers.
+                                                You can&apos;t change your email because it is used to sign you in and to be contacted by employers.
                                             </p>
                                         </div>
                                     </div>

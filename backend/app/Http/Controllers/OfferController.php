@@ -27,14 +27,18 @@ class OfferController extends Controller
             ->with(['jobPosting', 'tenant'])
             ->firstOrFail();
 
-        // Send the offer letter email
-        Mail::to($applicant->email)->send(new OfferLetter(
-            applicant:      $applicant,
-            jobPosting:     $applicant->jobPosting,
-            offeredSalary:  (string) $request->salary,
-            startDate:      $request->start_date,
-            notes:          $request->notes,
-        ));
+        try {
+            // Send the offer letter email
+            Mail::to($applicant->email)->send(new OfferLetter(
+                applicant:      $applicant,
+                jobPosting:     $applicant->jobPosting,
+                offeredSalary:  (string) $request->salary,
+                startDate:      $request->start_date,
+                notes:          $request->notes,
+            ));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to send offer letter email: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Offer letter sent successfully to ' . $applicant->email,

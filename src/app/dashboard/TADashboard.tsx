@@ -4,7 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiFetch, API_URL } from "@/lib/api";
-import { CheckCircle2, Search } from "lucide-react";
+import {
+  Check, ChevronLeft, ChevronRight, FileText, CheckCircle2,
+  TrendingUp, TrendingDown, Users, Briefcase, Target, Clock,
+  Download, Filter, BarChart2, PieChart, Activity, X,
+  Calendar, ArrowRight, LifeBuoy, BookOpen, MessageCircle,
+  ExternalLink, HelpCircle, Search
+} from "lucide-react";
 
 /* ─── Toast ─────────────────────────────────────────────── */
 function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
@@ -20,6 +26,224 @@ function Toast({ msg, type }: { msg: string; type: "success" | "error" }) {
     </motion.div>
   );
 }
+
+/* ─── Stat Card ─────────────────────────────────────────── */
+function StatCard({ label, value, icon: Icon, trend, trendUp, accent, delay = 0 }: any) {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 30, rotateX: 10 }} 
+      whileInView={{ opacity: 1, y: 0, rotateX: 0 }} 
+      viewport={{ once: false, amount: 0.15, margin: "-50px 0px" }}
+      whileHover={{ y: -8, scale: 1.02, boxShadow: '0 25px 40px -12px rgba(0,0,0,0.15)', transition: { duration: 0.3 } }} 
+      transition={{ duration: 0.6, ease: [0.215, 0.61, 0.355, 1], delay }}
+      className="relative bg-white rounded-[28px] border border-gray-100 shadow-sm overflow-hidden p-5 sm:p-7 cursor-default group"
+    >
+      {accent && <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#FDF22F] group-hover:h-2 transition-all" />}
+      <div className="flex items-start justify-between mb-4 sm:mb-5">
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center ${accent ? 'bg-[#FDF22F]' : 'bg-gray-50 border border-gray-100'} group-hover:scale-110 transition-transform duration-500`}>
+          <Icon size={18} className={accent ? 'text-black' : 'text-gray-400'} />
+        </div>
+        <motion.span 
+          initial={{ scale: 0.8, opacity: 0 }}
+          whileInView={{ scale: 1, opacity: 1 }}
+          transition={{ delay: delay + 0.3 }}
+          className={`text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-widest flex items-center gap-1 ${trendUp ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}
+        >
+          {trendUp ? <TrendingUp size={10} /> : <TrendingDown size={10} />}{trend}
+        </motion.span>
+      </div>
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">{label}</p>
+      <p className="text-3xl sm:text-4xl font-black text-black tracking-tight">{value}</p>
+    </motion.div>
+  );
+}
+
+/* ─── Funnel Bar ─────────────────────────────────────────── */
+function FunnelBar({ label, value, max, color, index = 0 }: any) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <motion.div 
+      initial={{ opacity: 0, x: -10 }}
+      whileInView={{ opacity: 1, x: 0 }}
+      viewport={{ once: false }}
+      transition={{ delay: index * 0.1 }}
+      className="space-y-2"
+    >
+      <div className="flex justify-between items-center">
+        <span className="text-[11px] font-black text-gray-500 uppercase tracking-widest">{label}</span>
+        <span className="text-[13px] font-black text-black tabular-nums">{value}</span>
+      </div>
+      <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+        <motion.div 
+          initial={{ width: 0 }} 
+          whileInView={{ width: `${pct}%` }} 
+          viewport={{ once: false }}
+          transition={{ duration: 1.2, ease: [0.21, 0.85, 0.44, 1], delay: 0.2 + (index * 0.1) }} 
+          className="h-full rounded-full" 
+          style={{ background: color }} 
+        />
+      </div>
+      <p className="text-[10px] font-bold text-gray-300 text-right">{pct}% of applied</p>
+    </motion.div>
+  );
+}
+
+/* ─── Donut Chart ────────────────────────────────────────── */
+function DonutChart({ data, colors }: { data: { label: string; value: number }[]; colors: string[] }) {
+  const total = data.reduce((s, d) => s + d.value, 0) || 1;
+  let offset = 0;
+  const r = 40, circ = 2 * Math.PI * r, cx = 60, cy = 60;
+  return (
+    <svg viewBox="0 0 120 120" className="w-full h-full">
+      {data.map((d, i) => {
+        const pct = d.value / total, dash = pct * circ, gap = circ - dash;
+        const rot = (offset / total) * 360 - 90;
+        offset += d.value;
+        return <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={colors[i] || '#E5E7EB'} strokeWidth="18" strokeDasharray={`${dash} ${gap}`} transform={`rotate(${rot} ${cx} ${cy})`} className="transition-all duration-700" />;
+      })}
+      <circle cx={cx} cy={cy} r="28" fill="white" />
+      <text x={cx} y={cy - 4} textAnchor="middle" style={{ fontSize: 14, fontWeight: 900, fill: '#000' }}>{total}</text>
+      <text x={cx} y={cy + 10} textAnchor="middle" style={{ fontSize: 7, fontWeight: 700, fill: '#9CA3AF', letterSpacing: 1 }}>TOTAL</text>
+    </svg>
+  );
+}
+
+/* ─── Bar Timeline ───────────────────────────────────────── */
+function BarTimeline({ data }: { data: { label: string; count: number }[] }) {
+  const max = Math.max(...data.map(d => d.count), 1);
+  return (
+    <div className="flex items-end gap-1 sm:gap-1.5 h-full w-full">
+      {data.map((d, i) => (
+        <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+          <span className="text-[9px] font-black text-gray-400 opacity-0 group-hover:opacity-100 transition-all tabular-nums">{d.count}</span>
+          <motion.div initial={{ height: 0 }} animate={{ height: `${Math.max((d.count / max) * 100, 2)}%` }} transition={{ duration: 0.6, delay: i * 0.04 }} className="w-full rounded-t-lg group-hover:bg-black transition-colors" style={{ background: '#FDF22F', minHeight: 3 }} />
+          <span className="text-[8px] sm:text-[9px] font-black text-gray-300 uppercase">{d.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Side Panel ─────────────────────────────────────────── */
+function SidePanel({ title, subtitle, onClose, children, loading }: any) {
+  return (
+    <>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[130]" onClick={onClose} />
+      <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+        className="fixed right-0 top-0 bottom-0 w-full sm:w-[560px] bg-white shadow-2xl z-[140] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="px-6 sm:px-8 py-6 border-b border-gray-100 flex items-start justify-between shrink-0">
+          <div>
+            <h2 className="text-[20px] font-black text-black tracking-tight">{title}</h2>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1">{subtitle}</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors text-gray-400 hover:text-black"><X size={18} /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8">
+          {loading ? <div className="flex items-center justify-center h-40"><div className="w-8 h-8 border-4 border-[#FDF22F] border-t-transparent rounded-full animate-spin" /></div> : children}
+        </div>
+      </motion.div>
+    </>
+  );
+}
+
+/* ─── CSV Builder ────────────────────────────────────────── */
+function buildAndDownloadCSV(stats: any, allApplicants: any[], jobs: any[], reportFilters: any) {
+  const now = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  const periodMap: Record<string, string> = { '7': 'Last 7 Days', '30': 'Last 30 Days', '90': 'Last 90 Days', '365': 'Last Year' };
+  const period = periodMap[reportFilters.dateRange] || `Year ${reportFilters.dateRange}`;
+  const esc = (v: any) => { const s = String(v ?? '').replace(/"/g, '""'); return /[,"\n]/.test(s) ? `"${s}"` : s; };
+  const row = (...cells: any[]) => cells.map(esc).join(',');
+  const L: string[] = [];
+
+  L.push(row('TALENT ACQUISITION REPORT — DROGA PHARMA'));
+  L.push(row('Generated On', now));
+  L.push(row('Reporting Period', period));
+  L.push(row('Department', reportFilters.department === 'All' ? 'All Departments' : reportFilters.department));
+  L.push('');
+
+  L.push('"### 1. KPI SUMMARY ###"');
+  L.push(row('Metric', 'Value'));
+  L.push(row('Total Employees (Headcount)', stats?.metrics?.total_employees ?? 0));
+  L.push(row('Active Applicants in Pipeline', stats?.funnel?.applied ?? 0));
+  L.push(row('Retention Rate (%)', stats?.metrics?.retention_rate ?? 0));
+  L.push(row('Open Positions', stats?.metrics?.active_jobs ?? 0));
+  L.push(row('Avg. Time to Hire (Days)', stats?.avg_time_to_hire ?? 0));
+  L.push(row('Total Hired (Period)', stats?.funnel?.hired ?? 0));
+  L.push(row('Total Offered (Period)', stats?.funnel?.offer ?? 0));
+  L.push('');
+
+  L.push('"### 2. HIRING FUNNEL ###"');
+  L.push(row('Stage', 'Count', 'Conversion Rate'));
+  const ap = stats?.funnel?.applied || 1;
+  L.push(row('Applied', stats?.funnel?.applied ?? 0, '100%'));
+  L.push(row('Screening', stats?.funnel?.screening ?? 0, `${Math.round(((stats?.funnel?.screening ?? 0) / ap) * 100)}%`));
+  L.push(row('Interviewing', stats?.funnel?.interviewing ?? 0, `${Math.round(((stats?.funnel?.interviewing ?? 0) / ap) * 100)}%`));
+  L.push(row('Offered', stats?.funnel?.offer ?? 0, `${Math.round(((stats?.funnel?.offer ?? 0) / ap) * 100)}%`));
+  L.push(row('Hired', stats?.funnel?.hired ?? 0, `${Math.round(((stats?.funnel?.hired ?? 0) / ap) * 100)}%`));
+  L.push('');
+
+  L.push('"### 3. MONTHLY APPLICATION VOLUME ###"');
+  L.push(row('Month', 'Applications'));
+  (stats?.timeline ?? []).forEach((t: any) => L.push(row(t.label, t.count)));
+  L.push('');
+
+  L.push('"### 4. APPLICANTS BY DEPARTMENT ###"');
+  L.push(row('Department', 'Applicants', 'Share (%)'));
+  const dt = (stats?.by_department ?? []).reduce((s: number, d: any) => s + d.count, 0) || 1;
+  (stats?.by_department ?? []).forEach((d: any) => L.push(row(d.department, d.count, `${Math.round((d.count / dt) * 100)}%`)));
+  L.push('');
+
+  L.push('"### 5. APPLICATION SOURCE ATTRIBUTION ###"');
+  L.push(row('Source', 'Applications', 'Share (%)'));
+  const st2 = (stats?.sources ?? []).reduce((s: number, d: any) => s + d.count, 0) || 1;
+  (stats?.sources ?? []).forEach((s: any) => L.push(row(s.source || 'Unknown', s.count, `${Math.round((s.count / st2) * 100)}%`)));
+  L.push('');
+
+  L.push('"### 6. ACTIVE JOB POSTINGS ###"');
+  L.push(row('Job Title', 'Department', 'Location', 'Status', 'Applicants'));
+  jobs.forEach((j: any) => L.push(row(j.title, j.department || j.requisition?.department || '—', j.location || '—', j.status, j.applicants_count ?? 0)));
+  L.push('');
+
+  L.push('"### 7. APPLICANT ROSTER ###"');
+  L.push(row('Name', 'Email', 'Phone', 'Position Applied', 'Department', 'Experience (Yrs)', 'Status', 'Employment Status', 'Applied On', 'Hired On'));
+  allApplicants.forEach((a: any) => L.push(row(
+    a.name,
+    a.email,
+    a.phone || '—',
+    a.job_posting?.title ?? a.jobPosting?.title ?? '—',
+    a.job_posting?.department ?? a.jobPosting?.department ?? '—',
+    a.years_of_experience ?? '—',
+    (a.status ?? 'new').replace(/_/g, ' ').toUpperCase(),
+    (a.employment_status ?? 'active').toUpperCase(),
+    a.created_at ? new Date(a.created_at).toLocaleDateString('en-US') : '—',
+    a.hired_at ? new Date(a.hired_at).toLocaleDateString('en-US') : '—',
+  )));
+
+  const csv = L.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `TA_TalentAcquisition_${(periodMap[reportFilters.dateRange] || reportFilters.dateRange).replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+const STATUS_COLOR_BAR: Record<string, string> = {
+  new: 'bg-blue-50 text-blue-600 border-blue-100',
+  written_exam: 'bg-purple-50 text-purple-600 border-purple-100',
+  technical_interview: 'bg-amber-50 text-amber-600 border-amber-100',
+  final_interview: 'bg-orange-50 text-orange-600 border-orange-100',
+  offer: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+  hired: 'bg-green-50 text-green-700 border-green-100',
+  rejected: 'bg-red-50 text-red-600 border-red-100',
+};
+const DEPT_COLORS = ['#FDF22F', '#000000', '#374151', '#6B7280', '#D1D5DB'];
+
+type ActivePanel = null | 'employees' | 'turnover' | 'performance' | 'interviews' | 'candidates' | 'help';
+
 
 export default function TADashboard({
   user,
@@ -203,6 +427,20 @@ export default function TADashboard({
     return () => clearTimeout(timer);
   }, [hiringPlanFilters.search]);
 
+  // Sidebar & Analytics State
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activePanel, setActivePanel] = useState<ActivePanel>(null);
+  const [panelData, setPanelData] = useState<any>(null);
+  const [panelLoading, setPanelLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
+  const [hoveredTurnover, setHoveredTurnover] = useState<any>(null);
+  const [showSupportForm, setShowSupportForm] = useState(false);
+  const [supportMessage, setSupportMessage] = useState("");
+  const [isSendingSupport, setIsSendingSupport] = useState(false);
+  const [recentApplicants, setRecentApplicants] = useState<any[]>([]);
+
+
   const showToast = (msg: string, type: "success" | "error" = "success") => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 4000);
@@ -213,6 +451,375 @@ export default function TADashboard({
       apiFetch("/v1/users").then((data) => setDepartmentUsers(data || []));
     }
   }, [drawerApp]);
+
+  /* ── Open panel ──────────────────────────────────────── */
+  const openPanel = useCallback(async (panel: ActivePanel) => {
+    setActivePanel(panel);
+    setPanelData(null);
+    setPanelLoading(true);
+    try {
+      if (panel === 'help') { setPanelLoading(false); return; }
+      const params = new URLSearchParams({ 
+        date_range: reportFilters.dateRange, 
+        department: reportFilters.department 
+      });
+      switch (panel) {
+        case 'employees': {
+          const r = await apiFetch(`/v1/applicants?page=1&limit=100&status=hired`);
+          setPanelData(r.data || []);
+          break;
+        }
+        case 'turnover':
+        case 'performance': {
+          const r = await apiFetch(`/v1/applicants/stats?${params}`);
+          setPanelData(r);
+          break;
+        }
+        case 'interviews': {
+          const r = await apiFetch(`/v1/interviews?page=1&limit=50`);
+          setPanelData(r.data || r || []);
+          break;
+        }
+        case 'candidates': {
+          const r = await apiFetch(`/v1/applicants?page=1&limit=50`);
+          setPanelData(r.data || []);
+          break;
+        }
+      }
+    } catch (e) { console.error(e); }
+    finally { setPanelLoading(false); }
+  }, [reportFilters]);
+
+  const PANEL_META: Record<string, { title: string; subtitle: string }> = {
+    employees: { title: 'Employees', subtitle: 'Active hired headcount' },
+    turnover: { title: 'Turnover Analysis', subtitle: 'Monthly separation data' },
+    performance: { title: 'Performance', subtitle: 'Hiring efficiency metrics' },
+    interviews: { title: 'Interviews', subtitle: 'Scheduled & recent sessions' },
+    candidates: { title: 'Candidates', subtitle: 'Full applicant pipeline' },
+    help: { title: 'Help & Support', subtitle: 'Knowledge base & direct support' },
+  };
+
+  /* ── Panel content ───────────────────────────────────── */
+  const renderPanel = () => {
+    // Metrics derived from stats for side panels
+    const appliedCount = stats?.funnel?.applied ?? 0;
+    const hiredCount = stats?.funnel?.hired ?? 0;
+    const activeJobsCount = stats?.metrics?.active_jobs ?? 0;
+    const totalEmployees = stats?.metrics?.total_employees ?? 0;
+    const retentionRate = stats?.metrics?.retention_rate ?? 0;
+    const avgTimeToHire = stats?.avg_time_to_hire ?? 0;
+
+    switch (activePanel) {
+      case 'help':
+        return (
+          <div className="space-y-8">
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 px-1">Popular Topics</p>
+              <div className="space-y-2">
+                {[
+                  { t: 'Managing user permissions', d: 'Invite team members and set roles', i: <Users size={16} /> },
+                  { t: 'Candidate scorecards', d: 'Standardize your interview feedback', i: <CheckCircle2 size={16} /> },
+                  { t: 'Automated email sequences', d: 'Nurture candidates at scale', i: <MessageCircle size={16} /> },
+                  { t: 'Advanced report building', d: 'Visualize your hiring efficiency', i: <TrendingUp size={16} /> },
+                ].map((topic, i) => (
+                  <button 
+                    key={topic.t} 
+                    onClick={() => showToast(`Opening article: ${topic.t}`)}
+                    className="w-full flex items-center gap-4 p-4 rounded-[20px] hover:bg-gray-50 active:bg-gray-100 transition-all text-left group outline-none focus:ring-2 focus:ring-gray-100"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-black group-hover:text-[#FDF22F] group-hover:border-black transition-all shadow-sm">
+                      {topic.i}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[13px] font-black text-black leading-snug">{topic.t}</p>
+                      <p className="text-[11px] text-gray-400 font-medium">{topic.d}</p>
+                    </div>
+                    <ExternalLink size={14} className="text-gray-200 group-hover:text-black transition-colors" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-black rounded-[32px] p-8 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-24 h-24 bg-[#FDF22F]/10 rounded-full -translate-x-12 -translate-y-12" />
+              <div className="relative z-10">
+                <div className="w-14 h-14 bg-[#FDF22F] rounded-2xl flex items-center justify-center mx-auto mb-4 rotate-3 shadow-xl">
+                  <LifeBuoy size={24} className="text-black" />
+                </div>
+                <h4 className="text-white text-lg font-black tracking-tight mb-2 text-center">Still stuck?</h4>
+                <p className="text-white/50 text-[12px] font-medium mb-6 leading-relaxed text-center">Our support heroes are available 24/7 to help you with your hiring needs.</p>
+                
+                <AnimatePresence mode="wait">
+                  {!showSupportForm ? (
+                    <motion.button 
+                      key="btn"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      onClick={() => setShowSupportForm(true)}
+                      className="w-full py-4 bg-[#FDF22F] text-black rounded-[20px] font-black text-[11px] uppercase tracking-widest hover:bg-white active:scale-95 transition-all shadow-lg flex items-center justify-center gap-3"
+                    >
+                      <MessageCircle size={16} /> Chat With Support
+                    </motion.button>
+                  ) : (
+                    <motion.div 
+                      key="form"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="space-y-4"
+                    >
+                      <textarea 
+                        autoFocus
+                        value={supportMessage}
+                        onChange={(e) => setSupportMessage(e.target.value)}
+                        placeholder="Write your message to Global Admin..."
+                        className="w-full h-32 bg-white/10 border border-white/20 rounded-2xl p-4 text-white text-[13px] font-medium outline-none focus:ring-2 focus:ring-[#FDF22F]/50 transition-all placeholder:text-white/20 resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setShowSupportForm(false)}
+                          className="flex-1 py-3 bg-white/5 text-white/40 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={handleSendSupport}
+                          disabled={!supportMessage.trim() || isSendingSupport}
+                          className="flex-[2] py-3 bg-[#FDF22F] text-black rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-white active:scale-95 transition-all shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {isSendingSupport ? 'Sending...' : 'Send Message'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <p className="text-white/30 text-[9px] font-bold mt-4 uppercase tracking-[0.2em] text-center">Direct to Global Admin</p>
+              </div>
+            </div>
+
+            <div className="text-center pt-2">
+              <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">System Version 2.4.0-pro</p>
+            </div>
+          </div>
+        );
+
+      case 'employees':
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              {[{ l: 'Headcount', v: totalEmployees }, { l: 'Hired (Period)', v: hiredCount }, { l: 'Open Roles', v: activeJobsCount }].map((m, i) => (
+                <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100 text-center">
+                  <p className="text-2xl font-black text-black tabular-nums">{m.v}</p>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">{m.l}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Hired Employees</p>
+            {!(panelData || []).length ? <p className="text-sm text-gray-400 italic text-center py-8">No hired employees found</p>
+              : (panelData || []).map((emp: any, i: number) => (
+                <div key={i} className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-black transition-all">
+                  <div className="w-10 h-10 rounded-xl bg-black flex items-center justify-center text-[#FDF22F] font-black text-sm shrink-0">{emp.name?.charAt(0) ?? 'E'}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-black text-black truncate">{emp.name}</p>
+                    <p className="text-[10px] text-gray-400 font-bold truncate">{emp.job_posting?.title ?? emp.jobPosting?.title ?? '—'}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-[10px] font-black text-gray-500">{emp.job_posting?.department ?? '—'}</p>
+                    <p className="text-[9px] text-gray-300 font-bold mt-0.5">{emp.hired_at ? new Date(emp.hired_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : '—'}</p>
+                  </div>
+                  <span className="shrink-0 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest bg-green-50 text-green-700 border border-green-100">{emp.employment_status || 'Active'}</span>
+                </div>
+              ))}
+          </div>
+        );
+
+      case 'turnover': {
+        const tv = panelData?.turnover ?? stats?.turnover ?? [];
+        const tvTotal = tv.reduce((s: number, d: any) => s + d.total, 0);
+        const tvRes = tv.reduce((s: number, d: any) => s + d.resigned, 0);
+        const tvTerm = tv.reduce((s: number, d: any) => s + d.terminated, 0);
+        return (
+          <div className="space-y-6">
+            <div className="grid grid-cols-3 gap-3">
+              {[{ l: 'Separations', v: tvTotal, c: 'text-black' }, { l: 'Resigned', v: tvRes, c: 'text-emerald-600' }, { l: 'Terminated', v: tvTerm, c: 'text-red-500' }].map((m, i) => (
+                <div key={i} className="bg-gray-50 rounded-2xl p-4 border border-gray-100 text-center">
+                  <p className={`text-2xl font-black tabular-nums ${m.c}`}>{m.v}</p>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">{m.l}</p>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-2xl border border-gray-100 overflow-hidden">
+              <table className="w-full text-left">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>{['Month', 'Rate', 'Resigned', 'Term.', 'Total'].map(h => <th key={h} className="px-4 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest">{h}</th>)}</tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {tv.map((d: any, i: number) => (
+                    <tr key={i} className={`${d.total > 0 ? 'bg-red-50/30' : ''} hover:bg-gray-50`}>
+                      <td className="px-4 py-3 text-[12px] font-black text-black">{d.full_label}</td>
+                      <td className="px-4 py-3"><span className={`text-[11px] font-black tabular-nums ${d.rate > 5 ? 'text-red-500' : d.rate > 2 ? 'text-amber-500' : 'text-emerald-600'}`}>{d.rate}%</span></td>
+                      <td className="px-4 py-3 text-[12px] text-emerald-600 font-black tabular-nums">{d.resigned}</td>
+                      <td className="px-4 py-3 text-[12px] text-red-500 font-black tabular-nums">{d.terminated}</td>
+                      <td className="px-4 py-3 text-[12px] font-black text-black tabular-nums">{d.total}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      }
+
+      case 'performance': {
+        const pf = panelData;
+        const pfAp = pf?.funnel?.applied || 1;
+        const offerAcc = pf?.funnel?.offer > 0 ? Math.round((pf.funnel.hired / pf.funnel.offer) * 100) : 0;
+        const hireRate = Math.round(((pf?.funnel?.hired ?? 0) / pfAp) * 100);
+        const screenP = Math.round(((pf?.funnel?.screening ?? 0) / pfAp) * 100);
+        const intConv = pf?.funnel?.screening > 0 ? Math.round(((pf?.funnel?.interviewing ?? 0) / pf.funnel.screening) * 100) : 0;
+        return (
+          <div className="space-y-6">
+            <div className="bg-black rounded-[24px] p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#FDF22F]/10 rounded-full -translate-y-8 translate-x-8" />
+              <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2">Avg. Time to Hire</p>
+              <div className="flex items-baseline gap-2">
+                <span className="text-5xl font-black text-[#FDF22F] tabular-nums">{pf?.avg_time_to_hire || avgTimeToHire || '—'}</span>
+                <span className="text-[13px] font-black text-white/40">days</span>
+              </div>
+              <p className="text-[10px] text-white/30 font-bold mt-2 uppercase tracking-widest">Industry benchmark: 28–42 days</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Funnel Conversion Rates</p>
+              <div className="space-y-4">
+                {[
+                  { l: 'Application → Screening', v: screenP, n: 'Screening pass rate' },
+                  { l: 'Screening → Interview', v: intConv, n: 'Interview conversion' },
+                  { l: 'Offer Acceptance Rate', v: offerAcc, n: 'Accepted / Offered' },
+                  { l: 'Overall Hire Rate', v: hireRate, n: 'Hired / Total Applied' },
+                ].map((m, i) => (
+                  <div key={i}>
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-[11px] font-black text-gray-600">{m.l}</span>
+                      <span className="text-[13px] font-black text-black tabular-nums">{m.v}%</span>
+                    </div>
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(m.v, 100)}%` }} transition={{ duration: 0.7, delay: i * 0.1 }} className="h-full rounded-full" style={{ background: m.v >= 50 ? '#10B981' : m.v >= 25 ? '#FDF22F' : '#EF4444' }} />
+                    </div>
+                    <p className="text-[9px] text-gray-300 font-bold mt-1">{m.n}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[{ l: 'Total Applied', v: pf?.funnel?.applied ?? 0 }, { l: 'Total Hired', v: pf?.funnel?.hired ?? 0 }, { l: 'Active Jobs', v: pf?.metrics?.active_jobs ?? 0 }, { l: 'Retention Rate', v: `${pf?.metrics?.retention_rate ?? 0}%` }].map((m, i) => (
+                <div key={i} className={`rounded-2xl p-4 border text-center ${i === 0 ? 'bg-[#FDF22F]/10 border-[#FDF22F]/20' : 'bg-gray-50 border-gray-100'}`}>
+                  <p className="text-2xl font-black text-black tabular-nums">{m.v}</p>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">{m.l}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      case 'interviews': {
+        const ivs = Array.isArray(panelData) ? panelData : [];
+        return (
+          <div className="space-y-4">
+            {ivs.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 gap-3">
+                <Calendar size={32} className="text-gray-200" />
+                <p className="text-sm text-gray-400 italic">No interviews scheduled</p>
+              </div>
+            ) : ivs.map((iv: any, i: number) => {
+              const dt = iv.scheduled_at ? new Date(iv.scheduled_at) : null;
+              const isPast = dt ? dt < new Date() : false;
+              return (
+                <div key={i} className={`p-4 rounded-2xl border ${isPast ? 'bg-gray-50 border-gray-100' : 'bg-white border-[#FDF22F]/30 shadow-sm'}`}>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${isPast ? 'bg-gray-200 text-gray-500' : 'bg-[#FDF22F] text-black'}`}>{iv.applicant?.name?.charAt(0) ?? 'A'}</div>
+                      <div>
+                        <p className="text-[13px] font-black text-black">{iv.applicant?.name ?? '—'}</p>
+                        <p className="text-[10px] text-gray-400 font-bold">{iv.type?.replace(/_/g, ' ') ?? 'Interview'}</p>
+                      </div>
+                    </div>
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border shrink-0 ${isPast ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-[#FDF22F]/10 text-black border-[#FDF22F]/30'}`}>{isPast ? 'Completed' : 'Upcoming'}</span>
+                  </div>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 ml-12">
+                    {dt && <span className="text-[11px] text-gray-500 font-bold">{dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · {dt.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>}
+                    {iv.location && <span className="text-[11px] text-gray-400">📍 {iv.location}</span>}
+                    {iv.interviewer?.name && <span className="text-[11px] text-gray-400">👤 {iv.interviewer.name}</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
+
+      case 'candidates':
+        return (
+          <div className="space-y-3">
+            {!(panelData || []).length ? <p className="text-sm text-gray-400 italic text-center py-8">No candidates found</p>
+              : (panelData || []).map((app: any, i: number) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-2xl border border-gray-100 hover:border-black transition-all bg-white">
+                  <div className="w-9 h-9 rounded-xl bg-black flex items-center justify-center text-[#FDF22F] font-black text-sm shrink-0">{app.name?.charAt(0)}</div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-black text-black truncate">{app.name}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{app.job_posting?.title ?? '—'}</p>
+                  </div>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border shrink-0 ${STATUS_COLOR_BAR[app.status] ?? 'bg-gray-50 text-gray-400 border-gray-100'}`}>{app.status?.replace(/_/g, ' ') ?? 'new'}</span>
+                </div>
+              ))}
+            <button onClick={() => { setActivePanel(null); router.push('/dashboard?tab=Candidates'); }} className="w-full mt-2 flex items-center justify-center gap-2 py-3 rounded-2xl bg-[#FDF22F] text-black font-black text-[11px] uppercase tracking-widest hover:bg-black hover:text-[#FDF22F] transition-all">
+              View Full Candidate List <ArrowRight size={14} />
+            </button>
+          </div>
+        );
+
+      default: return null;
+    }
+  };
+
+
+  /* ── Export CSV ──────────────────────────────────────── */
+  const handleExport = async () => {
+    setExportLoading(true);
+    try {
+      const r = await apiFetch(`/v1/applicants?page=1&limit=500`);
+      buildAndDownloadCSV(stats, r.data || [], jobs || [], reportFilters);
+      showToast('CSV Report Downloaded ✓');
+    } catch { showToast('Export failed', 'error'); }
+    finally { setExportLoading(false); }
+  };
+
+  const handleSendSupport = async () => {
+    if (!supportMessage.trim()) return;
+    setIsSendingSupport(true);
+    try {
+      const users = await apiFetch('/v1/messages/users');
+      const admin = users.find((u: any) => u.email === 'admin@droga.com') || users[0];
+      if (!admin) {
+        showToast('No administrator found', 'error');
+        return;
+      }
+      await apiFetch('/v1/messages/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to_user_id: admin.id, message: supportMessage })
+      });
+      showToast('Message sent to Global Admin ✓');
+      setSupportMessage('');
+      setShowSupportForm(false);
+    } catch (e) {
+      showToast('Could not reach support', 'error');
+    } finally {
+      setIsSendingSupport(false);
+    }
+  };
+
 
   const searchParams = useSearchParams();
   const liveSearch = searchParams.get("search") ?? "";
@@ -2867,52 +3474,276 @@ export default function TADashboard({
       )}
 
       {initialTab === "Reports" && (
-        <div className="bg-gray-50/50 min-h-[calc(100vh-100px)]">
-          {statsLoading && !stats ? (
-            /* Skeleton placeholder while data loads */
-            <div className="p-10 space-y-6 animate-pulse">
-              <div className="grid grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white p-5 rounded-2xl border border-gray-100 flex items-center gap-4"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-2.5 bg-gray-100 rounded w-3/4" />
-                      <div className="h-5 bg-gray-100 rounded w-1/2" />
-                    </div>
-                  </div>
-                ))}
+        <div className="flex flex-col lg:flex-row min-h-screen bg-gray-50/50">
+          {/* Mobile toggle bar (Reports specific) */}
+          <div className="lg:hidden bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-[#FDF22F] rounded-lg flex items-center justify-center font-black text-black text-sm">
+                D
               </div>
-              <div className="grid grid-cols-2 gap-10">
-                <div className="bg-white rounded-[32px] border border-gray-100 h-64" />
-                <div className="space-y-6">
-                  <div className="bg-white rounded-[32px] border border-gray-100 h-28" />
-                  <div className="bg-white rounded-[32px] border border-gray-100 h-32" />
+              <p className="text-[13px] font-black text-black">
+                Droga Pharma · TA Team
+              </p>
+            </div>
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="p-2 rounded-xl border border-gray-200"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <AnimatePresence>
+            {activePanel && (
+              <SidePanel
+                title={PANEL_META[activePanel]?.title ?? 'Panel'}
+                subtitle={PANEL_META[activePanel]?.subtitle ?? ''}
+                onClose={() => setActivePanel(null)}
+                loading={panelLoading}
+              >
+                {renderPanel()}
+              </SidePanel>
+            )}
+          </AnimatePresence>
+
+          {/* Sidebar */}
+          <div
+            className={`${sidebarOpen ? "flex" : "hidden"} lg:flex w-full lg:w-60 bg-white border-r border-gray-100 flex-col shrink-0 overflow-y-auto`}
+            style={{ maxHeight: "100vh", position: "sticky", top: 0 }}
+          >
+            <div className="hidden lg:block px-5 py-5 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-[#FDF22F] rounded-xl flex items-center justify-center font-black text-black text-lg shadow-md">
+                  D
+                </div>
+                <div>
+                  <p className="text-[13px] font-black text-black leading-none">
+                    Droga Pharma
+                  </p>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mt-0.5">
+                    TA Dashboard
+                  </p>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="p-10 space-y-6">
-              {/* ── Top Greeting ── */}
-              <div className="flex items-end justify-between">
-                <div>
-                  <h2 className="text-3xl font-black text-[#000000]">
-                    Welcome, {user.name}!
-                  </h2>
-                  <p className="text-sm font-medium text-gray-500 mt-1">
-                    Manage candidates and track applications
+            <div className="px-3 py-5 flex-1 space-y-1">
+              <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] px-3 mb-3">
+                Main
+              </p>
+
+              {/* Dashboard - active */}
+              <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#FDF22F] text-black shadow-md cursor-default">
+                <BarChart2 size={15} />
+                <span className="text-[13px] font-bold">Dashboard</span>
+                <div className="ml-auto w-1.5 h-1.5 rounded-full bg-black" />
+              </div>
+
+              {/* Candidates → panel */}
+              <button
+                onClick={() => openPanel("candidates")}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group"
+              >
+                <Users
+                  size={15}
+                  className="text-gray-400 group-hover:text-black transition-colors"
+                />
+                <span className="text-[13px] font-bold">Candidates</span>
+              </button>
+
+              {/* Jobs → navigates */}
+              <button
+                onClick={() => router.push("/dashboard?tab=Jobs")}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group"
+              >
+                <Briefcase
+                  size={15}
+                  className="text-gray-400 group-hover:text-black transition-colors"
+                />
+                <span className="text-[13px] font-bold">Jobs</span>
+              </button>
+
+              {/* Hiring Plan → navigates */}
+              <button
+                onClick={() => router.push("/dashboard?tab=HiringPlan")}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group"
+              >
+                <FileText
+                  size={15}
+                  className="text-gray-400 group-hover:text-black transition-colors"
+                />
+                <span className="text-[13px] font-bold">Hiring Plan</span>
+              </button>
+
+              {/* Interviews → panel */}
+              <button
+                onClick={() => openPanel("interviews")}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group"
+              >
+                <Activity
+                  size={15}
+                  className="text-gray-400 group-hover:text-black transition-colors"
+                />
+                <span className="text-[13px] font-bold">Interviews</span>
+              </button>
+
+              {/* Reports (current) */}
+              <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group">
+                <PieChart
+                  size={15}
+                  className="text-gray-400 group-hover:text-black transition-colors"
+                />
+                <span className="text-[13px] font-bold">Reports</span>
+              </button>
+
+              <div className="pt-4 mt-2 border-t border-gray-100">
+                <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] px-3 mb-3">
+                  Analytics
+                </p>
+
+                {/* Employees → opens panel */}
+                <button
+                  onClick={() => openPanel("employees")}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group"
+                >
+                  <Users
+                    size={15}
+                    className="text-gray-400 group-hover:text-black transition-colors"
+                  />
+                  <span className="text-[13px] font-bold">Employees</span>
+                </button>
+
+                {/* Turnover → opens panel */}
+                <button
+                  onClick={() => openPanel("turnover")}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group"
+                >
+                  <TrendingDown
+                    size={15}
+                    className="text-gray-400 group-hover:text-black transition-colors"
+                  />
+                  <span className="text-[13px] font-bold">Turnover</span>
+                </button>
+
+                {/* Performance → opens panel */}
+                <button
+                  onClick={() => openPanel("performance")}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group"
+                >
+                  <TrendingUp
+                    size={15}
+                    className="text-gray-400 group-hover:text-black transition-colors"
+                  />
+                  <span className="text-[13px] font-bold">Performance</span>
+                </button>
+              </div>
+
+              <div className="pt-4 mt-2 border-t border-gray-100">
+                <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] px-3 mb-3">
+                  System
+                </p>
+                <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:bg-gray-50 hover:text-black transition-all">
+                  <span className="text-sm">⚙️</span>
+                  <span className="text-[13px] font-bold">Settings</span>
+                </button>
+                <button
+                  onClick={() => openPanel("help")}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activePanel === "help" ? "bg-[#FDF22F] text-black shadow-sm" : "text-gray-400 hover:bg-gray-50 hover:text-black"}`}
+                >
+                  <span className="text-sm">❓</span>
+                  <span className="text-[13px] font-bold">Help & Support</span>
+                </button>
+              </div>
+            </div>
+            <div className="px-3 py-4 border-t border-gray-100">
+              <div className="bg-gray-50 rounded-2xl p-3 flex items-center gap-3 border border-gray-100">
+                <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-[#FDF22F] font-black text-sm shrink-0">
+                  {user.name.charAt(0)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[12px] font-black text-black truncate">
+                    {user.name}
+                  </p>
+                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                    TA Team
                   </p>
                 </div>
-                {/* Live data badge */}
-                <div className="flex items-center gap-2 bg-white border border-gray-100 shadow-sm px-3 py-1.5 rounded-xl">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    Live Data
-                  </span>
+                <button
+                  onClick={onLogout}
+                  className="text-gray-300 hover:text-black transition-colors font-black text-sm"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right content */}
+          <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+            {statsLoading && !stats ? (
+              /* Skeleton placeholder while data loads */
+              <div className="p-10 space-y-6 animate-pulse">
+                <div className="grid grid-cols-4 gap-6">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="bg-white p-5 rounded-2xl border border-gray-100 flex items-center gap-4"
+                    >
+                      <div className="w-10 h-10 rounded-lg bg-gray-100 shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-2.5 bg-gray-100 rounded w-3/4" />
+                        <div className="h-5 bg-gray-100 rounded w-1/2" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-10">
+                  <div className="bg-white rounded-[32px] border border-gray-100 h-64" />
+                  <div className="space-y-6">
+                    <div className="bg-white rounded-[32px] border border-gray-100 h-28" />
+                    <div className="bg-white rounded-[32px] border border-gray-100 h-32" />
+                  </div>
                 </div>
               </div>
+            ) : (
+              <div className="p-6 sm:p-10 space-y-6 sm:space-y-10">
+                {/* ── Top Greeting ── */}
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+                  <div>
+                    <h2 className="text-4xl font-black text-[#000000] tracking-tight">
+                      Welcome back, {user.name.split(' ')[0]}!
+                    </h2>
+                    <p className="text-[13px] font-bold text-gray-400 mt-2 flex items-center gap-2">
+                       Everything is running smoothly today.
+                    </p>
+                  </div>
+                  
+                  {/* Live Pulsing Dot - Ported and Enlarged */}
+                  <div className="flex items-center gap-4 bg-white border border-gray-100 shadow-sm px-6 py-3 rounded-2xl group hover:shadow-md transition-all cursor-default w-fit shadow-lg shadow-emerald-500/5">
+                    <div className="relative flex items-center justify-center">
+                      {/* Inner dot */}
+                      <div className="w-3.5 h-3.5 rounded-full bg-emerald-500 z-10 shadow-[0_0_12px_rgba(16,185,129,0.7)]" />
+                      {/* Pulse rings */}
+                      <div className="absolute inset-0 w-3.5 h-3.5 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                      <div className="absolute inset-0 w-full h-full rounded-full bg-emerald-400/20 animate-pulse scale-[2.5]" />
+                    </div>
+                    <div className="flex flex-col ml-2">
+                      <span className="text-[12px] font-black text-black uppercase tracking-widest leading-none">LIVE</span>
+                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest mt-1">Real-time stats</span>
+                    </div>
+                  </div>
+                </div>
 
               {/* ── Horizontal Filter Utility Bar ── */}
               <div className="bg-white border border-gray-100 shadow-sm rounded-2xl px-5 py-3.5 flex items-center gap-3 flex-wrap">
@@ -3054,7 +3885,7 @@ export default function TADashboard({
                 {[
                   {
                     label: "Total Employees",
-                    value: stats?.total_employees?.toLocaleString() || "0",
+                    value: stats?.metrics?.total_employees?.toLocaleString() || "0",
                     trend: `${stats?.total_employees_trend > 0 ? "+" : ""}${stats?.total_employees_trend || 0}% from last month`,
                     isPositive: true,
                     icon: (
@@ -3100,12 +3931,12 @@ export default function TADashboard({
                   },
                   {
                     label: "Retention Rate",
-                    value: (stats?.retention_rate || 98) + "%",
+                    value: (stats?.metrics?.retention_rate || 98) + "%",
                     trend:
-                      stats?.retention_rate >= 95
+                      (stats?.metrics?.retention_rate || 98) >= 95
                         ? "+0.5% Healthy"
                         : "-1.2% Review Needed",
-                    isPositive: (stats?.retention_rate || 98) >= 95,
+                    isPositive: (stats?.metrics?.retention_rate || 98) >= 95,
                     icon: (
                       <svg
                         className="w-5 h-5"
@@ -3126,7 +3957,7 @@ export default function TADashboard({
                   },
                   {
                     label: "Ongoing Job Openings",
-                    value: stats?.total_active_jobs || 0,
+                    value: stats?.metrics?.active_jobs || 0,
                     trend: `${stats?.total_active_jobs_trend > 0 ? "+" : ""}${stats?.total_active_jobs_trend || 0}% Growth`,
                     isPositive: true,
                     icon: (
@@ -4050,8 +4881,8 @@ export default function TADashboard({
                 </div>
               </div>
             </div>
-          )}{" "}
-          {/* end statsLoading ternary */}
+          )}
+          </div>
         </div>
       )}
 

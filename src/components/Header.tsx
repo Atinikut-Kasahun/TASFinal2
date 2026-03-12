@@ -94,10 +94,17 @@ export default function Header() {
                                 <button onClick={handleLogout} className="text-[13px] font-black uppercase tracking-wider text-red-500 hover:text-red-600 transition-colors">Logout</button>
                             </div>
                         ) : (
-                            <div className="hidden lg:flex items-center gap-6 pr-4">
-                                <Link href="/login" className="text-[13px] font-bold text-gray-400 hover:text-black transition-colors">Staff Login</Link>
-                                <Link href="/my-applications" className="text-[13px] font-bold text-gray-600 hover:text-black transition-colors flex items-center gap-1.5">
-                                    {applicantToken ? 'My Applications' : 'Track Application'}
+                            <div className="hidden lg:flex items-center gap-4 pr-3">
+                                <Link href="/login" className="text-[13px] font-bold text-gray-400 hover:text-black transition-colors mr-2">Staff Login</Link>
+                                <Link 
+                                    href="/my-applications" 
+                                    className="bg-black text-white text-[12px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 hover:bg-black/80 transition-all shadow-md"
+                                >
+                                    <div className="relative flex h-2.5 w-2.5 shrink-0 ml-0.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1FE08F] opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#1FE08F]"></span>
+                                    </div>
+                                    <span className="mr-0.5">{applicantToken ? 'My Applications' : 'Track Application'}</span>
                                 </Link>
                             </div>
                         )}
