@@ -250,22 +250,48 @@ class ApplicantAuthController extends Controller
             'professional_background' => 'nullable|string',
             'portfolio_link'          => 'nullable|url|max:255',
             'resume'                  => 'nullable|file|mimes:pdf|max:10000',
+            'photo'                   => 'nullable|image|max:5000',
         ]);
 
-        $applicant->update([
+        $profileData = [
             'name'                    => trim($validated['first_name'] . ' ' . $validated['last_name']),
-            'headline'                => $validated['headline'],
-            'phone'                   => $validated['phone'],
-            'age'                     => $validated['age'],
-            'gender'                  => $validated['gender'],
-            'years_of_experience'     => $validated['years_of_experience'],
-            'professional_background' => $validated['professional_background'],
-            'portfolio_link'          => $validated['portfolio_link'],
-        ]);
+            'headline'                => $validated['headline'] ?? '',
+            'phone'                   => $validated['phone'] ?? '',
+            'age'                     => $validated['age'] ?? null,
+            'gender'                  => $validated['gender'] ?? '',
+            'years_of_experience'     => $validated['years_of_experience'] ?? null,
+            'professional_background' => $validated['professional_background'] ?? '',
+            'portfolio_link'          => $validated['portfolio_link'] ?? '',
+        ];
+
+        // Update ALL applications associated with this email so the TA dashboard sees real-time updates everywhere
+        if ($applicant->email) {
+            Applicant::where('email', $applicant->email)->update($profileData);
+        } else {
+            $applicant->update($profileData);
+        }
+
+        // Apply back to the current applicant model instance so the response contains updated data
+        $applicant->fill($profileData);
 
         if ($request->hasFile('resume')) {
             $path = $request->file('resume')->store('resumes', 'public');
-            $applicant->update(['resume_path' => $path]);
+            if ($applicant->email) {
+                Applicant::where('email', $applicant->email)->update(['resume_path' => $path]);
+            } else {
+                $applicant->update(['resume_path' => $path]);
+            }
+            $applicant->resume_path = $path;
+        }
+
+        if ($request->hasFile('photo')) {
+            $path = $request->file('photo')->store('applicant_photos', 'public');
+            if ($applicant->email) {
+                Applicant::where('email', $applicant->email)->update(['photo_path' => $path]);
+            } else {
+                $applicant->update(['photo_path' => $path]);
+            }
+            $applicant->photo_path = $path;
         }
 
         return response()->json([

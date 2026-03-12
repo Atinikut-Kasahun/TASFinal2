@@ -22,7 +22,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" className={inter.variable} suppressHydrationWarning>
-            <body className="font-inter antialiased">
+            <body className="font-inter antialiased" suppressHydrationWarning>
                 {children}
                 <Script src="https://accounts.google.com/gsi/client" strategy="beforeInteractive" />
             </body>

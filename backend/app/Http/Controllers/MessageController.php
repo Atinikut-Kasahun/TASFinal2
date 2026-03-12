@@ -19,10 +19,14 @@ class MessageController extends Controller
     {
         $query = User::query();
 
-        // If not global admin, only show users in the same tenant
+        // If not global admin, only show users in the same tenant OR global admins
         if (!$request->user()->roles()->where('slug', 'admin')->exists()) {
-            $query->where('tenant_id', $request->user()->tenant_id)
-                ->where('id', '!=', $request->user()->id);
+            $query->where(function($q) use ($request) {
+                $q->where('tenant_id', $request->user()->tenant_id)
+                  ->orWhereHas('roles', function($rq) {
+                      $rq->where('slug', 'admin');
+                  });
+            })->where('id', '!=', $request->user()->id);
         } else {
             $query->where('id', '!=', $request->user()->id);
         }
@@ -44,9 +48,10 @@ class MessageController extends Controller
 
         $recipient = User::findOrFail($request->to_user_id);
 
-        // Authorization: Non-admins can only message users in their own tenant
+        // Authorization: Non-admins can only message users in their own tenant OR Global Admins
         if (!$request->user()->roles()->where('slug', 'admin')->exists()) {
-            if ($recipient->tenant_id !== $request->user()->tenant_id) {
+            $isGlobalAdmin = $recipient->roles()->where('slug', 'admin')->exists();
+            if ($recipient->tenant_id !== $request->user()->tenant_id && !$isGlobalAdmin) {
                 return response()->json(['error' => 'Unauthorized to message this user.'], 403);
             }
         }

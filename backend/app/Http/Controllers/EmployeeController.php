@@ -188,4 +188,49 @@ class EmployeeController extends Controller
             'last_rate' => $lastRate,
         ]);
     }
+    /**
+     * Detailed list of employees who left (resigned or terminated).
+     * Includes Name, Status, Date, Department, Profession, and Reason.
+     */
+    public function turnoverList(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $tenantId = $user->tenant_id;
+
+        if (!$tenantId) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // 1. Get separations from User table (Internal Employees)
+        $users = User::where('tenant_id', $tenantId)
+            ->whereIn('employment_status', ['resigned', 'terminated'])
+            ->select(['id', 'name', 'email', 'department', 'employment_status', 'separation_date', 'separation_reason'])
+            ->get()
+            ->map(function($u) {
+                $u->profession = 'General Staff';
+                $u->source = 'Employee';
+                return $u;
+            });
+
+        // 2. Get separations from Applicant table (Portal Hires)
+        $applicants = Applicant::where('applicants.tenant_id', $tenantId)
+            ->join('job_postings', 'applicants.job_posting_id', '=', 'job_postings.id')
+            ->leftJoin('job_requisitions', 'job_postings.job_requisition_id', '=', 'job_requisitions.id')
+            ->whereIn('applicants.employment_status', ['resigned', 'terminated'])
+            ->select([
+                'applicants.id', 'applicants.name', 'applicants.email', 
+                'applicants.employment_status', 'applicants.separation_date', 'applicants.separation_reason',
+                'job_postings.title as profession',
+                DB::raw('COALESCE(job_postings.department, job_requisitions.department) as department')
+            ])
+            ->get()
+            ->map(function($a) {
+                $a->source = 'System Hire';
+                return $a;
+            });
+
+        $all = $users->concat($applicants)->sortByDesc('separation_date')->values();
+
+        return response()->json($all);
+    }
 }

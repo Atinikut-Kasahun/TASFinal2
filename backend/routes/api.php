@@ -71,6 +71,7 @@ Route::middleware('mock.auth')->group(function () {
             Route::get('/employees', [\App\Http\Controllers\EmployeeController::class, 'index']);
             Route::patch('/employees/{id}/status', [\App\Http\Controllers\EmployeeController::class, 'updateStatus']);
             Route::get('/employees/turnover', [\App\Http\Controllers\EmployeeController::class, 'turnoverData']);
+            Route::get('/employees/turnover-list', [\App\Http\Controllers\EmployeeController::class, 'turnoverList']);
         });
 
         // ─────────────────────────────────────────────────────────
