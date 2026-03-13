@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\Route;
 
 // Auth Routes
 Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login']);
+Route::post('/forgot-password', [\App\Http\Controllers\AuthController::class, 'sendResetLink']);
+Route::post('/reset-password', [\App\Http\Controllers\AuthController::class, 'resetPassword']);
 
 Route::middleware('mock.auth')->group(function () {
     Route::get('/user', function (Request $request) {

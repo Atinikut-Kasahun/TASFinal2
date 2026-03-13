@@ -116,7 +116,7 @@ export default function LoginPage() {
                             <label className="block text-sm font-bold text-primary">Password</label>
                             {/* ── Reset your password link ── */}
                             <Link
-                                href="/applicant/forgot-password"
+                                href="/forgot-password"
                                 className="text-xs text-primary/50 hover:text-black font-medium transition-colors hover:underline underline-offset-2"
                             >
                                 Reset your password →
@@ -144,7 +144,7 @@ export default function LoginPage() {
                     <p className="text-center text-xs text-primary/40 pt-2">
                         Are you an applicant?{" "}
                         <Link
-                            href="/applicant/login"
+                            href="/my-applications"
                             className="text-primary/60 font-semibold hover:text-black hover:underline underline-offset-2 transition-colors"
                         >
                             Sign in to your portal →

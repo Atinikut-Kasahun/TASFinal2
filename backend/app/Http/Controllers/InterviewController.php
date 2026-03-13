@@ -26,6 +26,14 @@ class InterviewController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->boolean('upcoming')) {
+            $query->whereDate('scheduled_at', '>=', now()->toDateString());
+        }
+
+        if ($request->has('limit')) {
+            return response()->json($query->orderBy('scheduled_at', 'asc')->paginate($request->get('limit', 10)));
+        }
+
         return response()->json($query->orderBy('scheduled_at', 'asc')->get());
     }
 

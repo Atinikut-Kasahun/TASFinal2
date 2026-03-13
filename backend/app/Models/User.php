@@ -19,7 +19,7 @@ class User extends Authenticatable
     public function createToken(string $name, array $abilities = ['*'])
     {
         $userId = $this->id;
-        return new class ($userId) {
+        return new class($userId) {
             public $plainTextToken;
             public function __construct($userId)
             {
@@ -43,6 +43,8 @@ class User extends Authenticatable
         'separation_reason',
         'joined_date',
         'department',
+        'password_reset_token', // ← ADDED
+        'password_reset_expires_at', // ← ADDED
     ];
 
     /**
@@ -53,6 +55,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'password_reset_token', // ← ADDED (never expose this in API responses)
     ];
 
     /**
@@ -67,6 +70,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'separation_date' => 'date',
             'joined_date' => 'date',
+            'password_reset_expires_at' => 'datetime', // ← ADDED
         ];
     }
 

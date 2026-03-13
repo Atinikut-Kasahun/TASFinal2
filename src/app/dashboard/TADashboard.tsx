@@ -286,6 +286,7 @@ export default function TADashboard({
   });
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [interviewsList, setInterviewsList] = useState<any[]>([]);
+  const [interviewsPagination, setInterviewsPagination] = useState<any>(null);
   const [applicantFilters, setApplicantFilters] = useState({
     experience: "All",
     department: "All",
@@ -1018,11 +1019,26 @@ export default function TADashboard({
         }
 
         if (initialTab === "Calendar") {
-          // Calendar only needs interviews
-          const interviewsData = await apiFetch(
-            `/v1/interviews?status=scheduled`,
+          // Calendar: fetch scheduled interviews with pagination
+          const interviewsResponse = await apiFetch(
+            `/v1/interviews?status=scheduled&upcoming=true&page=${page}&limit=10`,
           );
-          setInterviewsList(interviewsData || []);
+          
+          if (interviewsResponse?.data) {
+            setInterviewsList(interviewsResponse.data);
+            setInterviewsPagination({
+              total: interviewsResponse.total,
+              current_page: interviewsResponse.current_page,
+              last_page: interviewsResponse.last_page,
+              from: interviewsResponse.from,
+              to: interviewsResponse.to,
+            });
+            setCurrentPage(interviewsResponse.current_page);
+          } else {
+            setInterviewsList(interviewsResponse || []);
+            setInterviewsPagination(null);
+          }
+          
           setApplicants([]);
           setApplicantsPagination(null);
         } else if (initialTab === "Jobs") {
@@ -2404,7 +2420,7 @@ export default function TADashboard({
                                   src={
                                     app.photo_path.startsWith("http")
                                       ? app.photo_path
-                                      : `${API_URL.replace("/api", "/storage")}/${app.photo_path}`
+                                      : `${API_URL.split("/api")[0]}/storage/${app.photo_path.replace(/^\//, "")}`
                                   }
                                   alt=""
                                   className="w-full h-full object-cover"
@@ -3341,7 +3357,7 @@ export default function TADashboard({
             <div className="flex items-center gap-4">
               <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-4 py-2 rounded-full border border-gray-100">
                 Upcoming:{" "}
-                <span className="text-[#000000]">{interviewsList.length}</span>
+                <span className="text-[#000000]">{interviewsPagination?.total ?? interviewsList.length}</span>
               </p>
             </div>
           </div>
@@ -3365,100 +3381,186 @@ export default function TADashboard({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {interviewsList.length === 0 ? (
+              {(interviewsList || []).length === 0 ? (
                 <tr>
                   <td
                     colSpan={5}
                     className="px-8 py-20 text-center text-gray-400 italic text-sm"
                   >
-                    No scheduled interviews found.
+                    No upcoming scheduled interviews found.
                   </td>
                 </tr>
               ) : (
-                interviewsList.map((interview: any) => (
-                  <tr
-                    key={interview.id}
-                    className="hover:bg-gray-50 transition-colors group cursor-pointer"
-                    onClick={() => {
-                      if (interview.applicant)
-                        setDrawerApp(interview.applicant);
-                    }}
-                  >
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 font-black">
-                          {interview.applicant?.name?.charAt(0) || "C"}
+                (interviewsList || []).map((interview: any) => (
+                    <tr
+                      key={interview.id}
+                      className="hover:bg-gray-50 transition-colors group cursor-pointer"
+                      onClick={() => {
+                        if (interview.applicant)
+                          setDrawerApp(interview.applicant);
+                      }}
+                    >
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600 font-black">
+                            {interview.applicant?.name?.charAt(0) || "C"}
+                          </div>
+                          <div>
+                            <p className="font-black text-[13px] text-[#000000]">
+                              {interview.applicant?.name || "Unknown"}
+                            </p>
+                            <p className="text-[11px] text-gray-400 mt-0.5">
+                              {interview.applicant?.job_posting?.title ||
+                                "Open Role"}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-black text-[13px] text-[#000000]">
-                            {interview.applicant?.name || "Unknown"}
-                          </p>
-                          <p className="text-[11px] text-gray-400 mt-0.5">
-                            {interview.applicant?.job_posting?.title ||
-                              "Open Role"}
-                          </p>
+                      </td>
+                      <td className="px-8 py-6">
+                        <p className="text-[12px] font-medium text-gray-600">
+                          {interview.applicant?.email || "N/A"}
+                        </p>
+                        <p className="text-[11px] text-gray-400">
+                          {interview.applicant?.phone || "-"}
+                        </p>
+                      </td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#000000] group-hover:text-white transition-colors">
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                              />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="font-bold text-[#000000] text-[13px]">
+                              {new Date(
+                                interview.scheduled_at,
+                              ).toLocaleDateString("en-US", {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                              })}
+                            </p>
+                            <p className="text-[#000000] font-black text-[11px]">
+                              {new Date(
+                                interview.scheduled_at,
+                              ).toLocaleTimeString("en-US", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <p className="text-[12px] font-medium text-gray-600">
-                        {interview.applicant?.email || "N/A"}
-                      </p>
-                      <p className="text-[11px] text-gray-400">
-                        {interview.applicant?.phone || "-"}
-                      </p>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#000000] group-hover:text-white transition-colors">
-                          <svg
-                            className="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth="2"
-                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-bold text-[#000000] text-[13px]">
-                            {new Date(
-                              interview.scheduled_at,
-                            ).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </p>
-                          <p className="text-[#000000] font-black text-[11px]">
-                            {new Date(
-                              interview.scheduled_at,
-                            ).toLocaleTimeString("en-US", {
-                              hour: "numeric",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6 text-[13px] text-gray-600 capitalize font-medium">
-                      {interview.type}
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest bg-[#FDF22F] text-[#000000] shadow-lg shadow-[#FDF22F]/30 ring-1 ring-[#FDF22F]/50">
-                        Confirmed
-                      </span>
-                    </td>
-                  </tr>
-                ))
+                      </td>
+                      <td className="px-8 py-6 text-[13px] text-gray-600 capitalize font-medium">
+                        {interview.type}
+                      </td>
+                      <td className="px-8 py-6">
+                        <span className="px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest bg-[#FDF22F] text-[#000000] shadow-lg shadow-[#FDF22F]/30 ring-1 ring-[#FDF22F]/50">
+                          Confirmed
+                        </span>
+                      </td>
+                    </tr>
+                  ))
               )}
             </tbody>
           </table>
+
+          {/* Interview Pagination Controls */}
+          {interviewsPagination && interviewsPagination.last_page > 1 && (
+            <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                  Showing{" "}
+                  <span className="text-[#000000]">
+                    {interviewsPagination.from}
+                  </span>{" "}
+                  -{" "}
+                  <span className="text-[#000000]">{interviewsPagination.to}</span>{" "}
+                  of{" "}
+                  <span className="text-[#000000]">
+                    {interviewsPagination.total}
+                  </span>
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => fetchData(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#000000] hover:border-[#000000] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+
+                {Array.from(
+                  { length: Math.min(5, interviewsPagination.last_page) },
+                  (_, i) => {
+                    let startPage = Math.max(1, currentPage - 2);
+                    if (startPage + 4 > interviewsPagination.last_page) {
+                      startPage = Math.max(1, interviewsPagination.last_page - 4);
+                    }
+                    const pageNum = startPage + i;
+                    if (pageNum > interviewsPagination.last_page) return null;
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => fetchData(pageNum)}
+                        className={`w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm border ${currentPage === pageNum
+                          ? "bg-[#FDF22F] text-black border-[#FDF22F]"
+                          : "bg-white text-gray-400 border-gray-200 hover:border-[#FDF22F] hover:text-[#000000]"
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  },
+                )}
+
+                <button
+                  onClick={() => fetchData(currentPage + 1)}
+                  disabled={currentPage === interviewsPagination.last_page}
+                  className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#000000] hover:border-[#000000] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2.5"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

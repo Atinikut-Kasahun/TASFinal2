@@ -66,6 +66,14 @@ export const auth = {
     }),
     logout: () => apiFetch("/logout", { method: "POST" }),
     me: () => apiFetch("/user"),
+    forgotPassword: (email: string) => apiFetch("/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+    }),
+    resetPassword: (data: any) => apiFetch("/reset-password", {
+        method: "POST",
+        body: JSON.stringify(data),
+    }),
 };
 
 // Keep for compatibility but use the enhanced apiFetch internally

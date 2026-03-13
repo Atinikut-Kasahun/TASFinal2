@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { API_URL } from "@/lib/api";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Briefcase, Calendar, Clock } from "lucide-react";
 
 const defaultCategories = ["All Departments", "Engineering", "Design", "Product", "Operations", "Sales"];
 const ITEMS_PER_PAGE = 3;
@@ -140,11 +140,20 @@ export default function JobBoard({ settings, searchQuery, onClearSearch }: { set
                     <span className="text-[#000000]/30 text-[9px] font-bold">{job.type}</span>
                   </div>
                   <h3 className="text-base font-bold text-[#000000] mb-1 group-hover:text-[#000000] transition-colors">{job.title}</h3>
-                  <p className="text-[#000000]/50 text-xs font-medium flex items-center gap-1.5">📍 {job.location || "—"}</p>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-3">
+                    <p className="text-[#000000]/50 text-[10px] font-bold flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-[#000000]/30" />
+                      {job.location || "—"}
+                    </p>
+                    <p className="text-[#000000]/50 text-[10px] font-bold flex items-center gap-1">
+                      <Briefcase className="w-3 h-3 text-[#000000]/30" />
+                      {job.type}
+                    </p>
+                  </div>
                   <div className="flex flex-wrap gap-1.5 mt-3">
                     {(job.published_at || job.created_at) && (
                       <div className="bg-white/60 px-2 py-1 rounded-lg flex items-center gap-1 border border-[#000000]/5 shadow-sm">
-                        <svg className="w-3 h-3 text-[#000000]/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                        <Calendar className="w-3 h-3 text-[#000000]/40" />
                         <span className="text-[9px] font-bold text-[#000000]/60 whitespace-nowrap">
                           {(() => {
                             const published = job.published_at || job.created_at;
@@ -162,7 +171,7 @@ export default function JobBoard({ settings, searchQuery, onClearSearch }: { set
                       </div>
                     )}
                     <div className="bg-[#000000]/5 px-2 py-1 rounded-lg flex items-center gap-1 shadow-sm border border-[#000000]/5">
-                      <svg className="w-3 h-3 text-[#000000]/40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <Clock className="w-3 h-3 text-[#000000]/40" />
                       <span className="text-[9px] font-bold text-[#000000]/60 whitespace-nowrap">
                         {(() => {
                           if (!job.deadline) return 'No Deadline Set';

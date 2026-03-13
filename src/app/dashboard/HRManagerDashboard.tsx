@@ -310,6 +310,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
     const [exportModal, setExportModal] = useState(false);
     const [recentFilter, setRecentFilter] = useState({ status: 'All', department: 'All' });
     const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
+    const [reportSearch, setReportSearch] = useState('');
     const router = useRouter();
 
     useEffect(() => {
@@ -452,6 +453,19 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
     };
 
     const pendingReqs = requisitions.filter(r => r.status === 'pending_md' || r.status === 'pending_hr');
+
+    /* ── Search-filtered applicants (used in Reports tab table) ── */
+    const searchQuery = reportSearch.trim().toLowerCase();
+    const filteredApplicants = searchQuery
+        ? recentApplicants.filter(app =>
+            (app.name ?? '').toLowerCase().includes(searchQuery) ||
+            (app.email ?? '').toLowerCase().includes(searchQuery) ||
+            (app.job_posting?.title ?? (app as any).jobPosting?.title ?? '').toLowerCase().includes(searchQuery) ||
+            (app.job_posting?.department ?? (app as any).jobPosting?.department ?? '').toLowerCase().includes(searchQuery) ||
+            (app.status ?? '').replace(/_/g, ' ').toLowerCase().includes(searchQuery)
+        )
+        : recentApplicants;
+
     const appliedCount = stats?.funnel?.applied ?? 0;
     const hiredCount = stats?.funnel?.hired ?? 0;
     const funnelMax = appliedCount || 1;
@@ -1009,10 +1023,6 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                         <Activity size={15} className="text-gray-400 group-hover:text-black transition-colors" /><span className="text-[13px] font-bold">Interviews</span>
                                     </button>
 
-                                    {/* Reports */}
-                                    <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group">
-                                        <PieChart size={15} className="text-gray-400 group-hover:text-black transition-colors" /><span className="text-[13px] font-bold">Reports</span>
-                                    </button>
 
                                     <div className="pt-4 mt-2 border-t border-gray-100">
                                         <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] px-3 mb-3">Analytics</p>
@@ -1035,9 +1045,6 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
 
                                     <div className="pt-4 mt-2 border-t border-gray-100">
                                         <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] px-3 mb-3">System</p>
-                                        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:bg-gray-50 hover:text-black transition-all">
-                                            <span className="text-sm">⚙️</span><span className="text-[13px] font-bold">Settings</span>
-                                        </button>
                                         <button 
                                             onClick={() => openPanel('help')}
                                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${activePanel === 'help' ? 'bg-[#FDF22F] text-black shadow-sm' : 'text-gray-400 hover:bg-gray-50 hover:text-black'}`}
@@ -1192,7 +1199,21 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                 <div className="bg-white border-b border-gray-100 px-4 sm:px-8 py-3 sm:py-4 flex justify-between items-center shadow-sm gap-3">
                                     <div className="relative w-full sm:w-80">
                                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
-                                        <input type="text" placeholder="Search anything..." className="w-full pl-11 pr-4 py-2.5 bg-gray-50 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#FDF22F]/50 border border-transparent transition-all" />
+                                        <input
+                                            type="text"
+                                            value={reportSearch}
+                                            onChange={e => setReportSearch(e.target.value)}
+                                            placeholder="Search candidates, positions, departments..."
+                                            className="w-full pl-11 pr-10 py-2.5 bg-gray-50 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-[#FDF22F]/50 border border-transparent focus:border-[#FDF22F]/40 transition-all"
+                                        />
+                                        {reportSearch && (
+                                            <button
+                                                onClick={() => setReportSearch('')}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-gray-300 hover:bg-black text-white flex items-center justify-center transition-all"
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        )}
                                     </div>
                                     <div className="flex items-center gap-3 shrink-0">
                                         <div className="relative">
@@ -1450,6 +1471,25 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                         </motion.div>
                                     </div>
 
+                                    {/* Search result banner */}
+                                    {reportSearch.trim() && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -8 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="flex items-center justify-between bg-[#FDF22F]/10 border border-[#FDF22F]/30 rounded-2xl px-5 py-3"
+                                        >
+                                            <p className="text-[12px] font-black text-black">
+                                                🔍 Showing results for <span className="text-[#b8a800]">&ldquo;{reportSearch}&rdquo;</span>
+                                            </p>
+                                            <button
+                                                onClick={() => setReportSearch('')}
+                                                className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest transition-colors flex items-center gap-1"
+                                            >
+                                                <X size={10} /> Clear
+                                            </button>
+                                        </motion.div>
+                                    )}
+
                                     {/* Recent applications */}
                                     <motion.div 
                                         initial={{ opacity: 0, y: 30 }} 
@@ -1552,7 +1592,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                                 </div>
                                                             </td>
                                                         </tr>
-                                                    ) : recentApplicants.length > 0 ? recentApplicants.map((app, i) => (
+                                                    ) : filteredApplicants.length > 0 ? filteredApplicants.map((app, i) => (
                                                         <motion.tr 
                                                             key={i} 
                                                             initial={{ opacity: 0, x: -10 }} 
@@ -1562,21 +1602,32 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                             className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                                                         >
                                                             <td className="px-8 py-5"><div className="flex items-center gap-3"><div className="w-9 h-9 rounded-full bg-black flex items-center justify-center font-black text-xs text-[#FDF22F] shadow-md">{app?.name?.charAt(0) ?? 'A'}</div><div><p className="text-[13px] font-black text-black">{app?.name ?? '—'}</p><p className="text-[10px] text-gray-400 font-bold">{app?.email ?? '—'}</p></div></div></td>
-                                                            <td className="px-8 py-5"><p className="text-[13px] font-black text-gray-700">{app?.job_posting?.title ?? app?.jobPosting?.title ?? '—'}</p></td>
-                                                            <td className="px-8 py-5 text-[13px] text-gray-500 font-bold">{app?.job_posting?.department ?? app?.jobPosting?.department ?? '—'}</td>
+                                                            <td className="px-8 py-5"><p className="text-[13px] font-black text-gray-700">{app?.job_posting?.title ?? (app as any)?.jobPosting?.title ?? '—'}</p></td>
+                                                            <td className="px-8 py-5 text-[13px] text-gray-500 font-bold">{app?.job_posting?.department ?? (app as any)?.jobPosting?.department ?? '—'}</td>
                                                             <td className="px-8 py-5 text-[13px] font-black tabular-nums">{app?.years_of_experience != null ? `${app.years_of_experience} Yrs` : '—'}</td>
                                                             <td className="px-8 py-5"><span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5 w-fit ${STATUS_COLOR[app?.status] ?? 'bg-gray-50 text-gray-400 border-gray-100'}`}><div className="w-1.5 h-1.5 rounded-full bg-current" />{app?.status?.replace(/_/g, ' ') ?? 'New'}</span></td>
                                                             <td className="px-8 py-5 text-[12px] font-bold text-gray-400 tabular-nums">{app?.created_at ? new Date(app.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
                                                         </motion.tr>
-                                                    )) : <tr><td colSpan={6} className="px-8 py-16 text-center text-gray-400 italic">No applicants found{recentFilter.status !== 'All' ? ` with status "${recentFilter.status.replace(/_/g, ' ')}"` : ''}</td></tr>}
+                                                    )) : (
+                                                        <tr><td colSpan={6} className="px-8 py-16 text-center text-gray-400 italic">
+                                                            {reportSearch.trim()
+                                                                ? `No results for "${reportSearch.trim()}"`
+                                                                : recentFilter.status !== 'All'
+                                                                    ? `No applicants found with status "${recentFilter.status.replace(/_/g, ' ')}"`
+                                                                    : 'No applicants found'
+                                                            }
+                                                        </td></tr>
+                                                    )}
                                                 </tbody>
                                             </table>
                                         </div>
                                         <div className="px-5 sm:px-10 py-4 sm:py-5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-center">
                                             <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                                                {recentFilter.status !== 'All' || recentFilter.department !== 'All'
-                                                    ? `${recentApplicants.length} result${recentApplicants.length !== 1 ? 's' : ''} · filtered`
-                                                    : `Showing ${recentApplicants.length} recent`
+                                                {searchQuery
+                                                    ? `${filteredApplicants.length} result${filteredApplicants.length !== 1 ? 's' : ''} for "${searchQuery}"`
+                                                    : recentFilter.status !== 'All' || recentFilter.department !== 'All'
+                                                    ? `${filteredApplicants.length} result${filteredApplicants.length !== 1 ? 's' : ''} · filtered`
+                                                    : `Showing ${filteredApplicants.length} recent`
                                                 }
                                             </p>
                                         </div>
