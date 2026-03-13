@@ -1,15 +1,17 @@
 'use client';
+// Professional HR Manager Dashboard - Rebuild trigger
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiFetch, API_URL } from '@/lib/api';
+import ExportModal from '@/components/ExportModal';
 import {
     Check, ChevronLeft, ChevronRight, FileText, CheckCircle2,
     TrendingUp, TrendingDown, Users, Briefcase, Target, Clock,
     Download, Filter, BarChart2, PieChart, Activity, X,
     Calendar, ArrowRight, LifeBuoy, BookOpen, MessageCircle,
-    ExternalLink, HelpCircle, Search
+    ExternalLink, HelpCircle, Search, Layers, ShieldCheck, Globe, Award
 } from 'lucide-react';
 
 /* ─── Toast ─────────────────────────────────────────────── */
@@ -305,6 +307,9 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
     const [panelData, setPanelData] = useState<any>(null);
     const [panelLoading, setPanelLoading] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
+    const [exportModal, setExportModal] = useState(false);
+    const [recentFilter, setRecentFilter] = useState({ status: 'All', department: 'All' });
+    const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -333,7 +338,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                 const [sd, jd, ad] = await Promise.all([
                     apiFetch(`/v1/applicants/stats?${params}`),
                     apiFetch(`/v1/jobs?page=1&limit=100`),
-                    apiFetch(`/v1/applicants?page=1&limit=8`),
+                    apiFetch(`/v1/applicants?page=1&limit=10`),
                 ]);
                 setStats(sd); setJobs(jd.data || []); setRecentApplicants(ad.data || []);
             }
@@ -341,7 +346,28 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
         finally { setLoading(false); }
     };
 
+    /* Lightweight fetch — only updates the recent applicants table, no scroll */
+    const [recentLoading, setRecentLoading] = useState(false);
+    const fetchRecentApplicants = async (filter: { status: string; department: string }) => {
+        setRecentLoading(true);
+        try {
+            const p = new URLSearchParams({ page: '1', limit: '10' });
+            if (filter.status !== 'All') p.set('status', filter.status);
+            if (filter.department !== 'All') p.set('department', filter.department);
+            const ad = await apiFetch(`/v1/applicants?${p.toString()}`);
+            setRecentApplicants(ad.data || []);
+        } catch (e) { console.error(e); }
+        finally { setRecentLoading(false); }
+    };
+
     useEffect(() => { fetchData(); }, [localTab, subTab, reportFilters, reqsPage, jobsPage]);
+
+    /* Re-fetch ONLY the recent table when filter changes — no full page reload */
+    useEffect(() => {
+        if (localTab === 'REPORTS') {
+            fetchRecentApplicants(recentFilter);
+        }
+    }, [recentFilter]);
 
     /* ── Open panel ──────────────────────────────────────── */
     const openPanel = useCallback(async (panel: ActivePanel) => {
@@ -378,16 +404,8 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
         finally { setPanelLoading(false); }
     }, [reportFilters]);
 
-    /* ── Export CSV ──────────────────────────────────────── */
-    const handleExport = async () => {
-        setExportLoading(true);
-        try {
-            const r = await apiFetch(`/v1/applicants?page=1&limit=500`);
-            buildAndDownloadCSV(stats, r.data || recentApplicants, jobs, reportFilters);
-            showToast('CSV Report Downloaded ✓');
-        } catch { showToast('Export failed', 'error'); }
-        finally { setExportLoading(false); }
-    };
+    /* ── Export ──────────────────────────────────────────── */
+    const handleExport = () => setExportModal(true);
 
     const isMD = user?.roles?.some((r: any) => r.slug === 'managing_director');
     const isHR = user?.roles?.some((r: any) => r.slug === 'hr_manager');
@@ -941,7 +959,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
 
                     {/* REPORTS TAB */}
                     {localTab === 'REPORTS' && (
-                        <div className="bg-[#F5F6FA] min-h-screen flex flex-col lg:flex-row">
+                        <div className="bg-[#F5F6FA] h-[calc(100vh-180px)] flex flex-col lg:flex-row overflow-hidden">
 
                             {/* Mobile top bar */}
                             <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100">
@@ -955,20 +973,21 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                             </div>
 
                             {/* Sidebar */}
-                            <div className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-full lg:w-60 bg-white border-r border-gray-100 flex-col shrink-0`} style={{ minHeight: '800px' }}>
+                            <div className={`${sidebarOpen ? 'flex' : 'hidden'} lg:flex w-full lg:w-[280px] bg-white border-r border-gray-100 flex-col shrink-0 h-full shadow-xl z-20`}>
                                 <div className="hidden lg:block px-5 py-5 border-b border-gray-100">
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 bg-[#FDF22F] rounded-xl flex items-center justify-center font-black text-black text-lg shadow-md">D</div>
                                         <div><p className="text-[13px] font-black text-black leading-none">Droga Pharma</p><p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mt-0.5">Hiring Hub</p></div>
                                     </div>
                                 </div>
-                                <div className="px-3 py-5 flex-1 space-y-1 overflow-y-auto">
-                                    <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] px-3 mb-3">Main</p>
+                                <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar min-h-0 pb-10">
+                                    <div className="px-3 py-5 flex flex-col space-y-3 h-max min-h-min">
+                                        <p className="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em] px-3 mb-3">Main</p>
 
-                                    {/* Dashboard - active */}
-                                    <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#FDF22F] text-black shadow-md">
-                                        <BarChart2 size={15} /><span className="text-[13px] font-bold">Dashboard</span><div className="ml-auto w-1.5 h-1.5 rounded-full bg-black" />
-                                    </div>
+                                        {/* Dashboard - active */}
+                                        <div className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#FDF22F] text-black shadow-md shrink-0">
+                                            <BarChart2 size={15} /><span className="text-[13px] font-bold">Dashboard</span><div className="ml-auto w-1.5 h-1.5 rounded-full bg-black" />
+                                        </div>
 
                                     {/* Candidates → opens panel */}
                                     <button onClick={() => openPanel('candidates')} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-black transition-all group">
@@ -1026,12 +1045,143 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                             <span className="text-sm">❓</span><span className="text-[13px] font-bold">Help & Support</span>
                                         </button>
                                     </div>
+
+                                    {/* Professional Awareness Card - Strategic Insight Command Center */}
+                                    <div className="mx-3 mt-8 p-6 bg-gradient-to-br from-white to-gray-50 rounded-[40px] border border-gray-200/60 shadow-[0_20px_50px_-20px_rgba(0,0,0,0.05)] relative overflow-hidden group/card transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.08)] flex flex-col">
+                                        {/* Subtle pattern background */}
+                                        <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#FDF22F_1px,transparent_1px)] [background-size:16px_16px]" />
+                                        
+                                        <div className="relative z-10">
+                                            {/* 1. Management: Insights Hub */}
+                                            <div className="mb-10">
+                                                <div className="flex items-center gap-3 mb-6">
+                                                    <div className="w-9 h-9 rounded-2xl bg-[#FDF22F] flex items-center justify-center shadow-[0_8px_16px_-4px_rgba(253,242,47,0.4)] transition-transform duration-500 group-hover/card:scale-110">
+                                                        <Target size={18} className="text-black" />
+                                                    </div>
+                                                    <div>
+                                                        <span className="text-[12px] font-black text-black uppercase tracking-[0.2em] block leading-none">Management</span>
+                                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest mt-1 block">Insights Hub</span>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="space-y-6">
+                                                    <div>
+                                                        <h4 className="text-[15px] font-black text-black leading-tight mb-2 tracking-tight">Lead with Purpose</h4>
+                                                        <p className="text-[10px] text-gray-500 font-bold leading-relaxed">
+                                                            Identifying the next generation of leaders who resonate with the mission to deliver health with excellence.
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    <div className="space-y-4">
+                                                        {[
+                                                            { title: 'Value Alignment', desc: 'Prioritizing candidate-culture fit for sustainable retention.' },
+                                                            { title: 'Brand Authority', desc: 'Your reputation is your most effective recruiter.' },
+                                                            { title: 'Data Intelligence', desc: 'Shift from reactive hiring to predictive talent mapping.' }
+                                                        ].map((item, idx) => (
+                                                            <div key={idx} className="flex items-start gap-3.5 group/item">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-[#FDF22F] mt-1.5 shrink-0 shadow-[0_0_10px_rgba(253,242,47,0.6)]" />
+                                                                <div>
+                                                                    <p className="text-[10px] text-black font-black uppercase tracking-wider leading-none">{item.title}</p>
+                                                                    <p className="text-[9px] text-gray-400 font-bold mt-1.5 leading-tight">{item.desc}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* 2. Global Standards (Performance Metrics) */}
+                                            <div className="mb-10 pt-8 border-t border-gray-100">
+                                                <div className="flex items-center gap-2 mb-4">
+                                                    <Globe size={13} className="text-gray-400" />
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Global Standards</span>
+                                                </div>
+                                                <div className="bg-white/60 rounded-[28px] p-5 border border-gray-100 relative shadow-sm">
+                                                    <p className="text-[10px] text-gray-600 font-bold leading-relaxed italic pr-4">
+                                                        &ldquo;Premium employer branding reduces <span className="text-black">cost-per-hire by 50%</span> and <span className="text-black">turnover by 28%</span>.&rdquo;
+                                                    </p>
+                                                    <div className="absolute right-4 bottom-4 opacity-10"><BarChart2 size={16} /></div>
+                                                </div>
+                                            </div>
+
+                                            {/* 3. Global HR Standards (Certifications) */}
+                                            <div className="mb-10 pt-8 border-t border-gray-100">
+                                                <div className="flex items-center gap-2 mb-5">
+                                                    <CheckCircle2 size={13} className="text-gray-400" />
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">HR Standards</span>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    <div className="p-4 rounded-3xl bg-white border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.02)] transition-all hover:border-[#FDF22F]/40 group/std">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="text-[10px] font-black text-black">ISO 30414 Certified</span>
+                                                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                                        </div>
+                                                        <p className="text-[9px] text-gray-400 font-bold leading-tight line-clamp-2">
+                                                            Adhering to international Human Capital Reporting standards for sustainable organizational growth.
+                                                        </p>
+                                                    </div>
+                                                    <div className="p-4 rounded-3xl bg-white border border-gray-100 shadow-[0_4px_12px_rgba(0,0,0,0.02)] transition-all hover:border-[#FDF22F]/40 group/std">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <span className="text-[10px] font-black text-black">DEI Governance</span>
+                                                            <span className="text-[8px] font-black text-[#FDF22F] bg-black px-1.5 py-0.5 rounded-full">LEVEL 4</span>
+                                                        </div>
+                                                        <p className="text-[9px] text-gray-400 font-bold leading-tight line-clamp-2">
+                                                            Maintaining Level 4 on the Global Diversity and Inclusion Maturity Index.
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* 4. HR Advocacy Trends */}
+                                            <div className="mb-10 pt-8 border-t border-gray-100">
+                                                <div className="flex items-center gap-2 mb-5">
+                                                    <Award size={13} className="text-gray-400" />
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Advocacy Trends</span>
+                                                </div>
+                                                <div className="bg-[#FDF22F]/5 rounded-[32px] p-5 border border-[#FDF22F]/20">
+                                                    <h5 className="text-[11px] font-black text-black uppercase tracking-tight mb-2">Employer of Choice</h5>
+                                                    <p className="text-[9px] text-gray-500 font-bold leading-relaxed mb-4">
+                                                        Currently recognized in the top 5% for workplace culture and employee advocacy indices.
+                                                    </p>
+                                                    <div className="flex items-center justify-between pt-4 border-t border-[#FDF22F]/20">
+                                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Hiring Hub Vision</span>
+                                                        <span className="text-[8px] font-black text-black uppercase bg-[#FDF22F] px-2 py-0.5 rounded-full">Core Release</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* 6. Growth Roadmap */}
+                                            <div className="pt-8 border-t border-gray-100 mt-auto">
+                                                <div className="flex items-center gap-2 mb-6">
+                                                    <Layers size={13} className="text-gray-400" />
+                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Growth Roadmap</span>
+                                                </div>
+                                                <div className="space-y-6">
+                                                    <div className="relative pl-7 group/step">
+                                                        <div className="absolute left-0 top-0 w-[2px] h-full bg-gray-100 group-last/step:h-0" />
+                                                        <div className="absolute left-[-4px] top-0 w-2.5 h-2.5 rounded-full bg-[#FDF22F] ring-4 ring-white shadow-sm" />
+                                                        <h6 className="text-[10px] font-black text-black uppercase tracking-wide leading-none mb-1.5">AI Integration Phase</h6>
+                                                        <p className="text-[9px] text-gray-400 font-bold leading-relaxed">Implementing intelligent, automated screening workflows for high-volume technical roles.</p>
+                                                    </div>
+                                                    <div className="relative pl-7 group/step">
+                                                        <div className="absolute left-0 top-0 w-[2px] h-full bg-gray-100 group-last/step:h-0" />
+                                                        <div className="absolute left-[-3px] top-0 w-2 h-2 rounded-full bg-gray-200 ring-4 ring-white" />
+                                                        <h6 className="text-[10px] font-black text-gray-300 uppercase tracking-wide leading-none mb-1.5">Global Expansion</h6>
+                                                        <p className="text-[9px] text-gray-400 font-bold leading-relaxed">Integrated multi-currency and localized portal support for international hiring pipelines.</p>
+                                                    </div>
+                                                </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="px-3 py-4 border-t border-gray-100">
-                                    <div className="bg-gray-50 rounded-2xl p-3 flex items-center gap-3 border border-gray-100">
-                                        <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-[#FDF22F] font-black text-sm shrink-0">{user.name.charAt(0)}</div>
-                                        <div className="min-w-0 flex-1"><p className="text-[12px] font-black text-black truncate">{user.name}</p><p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">HR Manager</p></div>
-                                        <button onClick={onLogout} className="text-gray-300 hover:text-black transition-colors font-black text-sm">→</button>
+                                <div className="px-5 py-6 border-t border-gray-100 bg-white/50 backdrop-blur-md">
+                                    <div className="bg-white rounded-3xl p-4 flex items-center gap-4 border border-gray-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.05)] hover:shadow-[0_15px_35px_-10px_rgba(0,0,0,0.08)] transition-all cursor-pointer group/profile">
+                                        <div className="w-10 h-10 rounded-2xl bg-black flex items-center justify-center text-[#FDF22F] font-black text-sm shrink-0 shadow-lg group-hover/profile:scale-110 transition-transform">{user.name.charAt(0)}</div>
+                                        <div className="min-w-0 flex-1"><p className="text-[13px] font-black text-black truncate group-hover/profile:text-[#FDF22F] transition-colors">{user.name}</p><p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-0.5">HR Manager</p></div>
+                                        <button onClick={onLogout} className="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 hover:bg-black hover:text-[#FDF22F] transition-all group-hover/profile:rotate-45">
+                                            <ChevronRight size={14} />
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1095,11 +1245,14 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                 Talent Acquisition Dashboard · Performance Hub
                                             </p>
                                         </div>
-                                        {/* Export CSV */}
-                                        <button onClick={handleExport} disabled={exportLoading || !stats}
-                                            className="flex items-center gap-2 bg-black text-[#FDF22F] px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-[11px] tracking-widest uppercase hover:bg-[#FDF22F] hover:text-black transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                                            {exportLoading ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Download size={13} />}
-                                            {exportLoading ? 'Building...' : 'Export CSV'}
+                                        {/* Export Excel */}
+                                        <button
+                                            onClick={handleExport}
+                                            disabled={!stats}
+                                            className="flex items-center gap-2 bg-[#FDF22F] text-black px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl font-black text-[10px] sm:text-[11px] tracking-widest uppercase hover:bg-black hover:text-[#FDF22F] transition-all shadow-lg shadow-[#FDF22F]/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <Download size={13} />
+                                            Export Report
                                         </button>
                                     </motion.div>
 
@@ -1156,7 +1309,7 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                         {[50, 100, 150].map(y => <line key={y} x1="0" y1={y} x2="800" y2={y} stroke="#F3F4F6" strokeWidth="1" />)}
                                                         <path d={svgArea} fill="url(#areaGrad)" />
                                                         <path d={svgPath} fill="none" stroke="#FDF22F" strokeWidth="3.5" strokeLinecap="round" />
-                                                        {svgPts.map((p, i) => (
+                                                        {svgPts.map((p: { x: number; y: number }, i: number) => (
                                                             <g key={i} onMouseEnter={() => setHoveredTurnover({ data: turnoverData[i], index: i })} onMouseLeave={() => setHoveredTurnover(null)}>
                                                                 <circle cx={p.x} cy={p.y} r="22" fill="transparent" className="cursor-pointer" />
                                                                 <circle cx={p.x} cy={p.y} r={hoveredTurnover?.index === i ? 7 : 4} fill={hoveredTurnover?.index === i ? '#000' : '#FDF22F'} stroke={hoveredTurnover?.index === i ? '#FDF22F' : '#fff'} strokeWidth="2" className="transition-all duration-200" />
@@ -1306,19 +1459,100 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                         className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden"
                                     >
                                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 px-5 sm:px-10 py-5 sm:py-7 border-b border-gray-50">
-                                            <div><h3 className="text-[16px] sm:text-[18px] font-black text-black tracking-tight">Recent Applications</h3><p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em] mt-1">Latest candidate submissions</p></div>
-                                            <div className="flex gap-2 sm:gap-3">
-                                                <button className="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-[10px] font-black uppercase tracking-widest hover:border-black transition-all"><Filter size={12} /> Filter</button>
-                                                <button onClick={handleExport} disabled={exportLoading || !stats} className="flex items-center gap-2 px-4 sm:px-5 py-2.5 bg-black text-[#FDF22F] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#FDF22F] hover:text-black transition-all disabled:opacity-50">
-                                                    {exportLoading ? <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Download size={12} />} Export CSV
-                                                </button>
+                                            <div>
+                                                <h3 className="text-[16px] sm:text-[18px] font-black text-black tracking-tight">Recent Applications</h3>
+                                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em] mt-1">
+                                                    {recentFilter.status !== 'All' ? `Filtered: ${recentFilter.status.replace(/_/g, ' ')}` : 'Latest candidate submissions'}
+                                                </p>
+                                            </div>
+                                            <div className="flex gap-2 sm:gap-3 items-center relative">
+                                                {/* Filter Button + Dropdown */}
+                                                <div className="relative">
+                                                    <button
+                                                        onClick={() => setFilterDropdownOpen(v => !v)}
+                                                        className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 border rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                                                            recentFilter.status !== 'All' || recentFilter.department !== 'All'
+                                                                ? 'bg-black text-[#FDF22F] border-black'
+                                                                : 'bg-white border-gray-200 hover:border-black'
+                                                        }`}
+                                                    >
+                                                        <Filter size={12} />
+                                                        Filter
+                                                        {(recentFilter.status !== 'All' || recentFilter.department !== 'All') && (
+                                                            <span className="w-4 h-4 rounded-full bg-[#FDF22F] text-black flex items-center justify-center text-[8px] font-black">
+                                                                {[recentFilter.status !== 'All', recentFilter.department !== 'All'].filter(Boolean).length}
+                                                            </span>
+                                                        )}
+                                                    </button>
+
+                                                    {/* Dropdown */}
+                                                    {filterDropdownOpen && (
+                                                        <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl border border-gray-100 shadow-2xl z-50 p-4 space-y-4">
+                                                            <div className="flex items-center justify-between mb-1">
+                                                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filter Applicants</p>
+                                                                <button onClick={() => { setRecentFilter({ status: 'All', department: 'All' }); setFilterDropdownOpen(false); }} className="text-[9px] font-black text-gray-300 hover:text-black uppercase tracking-widest transition-colors">Clear All</button>
+                                                            </div>
+
+                                                            {/* Status filter */}
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Status</p>
+                                                                <div className="flex flex-wrap gap-1.5">
+                                                                    {['All', 'new', 'written_exam', 'technical_interview', 'final_interview', 'offer', 'hired', 'rejected'].map(s => (
+                                                                        <button
+                                                                            key={s}
+                                                                            onClick={() => setRecentFilter(f => ({ ...f, status: s }))}
+                                                                            className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${
+                                                                                recentFilter.status === s
+                                                                                    ? 'bg-black text-[#FDF22F]'
+                                                                                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                                                                            }`}
+                                                                        >
+                                                                            {s === 'All' ? 'All' : s.replace(/_/g, ' ')}
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Department filter */}
+                                                            <div>
+                                                                <p className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Department</p>
+                                                                <select
+                                                                    value={recentFilter.department}
+                                                                    onChange={e => setRecentFilter(f => ({ ...f, department: e.target.value }))}
+                                                                    className="w-full text-[11px] font-bold text-black bg-gray-50 border border-gray-100 rounded-xl px-3 py-2 outline-none cursor-pointer focus:border-black appearance-none"
+                                                                >
+                                                                    <option value="All">All Departments</option>
+                                                                    {[...new Set((jobs || []).map((j: any) => j.department || j.requisition?.department).filter(Boolean))].map((dept) => (
+                                                                        <option key={String(dept)} value={String(dept)}>{String(dept)}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </div>
+
+                                                            <button
+                                                                onClick={() => setFilterDropdownOpen(false)}
+                                                                className="w-full py-2.5 bg-black text-[#FDF22F] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#FDF22F] hover:text-black transition-all"
+                                                            >
+                                                                Apply
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className="hidden md:block overflow-x-auto">
                                             <table className="w-full text-left">
                                                 <thead className="bg-gray-50/80"><tr>{['Candidate', 'Position Applied', 'Department', 'Experience', 'Status', 'Applied On'].map(h => <th key={h} className="px-8 py-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.15em]">{h}</th>)}</tr></thead>
                                                 <tbody className="divide-y divide-gray-50">
-                                                    {recentApplicants.length > 0 ? recentApplicants.map((app, i) => (
+                                                    {recentLoading ? (
+                                                        <tr>
+                                                            <td colSpan={6} className="px-8 py-12 text-center">
+                                                                <div className="flex items-center justify-center gap-3 text-gray-400">
+                                                                    <div className="w-5 h-5 border-2 border-gray-200 border-t-black rounded-full animate-spin" />
+                                                                    <span className="text-[11px] font-black uppercase tracking-widest">Loading…</span>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ) : recentApplicants.length > 0 ? recentApplicants.map((app, i) => (
                                                         <motion.tr 
                                                             key={i} 
                                                             initial={{ opacity: 0, x: -10 }} 
@@ -1334,15 +1568,17 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
                                                             <td className="px-8 py-5"><span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-1.5 w-fit ${STATUS_COLOR[app?.status] ?? 'bg-gray-50 text-gray-400 border-gray-100'}`}><div className="w-1.5 h-1.5 rounded-full bg-current" />{app?.status?.replace(/_/g, ' ') ?? 'New'}</span></td>
                                                             <td className="px-8 py-5 text-[12px] font-bold text-gray-400 tabular-nums">{app?.created_at ? new Date(app.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</td>
                                                         </motion.tr>
-                                                    )) : <tr><td colSpan={6} className="px-8 py-16 text-center text-gray-400 italic">No recent applications</td></tr>}
+                                                    )) : <tr><td colSpan={6} className="px-8 py-16 text-center text-gray-400 italic">No applicants found{recentFilter.status !== 'All' ? ` with status "${recentFilter.status.replace(/_/g, ' ')}"` : ''}</td></tr>}
                                                 </tbody>
                                             </table>
                                         </div>
-                                        <div className="px-5 sm:px-10 py-4 sm:py-5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-                                            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Showing {recentApplicants.length} recent</p>
-                                            <button onClick={() => router.push('/dashboard?tab=Candidates')} className="text-[11px] font-black text-black uppercase tracking-widest flex items-center gap-1.5 bg-[#FDF22F] px-4 sm:px-5 py-2.5 rounded-xl hover:bg-black hover:text-[#FDF22F] transition-all">
-                                                View All <ChevronRight size={14} />
-                                            </button>
+                                        <div className="px-5 sm:px-10 py-4 sm:py-5 bg-gray-50/50 border-t border-gray-100 flex items-center justify-center">
+                                            <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
+                                                {recentFilter.status !== 'All' || recentFilter.department !== 'All'
+                                                    ? `${recentApplicants.length} result${recentApplicants.length !== 1 ? 's' : ''} · filtered`
+                                                    : `Showing ${recentApplicants.length} recent`
+                                                }
+                                            </p>
                                         </div>
                                     </motion.div>
                                 </div>
@@ -1415,6 +1651,32 @@ export default function HRManagerDashboard({ user, activeTab: initialTab, onLogo
             </AnimatePresence>
 
             <AnimatePresence>{toast && <Toast msg={toast.msg} type={toast.type} />}</AnimatePresence>
+
+            <ExportModal
+                open={exportModal}
+                onClose={() => setExportModal(false)}
+                stats={stats}
+                jobs={jobs || []}
+                reportFilters={reportFilters}
+                apiFetch={apiFetch}
+            />
+            {/* Premium Scrollbar Styling */}
+            <style jsx global>{`
+                .custom-scrollbar::-webkit-scrollbar {
+                    width: 5px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb {
+                    background: rgba(0,0,0,0.1);
+                    border-radius: 20px;
+                }
+                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                    background: #FDF22F;
+                }
+            `}</style>
         </div>
     );
 }
+

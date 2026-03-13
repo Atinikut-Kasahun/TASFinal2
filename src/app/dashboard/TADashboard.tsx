@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiFetch, API_URL } from "@/lib/api";
+import ExportModal from "@/components/ExportModal";
 import {
   Check, ChevronLeft, ChevronRight, FileText, CheckCircle2,
   TrendingUp, TrendingDown, Users, Briefcase, Target, Clock,
@@ -433,6 +434,7 @@ export default function TADashboard({
   const [panelData, setPanelData] = useState<any>(null);
   const [panelLoading, setPanelLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [exportModal, setExportModal] = useState(false);
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false);
   const [hoveredTurnover, setHoveredTurnover] = useState<any>(null);
   const [showSupportForm, setShowSupportForm] = useState(false);
@@ -784,16 +786,8 @@ export default function TADashboard({
   };
 
 
-  /* ── Export CSV ──────────────────────────────────────── */
-  const handleExport = async () => {
-    setExportLoading(true);
-    try {
-      const r = await apiFetch(`/v1/applicants?page=1&limit=500`);
-      buildAndDownloadCSV(stats, r.data || [], jobs || [], reportFilters);
-      showToast('CSV Report Downloaded ✓');
-    } catch { showToast('Export failed', 'error'); }
-    finally { setExportLoading(false); }
-  };
+  /* ── Export ──────────────────────────────────────────── */
+  const handleExport = () => setExportModal(true);
 
   const handleSendSupport = async () => {
     if (!supportMessage.trim()) return;
@@ -934,16 +928,11 @@ export default function TADashboard({
             job_id: reportFilters.jobId,
             search: search,
           });
-          const [statsData, jobsData, turnoverData] = await Promise.all([
+          const [statsData, jobsData] = await Promise.all([
             apiFetch(`/v1/applicants/stats?${params.toString()}`),
             apiFetch("/v1/jobs?page=1"), // Fetch jobs for filters
-            apiFetch("/v1/employees/turnover"),
           ]);
-          setStats({
-            ...statsData,
-            turnover: turnoverData?.turnover,
-            turnoverTrend: turnoverData?.trend,
-          });
+          setStats(statsData);
           if (jobsData?.data) setJobs(jobsData.data);
           else setJobs(jobsData || []);
           setStatsLoading(false);
@@ -1540,6 +1529,35 @@ export default function TADashboard({
     }
   };
 
+  const computedTurnoverData = stats?.turnover ?? [];
+
+  // SVG turnover chart
+  const tRates = computedTurnoverData.map((d: any) => d.rate);
+  const minRate = Math.min(...tRates, 0);
+  const maxRate = Math.max(...tRates, 1);
+  const toY = (r: number) =>
+    180 - ((r - minRate) / (maxRate - minRate || 1)) * 140 + 20;
+  const svgPts = computedTurnoverData.map((d: any, i: number) => ({
+    x:
+      computedTurnoverData.length > 1
+        ? (i * 800) / (computedTurnoverData.length - 1)
+        : 400,
+    y: toY(d.rate),
+  }));
+  let svgPath = "",
+    svgArea = "";
+  if (svgPts.length > 1) {
+    let p = `M${svgPts[0].x},${svgPts[0].y}`;
+    for (let i = 0; i < svgPts.length - 1; i++) {
+      const p0 = svgPts[i],
+        p1 = svgPts[i + 1],
+        cx = (p0.x + p1.x) / 2;
+      p += ` C${cx},${p0.y} ${cx},${p1.y} ${p1.x},${p1.y}`;
+    }
+    svgPath = p;
+    svgArea = `${p} L${svgPts[svgPts.length - 1].x},200 L${svgPts[0].x},200 Z`;
+  }
+
   return (
     <div className="space-y-6 pb-20">
       {/* Connection error banner */}
@@ -1663,34 +1681,23 @@ export default function TADashboard({
                   "HIRED",
                   "REJECTED",
                 ];
-              else if (initialTab === "Jobs" || initialTab === "HiringPlan")
-                items = ["JOBS", "HIRING PLAN"];
+              else if (initialTab === "Jobs")
+                items = ["ACTIVE", "ARCHIVED"];
+              else if (initialTab === "HiringPlan")
+                items = ["REQUISITIONS"];
               else if (initialTab === "Employees")
                 items = ["HIRED", "ACTIVE", "STAFF"];
               else if (initialTab === "Reports") items = ["OVERVIEW"];
               else items = ["OVERVIEW"];
 
               return items.map((t) => {
-                const isSectionActive =
-                  (t === "JOBS" && initialTab === "Jobs") ||
-                  (t === "HIRING PLAN" && initialTab === "HiringPlan");
-                const isSubActive = subTab === t;
-                const isActive = isSectionActive || isSubActive;
+                const isActive = subTab === t;
                 return (
                   <button
                     key={t}
                     onClick={() => {
-                      if (t === "JOBS" && initialTab !== "Jobs") {
-                        router.push("/dashboard?tab=Jobs");
-                      } else if (
-                        t === "HIRING PLAN" &&
-                        initialTab !== "HiringPlan"
-                      ) {
-                        router.push("/dashboard?tab=HiringPlan");
-                      } else if (t !== "JOBS" && t !== "HIRING PLAN") {
-                        setSubTab(t);
-                        setCurrentPage(1);
-                      }
+                      setSubTab(t);
+                      setCurrentPage(1);
                     }}
                     className={`pb-4 text-[12px] font-black tracking-[0.15em] transition-all relative ${isActive
                       ? "text-[#000000]"
@@ -1709,25 +1716,7 @@ export default function TADashboard({
               });
             })()}
 
-            {(initialTab === "Jobs" || initialTab === "HiringPlan") && (
-              <div className="hidden sm:flex self-start mt-0.5 items-center gap-6 ml-4 border-l border-gray-100 pl-10 h-6">
-                {(initialTab === "Jobs"
-                  ? ["ACTIVE", "ARCHIVED"]
-                  : ["REQUISITIONS"]
-                ).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => {
-                      setSubTab(f);
-                      setCurrentPage(1);
-                    }}
-                    className={`text-[10px] font-black tracking-widest transition-all ${subTab === f ? "text-[#000000]" : "text-gray-400 hover:text-gray-600"}`}
-                  >
-                    {f}
-                  </button>
-                ))}
-              </div>
-            )}
+
           </div>
         </div>
       </div>
@@ -3852,10 +3841,20 @@ export default function TADashboard({
                   </select>
                 </div>
 
-                {/* Spacer — pushes refresh to the far right */}
+                {/* Spacer — pushes buttons to the far right */}
                 <div className="flex-1" />
 
-                {/* Refresh icon button (far right) */}
+                {/* Export button */}
+                <button
+                  onClick={handleExport}
+                  title="Export Report as Excel"
+                  className="flex items-center gap-2 px-4 py-2 h-9 bg-[#FDF22F] text-black text-[10px] font-black uppercase tracking-widest rounded-xl border border-[#FDF22F]/50 hover:bg-black hover:text-[#FDF22F] transition-all shadow-sm shrink-0"
+                >
+                  <Download size={13} />
+                  Export
+                </button>
+
+                {/* Refresh icon button */}
                 <button
                   onClick={() => fetchData(1)}
                   title="Refresh data"
@@ -4033,324 +4032,197 @@ export default function TADashboard({
 
               {/* Analytics Layer (Middle): Larger Chart Modules */}
               <div className="grid grid-cols-2 gap-8">
-                {/* Employee Turnover — Premium Spline Area Chart */}
-                <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm flex flex-col relative overflow-hidden hover:shadow-md transition-all duration-300">
-                  {/* ── Header ── */}
-                  <div className="flex justify-between items-start mb-6 relative z-10">
+                {/* Employee Turnover — Duplicated from HR Manager Dashboard */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30, rotateX: 5 }}
+                  whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+                  viewport={{ once: false, amount: 0.15, margin: "-100px 0px" }}
+                  whileHover={{
+                    y: -8,
+                    boxShadow: "0 30px 45px -15px rgba(0,0,0,0.15)",
+                  }}
+                  transition={{
+                    duration: 0.7,
+                    ease: [0.215, 0.61, 0.355, 1],
+                    delay: 0.1,
+                  }}
+                  className="bg-white rounded-[32px] border border-gray-100 shadow-sm p-5 sm:p-8"
+                >
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-6">
                     <div>
-                      <h3 className="text-[18px] font-black text-[#000000] tracking-tight">
+                      <h3 className="text-[16px] sm:text-[18px] font-black text-black tracking-tight">
                         Employee Turnover
                       </h3>
-                      <div className="flex items-center gap-2 mt-2">
-                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">
-                          Growth Analytics
-                        </p>
-                        <div
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border ${stats?.turnoverTrend < 0 ? "bg-emerald-50 text-emerald-600 border-emerald-100/50" : "bg-red-50 text-red-600 border-red-100/50"}`}
-                        >
-                          <svg
-                            className="w-3"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            {stats?.turnoverTrend < 0 ? (
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="4"
-                                d="M19 9l-7 7-7-7"
-                              />
-                            ) : (
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="4"
-                                d="M5 15l7-7 7 7"
-                              />
-                            )}
-                          </svg>
-                          <span className="text-[10px] font-black">
-                            {stats?.turnoverTrend > 0 ? "+" : ""}
-                            {stats?.turnoverTrend || 0}% from last month
-                          </span>
-                        </div>
-                      </div>
+                      <p className="text-[11px] font-black text-gray-400 uppercase tracking-[0.15em] mt-1">
+                        Monthly Rate ·{" "}
+                        {reportFilters.dateRange.length > 3
+                          ? `Year ${reportFilters.dateRange}`
+                          : "12 Month View"}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-                        <div className="w-2 h-2 rounded-full bg-[#FDF22F] shadow-[0_0_8px_rgba(253,242,47,0.5)]" />
-                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                          Live Trend
-                        </span>
-                      </div>
-                      <select className="bg-white border text-[10px] font-black uppercase tracking-widest text-gray-500 border-gray-200 rounded-xl px-4 py-2 outline-none cursor-pointer hover:border-[#000000] transition-all appearance-none shadow-sm">
-                        <option>Yearly</option>
-                        <option>Monthly</option>
-                      </select>
+                    <div className="flex items-center gap-2 bg-[#FDF22F]/10 border border-[#FDF22F]/30 px-3 py-1.5 rounded-xl">
+                      <div className="w-2 h-2 rounded-full bg-[#FDF22F] animate-pulse" />
+                      <span className="text-[10px] font-black text-black uppercase tracking-widest">
+                        Live Trend
+                      </span>
                     </div>
                   </div>
-
-                  {/* ── Chart body (relative container) ── */}
-                  <div className="relative" style={{ height: 200 }}>
-                    {/* Y-axis floating labels + ultra-pale dashed horizontals — NO cage/border lines */}
-                    <div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{
-                        paddingLeft: 36,
-                        paddingBottom: 24,
-                        paddingTop: 4,
-                      }}
-                    >
-                      {[100, 80, 60, 40, 20, 0].map((v) => {
-                        const topPct = ((100 - v) / 100) * 100;
-                        return (
-                          <div
-                            key={v}
-                            className="absolute left-0 right-0 flex items-center"
-                            style={{ top: `${topPct}%` }}
-                          >
-                            <span className="text-[10px] text-gray-200 font-semibold w-8 text-right select-none pr-2 shrink-0 leading-none">
-                              {v}
-                            </span>
-                            {v > 0 && (
-                              <div
-                                className="flex-1 border-t border-dashed"
-                                style={{ borderColor: "rgba(0,0,0,0.045)" }}
-                              />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* SVG — no viewBox outline, no axes strokes */}
-                    <svg
-                      className="absolute inset-0 w-full h-full overflow-visible"
-                      style={{
-                        paddingLeft: 36,
-                        paddingBottom: 24,
-                        paddingTop: 4,
-                        paddingRight: 4,
-                      }}
-                      viewBox="0 0 400 160"
-                      preserveAspectRatio="none"
-                      onMouseLeave={() => setHoveredPoint(null)}
-                      onMouseMove={(e) => {
-                        if (!stats?.turnover?.length) return;
-                        const rect = (
-                          e.currentTarget as SVGSVGElement
-                        ).getBoundingClientRect();
-                        const relX = (e.clientX - rect.left) / rect.width;
-                        const n = stats.turnover.length;
-                        setHoveredPoint(
-                          Math.max(
-                            0,
-                            Math.min(n - 1, Math.round(relX * (n - 1))),
-                          ),
-                        );
-                      }}
-                    >
-                      <defs>
-                        {/* 3-stop airy gradient: 30% → 5% → 0% — light and modern */}
-                        <linearGradient
-                          id="toGrad2"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="0%"
-                            stopColor="#FDF22F"
-                            stopOpacity="0.40"
-                          />
-                          <stop
-                            offset="60%"
-                            stopColor="#FDF22F"
-                            stopOpacity="0.10"
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#FDF22F"
-                            stopOpacity="0.00"
-                          />
-                        </linearGradient>
-                      </defs>
-
-                      {(() => {
-                        if (!stats?.turnover || stats.turnover.length < 2)
-                          return null;
-                        const W = 400,
-                          H = 160,
-                          pad = 6;
-                        const n = stats.turnover.length;
-
-                        // Map each data point to SVG coords (rate 0-20 → full height)
-                        const pts: { x: number; y: number }[] =
-                          stats.turnover.map((d: any, i: number) => ({
-                            x: pad + (i / (n - 1)) * (W - pad * 2),
-                            y:
-                              pad +
-                              ((20 - Math.min(d.rate ?? 0, 20)) / 20) *
-                              (H - pad * 2),
-                          }));
-
-                        // Catmull-Rom spline → cubic Bézier (gives true smooth curves, no sharp peaks)
-                        function splinePath(
-                          pts: { x: number; y: number }[],
-                        ): string {
-                          let d = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
-                          for (let i = 0; i < pts.length - 1; i++) {
-                            const p0 = pts[Math.max(i - 1, 0)];
-                            const p1 = pts[i];
-                            const p2 = pts[i + 1];
-                            const p3 = pts[Math.min(i + 2, pts.length - 1)];
-                            // Standard Catmull-Rom tension = 1/6
-                            const cp1x = p1.x + (p2.x - p0.x) / 6;
-                            const cp1y = p1.y + (p2.y - p0.y) / 6;
-                            const cp2x = p2.x - (p3.x - p1.x) / 6;
-                            const cp2y = p2.y - (p3.y - p1.y) / 6;
-                            d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
-                          }
-                          return d;
-                        }
-
-                        const linePath = splinePath(pts);
-                        const areaPath = `${linePath} L ${pts[n - 1].x} ${H} L ${pts[0].x} ${H} Z`;
-
-                        const hp = hoveredPoint;
-                        const hx = hp !== null ? pts[hp]?.x : null;
-                        const hy = hp !== null ? pts[hp]?.y : null;
-
-                        return (
-                          <>
-                            {/* 1. Area fill — airy gradient, no solid block */}
-                            <path d={areaPath} fill="url(#toGrad2)" />
-
-                            {/* 2. Catmull-Rom spline trend line */}
-                            <path
-                              d={linePath}
-                              fill="none"
-                              stroke="#FDF22F"
-                              strokeWidth="3"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
-
-                            {/* 3. Dynamic crosshair — vertical dashed line that follows the mouse */}
-                            {hx !== null && (
-                              <line
-                                x1={hx}
-                                y1={pad}
-                                x2={hx}
-                                y2={H - pad}
-                                stroke="#000000"
-                                strokeWidth="1.5"
-                                strokeDasharray="5 4"
-                                strokeOpacity="0.28"
-                              />
-                            )}
-
-                            {/* 4. Active point: outer glow → mid ring → solid dot */}
-                            {hx !== null && hy !== null && (
-                              <g>
-                                <circle
-                                  cx={hx}
-                                  cy={hy}
-                                  r="12"
-                                  fill="rgba(253,242,47,0.15)"
-                                />
-                                <circle
-                                  cx={hx}
-                                  cy={hy}
-                                  r="7"
-                                  fill="rgba(253,242,47,0.3)"
-                                />
-                                <circle
-                                  cx={hx}
-                                  cy={hy}
-                                  r="4"
-                                  fill="#FDF22F"
-                                  stroke="black"
-                                  strokeWidth="2.5"
-                                />
-                              </g>
-                            )}
-
-                            {/* Full invisible hit rect to ensure onMouseMove fires everywhere */}
-                            <rect
-                              x={0}
-                              y={0}
-                              width={W}
-                              height={H}
-                              fill="transparent"
-                            />
-                          </>
-                        );
-                      })()}
-                    </svg>
-
-                    {/* High-contrast black tooltip — white text on dark bg, appears near active point */}
+                  <div className="relative h-40 sm:h-52">
                     <AnimatePresence>
-                      {hoveredPoint !== null &&
-                        stats?.turnover?.[hoveredPoint] &&
-                        (() => {
-                          const d = stats.turnover[hoveredPoint];
-                          const n = stats.turnover.length;
-                          const leftPct = (hoveredPoint / (n - 1)) * 100;
-                          const isRight = hoveredPoint >= n * 0.7;
-                          return (
-                            <motion.div
-                              key={hoveredPoint}
-                              initial={{ opacity: 0, scale: 0.88, y: 6 }}
-                              animate={{ opacity: 1, scale: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.88 }}
-                              transition={{ duration: 0.12 }}
-                              style={{
-                                position: "absolute",
-                                top: 8,
-                                ...(isRight
-                                  ? { right: `calc(${100 - leftPct}% + 10px)` }
-                                  : { left: `calc(${leftPct}% + 48px)` }),
-                                zIndex: 60,
-                              }}
-                              className="bg-[#0F1C28] pointer-events-none text-white px-4 py-3 rounded-2xl shadow-2xl border border-white/10 min-w-[120px]"
-                            >
-                              <div className="flex items-center gap-1.5 mb-1">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#FDF22F] shrink-0" />
-                                <p className="text-[9px] font-black uppercase tracking-[0.12em] text-[#FDF22F]">
-                                  Analytics
+                      {hoveredTurnover && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute top-0 z-30 pointer-events-none"
+                          style={{
+                            left: `${computedTurnoverData.length > 1 ? (hoveredTurnover.index * 100) / (computedTurnoverData.length - 1) : 50}%`,
+                            transform:
+                              hoveredTurnover.index === 0
+                                ? "translateX(0)"
+                                : hoveredTurnover.index ===
+                                    computedTurnoverData.length - 1
+                                  ? "translateX(-100%)"
+                                  : "translateX(-50%)",
+                            marginTop: "-60px",
+                          }}
+                        >
+                          <div className="bg-white/95 backdrop-blur-xl text-black px-5 py-4 rounded-[24px] shadow-2xl border border-gray-100 whitespace-nowrap min-w-[190px]">
+                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                              {hoveredTurnover.data.full_label}
+                            </p>
+                            <div className="flex items-baseline gap-1 mb-3">
+                              <span className="text-[26px] font-black text-black tabular-nums">
+                                {hoveredTurnover.data.rate}
+                              </span>
+                              <span className="text-[14px] font-black text-[#FDF22F]">
+                                %
+                              </span>
+                            </div>
+                            <div className="flex gap-4 border-t border-gray-100 pt-2">
+                              <div>
+                                <p className="text-[8px] font-black text-emerald-500 uppercase">
+                                  Resigned
+                                </p>
+                                <p className="text-[15px] font-black">
+                                  {hoveredTurnover.data.resigned}
                                 </p>
                               </div>
-                              <p className="text-[18px] font-black leading-none">
-                                {d.rate}%
-                              </p>
-                              <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">
-                                {d.label} 2024
-                              </p>
-                            </motion.div>
-                          );
-                        })()}
+                              <div>
+                                <p className="text-[8px] font-black text-rose-500 uppercase">
+                                  Terminated
+                                </p>
+                                <p className="text-[15px] font-black">
+                                  {hoveredTurnover.data.terminated}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
                     </AnimatePresence>
+                    {computedTurnoverData.length > 1 ? (
+                      <svg
+                        className="w-full h-full overflow-visible"
+                        viewBox="0 0 800 200"
+                        preserveAspectRatio="none"
+                      >
+                        <defs>
+                          <linearGradient
+                            id="areaGrad"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="0%"
+                              stopColor="#FDF22F"
+                              stopOpacity="0.25"
+                            />
+                            <stop
+                              offset="100%"
+                              stopColor="#FDF22F"
+                              stopOpacity="0"
+                            />
+                          </linearGradient>
+                        </defs>
+                        {[50, 100, 150].map((y) => (
+                          <line
+                            key={y}
+                            x1="0"
+                            y1={y}
+                            x2="800"
+                            y2={y}
+                            stroke="#F3F4F6"
+                            strokeWidth="1"
+                          />
+                        ))}
+                        <path d={svgArea} fill="url(#areaGrad)" />
+                        <path
+                          d={svgPath}
+                          fill="none"
+                          stroke="#FDF22F"
+                          strokeWidth="3.5"
+                          strokeLinecap="round"
+                        />
+                        {svgPts.map((p, i) => (
+                          <g
+                            key={i}
+                            onMouseEnter={() =>
+                              setHoveredTurnover({
+                                data: computedTurnoverData[i],
+                                index: i,
+                              })
+                            }
+                            onMouseLeave={() => setHoveredTurnover(null)}
+                          >
+                            <circle
+                              cx={p.x}
+                              cy={p.y}
+                              r="22"
+                              fill="transparent"
+                              className="cursor-pointer"
+                            />
+                            <circle
+                              cx={p.x}
+                              cy={p.y}
+                              r={hoveredTurnover?.index === i ? 7 : 4}
+                              fill={
+                                hoveredTurnover?.index === i
+                                  ? "#000"
+                                  : "#FDF22F"
+                              }
+                              stroke={
+                                hoveredTurnover?.index === i
+                                  ? "#FDF22F"
+                                  : "#fff"
+                              }
+                              strokeWidth="2"
+                              className="transition-all duration-200"
+                            />
+                          </g>
+                        ))}
+                      </svg>
+                    ) : (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-[12px] text-gray-400">
+                          No turnover data for this period
+                        </p>
+                      </div>
+                    )}
                   </div>
-
-                  {/* X-axis: floating month labels — no axis line, label scales on hover */}
-                  <div
-                    className="flex mt-3"
-                    style={{ paddingLeft: 36, paddingRight: 4 }}
-                  >
-                    {(stats?.turnover || []).map((t: any, i: number) => (
+                  <div className="flex justify-between mt-2 px-1">
+                    {computedTurnoverData.map((d: any, i: number) => (
                       <span
                         key={i}
-                        style={{ flex: 1 }}
-                        className={`text-center text-[9px] font-bold uppercase tracking-widest select-none transition-all ${hoveredPoint === i ? "text-[#000000] font-black" : "text-gray-300"}`}
+                        className="text-[9px] sm:text-[10px] font-black text-gray-300 uppercase"
                       >
-                        {t.label}
+                        {d.label}
                       </span>
                     ))}
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Hiring Funnel Overview — Pro SVG Bézier Funnel */}
                 <div className="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm flex flex-col hover:shadow-md transition-all duration-300">
@@ -6932,6 +6804,15 @@ export default function TADashboard({
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ExportModal
+        open={exportModal}
+        onClose={() => setExportModal(false)}
+        stats={stats}
+        jobs={jobs || []}
+        reportFilters={reportFilters}
+        apiFetch={apiFetch}
+      />
     </div>
   );
 }

@@ -124,6 +124,10 @@ class JobPostingController extends Controller
         $perPage = request()->input('per_page', 9);
         $query = JobPosting::with('tenant')
             ->where('status', 'active')
+            // Only show "real" jobs that came from a validated requisition
+            ->whereNotNull('job_requisition_id')
+            // Double-check to exclude anything with "Sample" in the title
+            ->where('title', 'NOT LIKE', 'Sample%')
             ->where(function ($q) {
                 $q->whereNull('deadline')
                     ->orWhere('deadline', '>=', now()->toDateString());
@@ -154,6 +158,8 @@ class JobPostingController extends Controller
     {
         $job = JobPosting::with('tenant')
             ->where('status', 'active')
+            ->whereNotNull('job_requisition_id')
+            ->where('title', 'NOT LIKE', 'Sample%')
             ->findOrFail($id);
 
         return response()->json($job);
