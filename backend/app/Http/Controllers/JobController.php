@@ -112,7 +112,7 @@ class JobController extends Controller
         $request->validate([
             'title' => 'sometimes|string|max:255',
             'description' => 'sometimes|string',
-            'status' => 'sometimes|in:active,closed,draft',
+            'status' => 'sometimes|in:active,closed,archived,draft',
             'deadline' => 'nullable|date',
         ]);
 

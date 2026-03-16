@@ -23,8 +23,13 @@ class ApplicantController extends Controller
         $tenantId = $user->tenant_id;
 
         $query = Applicant::query()
-            ->with(['jobPosting', 'tenant'])
-            ->orderBy('created_at', 'desc');
+            ->with(['jobPosting', 'tenant']);
+
+        if ($request->status === 'hired') {
+            $query->orderBy('hired_at', 'desc');
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
 
         if (!$isAdmin) {
             $query->where('tenant_id', $tenantId);
@@ -147,12 +152,25 @@ class ApplicantController extends Controller
     public function updateStatus(Request $request, $id): JsonResponse
     {
         $request->validate([
-            'status'                    => 'required|string|in:new,written_exam,technical_interview,final_interview,offer,hired,rejected',
+            'status'                    => 'required|string|in:new,written_exam,technical_interview,final_interview,offer,hired,onboarding,rejected',
             'written_exam_score'        => 'nullable|numeric',
             'technical_interview_score' => 'nullable|numeric',
             'interviewer_feedback'      => 'nullable|string',
             'exam_paper'                => 'nullable|file|mimes:pdf,doc,docx,jpg,png,jpeg|max:10240',
-            'offer_letter'              => 'nullable|file|mimes:pdf,doc,docx,jpg,png,jpeg|max:20480',
+            'rejection_note'            => 'nullable|string',
+            'offer_notes'               => 'nullable|string',
+            'contract_path'             => 'nullable|string',
+            'contract_signed'           => 'nullable|boolean',
+            'id_verified'               => 'nullable|boolean',
+            'bank_account'              => 'nullable|string',
+            'tax_id'                    => 'nullable|string',
+            'payroll_setup'             => 'nullable|boolean',
+            'workstation_ready'         => 'nullable|boolean',
+            'company_email'             => 'nullable|string',
+            'email_created'             => 'nullable|boolean',
+            'office_tour_done'          => 'nullable|boolean',
+            'orientation_date'          => 'nullable|date',
+            'orientation_done'          => 'nullable|boolean',
         ]);
 
         $applicant = Applicant::findOrFail($id);
@@ -169,7 +187,23 @@ class ApplicantController extends Controller
             'interviewer_feedback',
             'offered_salary',
             'start_date',
+            'contract_signed',
+            'id_verified',
+            'bank_account',
+            'tax_id',
+            'payroll_setup',
+            'workstation_ready',
+            'company_email',
+            'email_created',
+            'office_tour_done',
+            'orientation_date',
+            'orientation_done',
         ]);
+
+        if ($request->hasFile('contract_file')) {
+            $relativePath = $request->file('contract_file')->store('contracts', 'public');
+            $data['contract_path'] = $relativePath;
+        }
 
         if ($request->has('rejection_note')) {
             $data['interviewer_feedback'] = $request->rejection_note;
@@ -266,6 +300,76 @@ class ApplicantController extends Controller
         ));
 
         return response()->json(['message' => 'Notification sent to applicant successfully']);
+    }
+
+    /**
+     * Promote an onboarding applicant to a Staff (User) record.
+     */
+    public function promoteToStaff(Request $request, $id): JsonResponse
+    {
+        $admin = $request->user();
+        $applicant = Applicant::findOrFail($id);
+
+        if (!$admin->hasRole('admin') && $applicant->tenant_id !== $admin->tenant_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Check if already promoted or exists
+        $existingUser = \App\Models\User::where('email', $applicant->email)->first();
+        if ($existingUser) {
+            // Ensure the 'employee' role exists
+            $employeeRole = \App\Models\Role::firstOrCreate(['slug' => 'employee'], ['name' => 'Staff Employee (Hired)']);
+            
+            // Link them up and update both User and Applicant
+            $existingUser->roles()->syncWithoutDetaching([$employeeRole->id]);
+            $existingUser->update([
+                'employment_status' => 'active',
+                'department' => $existingUser->department ?? ($applicant->jobPosting->department ?? 'Operations')
+            ]);
+            
+            $applicant->update([
+                'status' => 'staff', 
+                'employment_status' => 'active',
+                'hired_at' => $applicant->hired_at ?? now()
+            ]);
+
+            return response()->json([
+                'message' => 'Staff record updated and linked. They should now appear in the Staff tab.',
+                'user'    => $existingUser->load('roles')
+            ]);
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function() use ($applicant, $admin) {
+            // Create user
+            $user = \App\Models\User::create([
+                'name'              => $applicant->name,
+                'email'             => $applicant->email,
+                'password'          => $applicant->password ?? \Illuminate\Support\Facades\Hash::make(\Illuminate\Support\Str::random(12)),
+                'tenant_id'         => $applicant->tenant_id,
+                'department'        => $applicant->jobPosting->department ?? 'Operations',
+                'joined_date'       => $applicant->start_date ?? now(),
+                'employment_status' => 'active',
+            ]);
+
+            // Assign 'employee' role (ensure it exists)
+            $employeeRole = \App\Models\Role::firstOrCreate(['slug' => 'employee'], ['name' => 'Staff Employee (Hired)']);
+            $user->roles()->sync([$employeeRole->id]);
+
+            // Update applicant status
+            $applicant->update([
+                'status' => 'staff',
+                'employment_status' => 'active',
+                'hired_at' => $applicant->hired_at ?? now()
+            ]);
+
+            // Clear cache
+            \Illuminate\Support\Facades\Cache::forget("ta_manager_dashboard_stats_{$admin->tenant_id}");
+
+            return response()->json([
+                'message' => 'Applicant promoted to Staff successfully.',
+                'user'    => $user
+            ]);
+        });
     }
 
     public function updateEmploymentStatus(Request $request, $id): JsonResponse

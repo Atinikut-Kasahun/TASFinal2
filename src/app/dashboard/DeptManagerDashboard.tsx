@@ -101,8 +101,8 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
             const searchParam = search ? `&search=${encodeURIComponent(search)}` : '';
             console.log('[DM Dashboard] Fetching data with search:', search || '(none)');
             const [reqRes, jobsRes] = await Promise.all([
-                apiFetch(`/v1/requisitions?page=${rp}${searchParam}`),
-                apiFetch(`/v1/jobs?page=${jp}${searchParam}`)
+                apiFetch(`/v1/requisitions?page=${rp}&per_page=10${searchParam}`),
+                apiFetch(`/v1/jobs?page=${jp}&per_page=10${searchParam}`)
             ]);
             setRequisitions(reqRes.data || []);
             setReqsMeta(reqRes);
@@ -134,6 +134,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                 method: 'POST',
                 body: fd,
             });
+
             setDrawerOpen(false);
             setWizardStep(1);
             setFormData(INITIAL_FORM_DATA);
@@ -167,6 +168,18 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
         setDrawerOpen(true);
     };
 
+    const handleDelete = async (id: number) => {
+        if (!confirm('Are you sure you want to delete this requisition? This action cannot be undone.')) return;
+        try {
+            await apiFetch(`/v1/requisitions/${id}`, { method: 'DELETE' });
+            showToast('Requisition Deleted Successfully!');
+            fetchData();
+        } catch (e) {
+            console.error(e);
+            showToast('Failed to delete requisition', 'error');
+        }
+    };
+
     const handleDuplicate = async (id: number) => {
         try {
             await apiFetch(`/v1/requisitions/${id}/duplicate`, { method: 'POST' });
@@ -190,38 +203,13 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                 <div className="space-y-4">
                     {/* Sub Tabs */}
                     <div className="flex gap-6 sm:gap-10 border-b border-gray-100 mt-2">
-                        {['JOBS', 'HIRING PLAN'].map((t) => {
-                            const isSectionActive = (t === 'JOBS' && initialTab === 'Jobs') || (t === 'HIRING PLAN' && initialTab === 'HiringPlan');
-                            const isSubActive = localTab === t;
-                            const isActive = isSectionActive || isSubActive;
-
-                            return (
-                                <button
-                                    key={t}
-                                    onClick={() => {
-                                        if (t === 'JOBS' && initialTab !== 'Jobs') {
-                                            router.push('/dashboard?tab=Jobs');
-                                        } else if (t === 'HIRING PLAN' && initialTab !== 'HiringPlan') {
-                                            router.push('/dashboard?tab=HiringPlan');
-                                        } else {
-                                            setLocalTab(t);
-                                        }
-                                    }}
-                                    className={`pb-4 text-[11px] sm:text-[12px] font-black tracking-[0.1em] sm:tracking-[0.15em] transition-all relative ${isActive
-                                        ? 'text-[#000000]'
-                                        : 'text-gray-400 hover:text-gray-600'
-                                        }`}
-                                >
-                                    <span className="uppercase">{t}</span>
-                                    {isActive && (
-                                        <motion.div
-                                            layoutId="activeSubTabDM"
-                                            className="absolute bottom-0 left-0 right-0 h-[4px] bg-[#FDF22F] rounded-t-full shadow-[0_-2px_8px_rgba(253,242,47,0.4)]"
-                                        />
-                                    )}
-                                </button>
-                            );
-                        })}
+                        <div className="pb-4 text-[11px] sm:text-[12px] font-black tracking-[0.1em] sm:tracking-[0.15em] text-[#000000] relative">
+                            <span className="uppercase">{localTab}</span>
+                            <motion.div
+                                layoutId="activeSubTabDM"
+                                className="absolute bottom-0 left-0 right-0 h-[4px] bg-[#FDF22F] rounded-t-full shadow-[0_-2px_8px_rgba(253,242,47,0.4)]"
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -288,7 +276,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                 {jobs === null ? null : jobs.length === 0 ? (
                                     <p className="px-5 py-16 text-center text-gray-400 italic text-sm">No active jobs posted yet for {user.tenant?.name || 'this company'}.</p>
                                 ) : jobs.map((job: any) => (
-                                    <div key={job.id} className="px-5 py-4 hover:bg-gray-50 transition-colors">
+                                    <div key={job.id} className="px-5 py-4 hover:bg-gray-50 transition-colors group">
                                         <div className="flex items-start justify-between gap-3">
                                             <p className="font-bold text-[#000000] text-[14px] leading-snug">{job.title}</p>
                                             <span className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === 'active' ? 'bg-emerald-50 text-emerald-600' : job.status === 'closed' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-400'}`}>
@@ -406,9 +394,9 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center justify-between gap-4">
-                                                        <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
+                                                <td className="px-8 py-6 text-right">
+                                                    <div className="flex items-center justify-end gap-3">
+                                                        <span className={`px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-widest mr-auto ${req.status === 'approved' ? 'bg-emerald-50 text-emerald-600' :
                                                             req.status === 'amendment_required' ? 'bg-amber-50 text-amber-600' :
                                                                 (req.status === 'pending_md' || req.status === 'pending_hr') ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-500'
                                                             }`}>
@@ -419,7 +407,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); handleEdit(req); }}
                                                                     className="opacity-0 group-hover:opacity-100 p-1.5 text-amber-600 bg-amber-50 hover:bg-amber-100 rounded-lg transition-all"
-                                                                    title="Edit / Amend"
+                                                                    title="Amend"
                                                                 >
                                                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                                 </button>
@@ -488,7 +476,6 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                             </div>
                                         </div>
 
-                                        {/* Actions — always visible on mobile (no hover-only) */}
                                         <div className="flex gap-2 pt-3 border-t border-gray-100">
                                             {(req.status === 'amendment_required' || req.status === 'pending_md') && (
                                                 <button
@@ -559,7 +546,7 @@ export default function DeptManagerDashboard({ user, activeTab: initialTab, onLo
                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Step {wizardStep} of 2</span>
                                     </div>
                                 </div>
-                                <button onClick={() => setDrawerOpen(false)} className="text-gray-300 hover:text-gray-500 transition-colors p-1">
+                                <button onClick={() => { setDrawerOpen(false); setEditingReqId(null); }} className="text-gray-300 hover:text-gray-500 transition-colors p-1">
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
                             </div>

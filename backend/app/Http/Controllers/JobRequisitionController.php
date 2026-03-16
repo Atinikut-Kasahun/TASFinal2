@@ -100,12 +100,13 @@ class JobRequisitionController extends Controller
                 }) ?? 0, 1),
         ];
 
-        $requisitions = $query->orderBy('created_at', 'desc')->get();
+        $perPage = $request->input('per_page', 10);
+        $requisitions = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
-        return response()->json([
-            'data' => $requisitions,
-            'kpis' => $kpis
-        ]);
+        return response()->json(array_merge(
+            $requisitions->toArray(),
+            ['kpis' => $kpis]
+        ));
     }
 
     /**
@@ -392,5 +393,27 @@ class JobRequisitionController extends Controller
             'Content-Type' => $contentType,
             'Content-Disposition' => $disposition . '; filename="' . $safeFilename . '"',
         ]);
+    }
+    /**
+     * Delete a requisition.
+     */
+    public function destroy(string $id, Request $request): JsonResponse
+    {
+        $requisition = JobRequisition::findOrFail($id);
+        $user = $request->user();
+
+        // Only allow requester or admin to delete
+        if ($requisition->requested_by !== $user->id && !$user->hasRole('admin')) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Prevent deletion of approved or posted requisitions
+        if ($requisition->status === 'approved' && !$user->hasRole('admin')) {
+            return response()->json(['error' => 'Approved requisitions cannot be deleted.'], 403);
+        }
+
+        $requisition->delete();
+
+        return response()->json(['message' => 'Requisition deleted successfully.']);
     }
 }

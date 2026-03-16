@@ -403,6 +403,20 @@ export default function TADashboard({
   const [debouncedEmployeeSearch, setDebouncedEmployeeSearch] = useState("");
   const [debouncedHiringPlanSearch, setDebouncedHiringPlanSearch] =
     useState("");
+  const [onboardingStartDate, setOnboardingStartDate] = useState("");
+  const [onboardingForm, setOnboardingForm] = useState({
+    contract_signed: false,
+    id_verified: false,
+    bank_account: "",
+    tax_id: "",
+    payroll_setup: false,
+    workstation_ready: false,
+    company_email: "",
+    email_created: false,
+    office_tour_done: false,
+    orientation_date: "",
+    orientation_done: false,
+  });
   const [hiringPlanKpis, setHiringPlanKpis] = useState<any>(null);
 
   // Debounce global search
@@ -452,6 +466,22 @@ export default function TADashboard({
   useEffect(() => {
     if (drawerApp) {
       apiFetch("/v1/users").then((data) => setDepartmentUsers(data || []));
+      
+      if (drawerApp.status === "onboarding") {
+        setOnboardingForm({
+          contract_signed: !!drawerApp.contract_signed,
+          id_verified: !!drawerApp.id_verified,
+          bank_account: drawerApp.bank_account || "",
+          tax_id: drawerApp.tax_id || "",
+          payroll_setup: !!drawerApp.payroll_setup,
+          workstation_ready: !!drawerApp.workstation_ready,
+          company_email: drawerApp.company_email || "",
+          email_created: !!drawerApp.email_created,
+          office_tour_done: !!drawerApp.office_tour_done,
+          orientation_date: drawerApp.orientation_date ? drawerApp.orientation_date.split('T')[0] : "",
+          orientation_done: !!drawerApp.orientation_done,
+        });
+      }
     }
   }, [drawerApp]);
 
@@ -883,6 +913,72 @@ export default function TADashboard({
     }
   };
 
+  const handleStartOnboarding = async () => {
+    if (!drawerApp || !onboardingStartDate) {
+      showToast("Please select a start date", "error");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await apiFetch(`/v1/applicants/${drawerApp.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          status: "onboarding",
+          start_date: onboardingStartDate
+        })
+      });
+      showToast(`Successfully moved ${drawerApp.name} to Onboarding!`, "success");
+      setDrawerApp(null);
+      fetchData(currentPage);
+    } catch (e) {
+      console.error(e);
+      showToast("Failed to start onboarding", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUpdateOnboarding = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!drawerApp) return;
+    setActionLoading(true);
+    try {
+      await apiFetch(`/v1/applicants/${drawerApp.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          ...onboardingForm,
+          status: "onboarding", // Keep status as onboarding
+        }),
+      });
+      showToast("Onboarding details updated successfully", "success");
+      setDrawerApp(null);
+      fetchData(currentPage);
+    } catch (err) {
+      console.error("Failed to update onboarding", err);
+      showToast("Update failed", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handlePromoteToStaff = async () => {
+    if (!drawerApp) return;
+    setActionLoading(true);
+    try {
+      await apiFetch(`/v1/applicants/${drawerApp.id}/promote`, {
+        method: "POST",
+      });
+      showToast(`${drawerApp.name} is now a member of the staff!`, "success");
+      setDrawerApp(null);
+      fetchData(currentPage);
+    } catch (err: any) {
+      console.error("Failed to promote to staff", err);
+      showToast(err.message || "Promotion failed", "error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleUpdateEmployeeStatus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedEmployee) return;
@@ -890,7 +986,7 @@ export default function TADashboard({
 
     // If we're in 'HIRED' or 'ACTIVE' sub-tabs, these are applicant records.
     // 'STAFF' and 'SEPARATED' tabs use the /v1/employees endpoint (User model).
-    const isApplicant = subTab === "HIRED" || subTab === "ACTIVE";
+    const isApplicant = subTab === "HIRED" || subTab === "ACTIVE" || subTab === "ONBOARDING";
     const endpoint = isApplicant
       ? `/v1/applicants/${selectedEmployee.id}/employment-status`
       : `/v1/employees/${selectedEmployee.id}/status`;
@@ -942,9 +1038,9 @@ export default function TADashboard({
         }
 
         if (initialTab === "Employees") {
-          if (subTab === "HIRED" || subTab === "ACTIVE") {
+          if (subTab === "HIRED" || subTab === "ONBOARDING") {
             // Fetch Pipeline/Newly Hired (Applicants)
-            const statusParam = subTab === "HIRED" ? "hired" : "active";
+            const statusParam = subTab === "HIRED" ? "hired" : "onboarding";
             const params = new URLSearchParams({
               page: page.toString(),
               status: statusParam,
@@ -1445,10 +1541,17 @@ export default function TADashboard({
         }
       }
 
-      showToast(
-        `${scheduleContext.title} scheduled for ${drawerApp.name}`,
-        "success",
-      );
+      if (scheduleContext.targetStatus === "hired") {
+        showToast(`Successfully hired ${drawerApp.name}! Redirecting to Employees...`, "success");
+        setTimeout(() => {
+          router.push("/dashboard?tab=Employees");
+        }, 1500);
+      } else {
+        showToast(
+          `${scheduleContext.title} scheduled for ${drawerApp.name}`,
+          "success",
+        );
+      }
       setDrawerApp((prev: any) => ({
         ...prev,
         status: scheduleContext.targetStatus,
@@ -1458,7 +1561,7 @@ export default function TADashboard({
     } catch (e) {
       console.error(e);
       showToast(
-        `Failed to schedule ${scheduleContext.title.toLowerCase()}`,
+        `Failed to move candidate to ${scheduleContext.title.toLowerCase()}`,
         "error",
       );
     } finally {
@@ -1694,7 +1797,6 @@ export default function TADashboard({
                   "TECHNICAL INTERVIEW",
                   "FINAL INTERVIEW",
                   "OFFERS",
-                  "HIRED",
                   "REJECTED",
                 ];
               else if (initialTab === "Jobs")
@@ -1702,7 +1804,7 @@ export default function TADashboard({
               else if (initialTab === "HiringPlan")
                 items = ["REQUISITIONS"];
               else if (initialTab === "Employees")
-                items = ["HIRED", "ACTIVE", "STAFF"];
+                items = ["HIRED", "ONBOARDING", "STAFF"];
               else if (initialTab === "Reports") items = ["OVERVIEW"];
               else items = ["OVERVIEW"];
 
@@ -2012,7 +2114,7 @@ export default function TADashboard({
                       </td>
                       <td className="px-8 py-6">
                         <span
-                          className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === "active" ? "bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10" : job.status === "closed" ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-400"}`}
+                          className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === "active" ? "bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10" : (job.status === "closed" || job.status === "archived") ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-400"}`}
                         >
                           {job.status}
                         </span>
@@ -2023,13 +2125,13 @@ export default function TADashboard({
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleJobStatus(job.id, "closed");
+                                handleToggleJobStatus(job.id, "archived");
                               }}
                               className="px-4 py-2 border border-red-200 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-50 transition-all"
                             >
                               Close Job
                             </button>
-                          ) : job.status === "closed" ? (
+                          ) : (job.status === "closed" || job.status === "archived") ? (
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -2040,15 +2142,18 @@ export default function TADashboard({
                               Re-open
                             </button>
                           ) : null}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteJob(job.id);
-                            }}
-                            className="px-4 py-2 border border-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all"
-                          >
-                            Delete
-                          </button>
+                          {(job.status === "closed" || job.status === "archived") && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteConfirmId(job.id);
+                                handleDeleteJob(job.id);
+                              }}
+                              className="px-4 py-2 border border-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all font-bold"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -2074,7 +2179,7 @@ export default function TADashboard({
                     <div className="flex items-center justify-between">
                       <p className="font-bold text-[#000000]">{job.title}</p>
                       <span
-                        className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === "active" ? "bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10" : job.status === "closed" ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-400"}`}
+                        className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === "active" ? "bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10" : (job.status === "closed" || job.status === "archived") ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-400"}`}
                       >
                         {job.status}
                       </span>
@@ -2137,13 +2242,13 @@ export default function TADashboard({
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleToggleJobStatus(job.id, "closed");
+                            handleToggleJobStatus(job.id, "archived");
                           }}
                           className="px-4 py-2 border border-red-200 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-50 transition-all flex-1"
                         >
                           Close Job
                         </button>
-                      ) : job.status === "closed" ? (
+                      ) : (job.status === "closed" || job.status === "archived") ? (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -2154,15 +2259,18 @@ export default function TADashboard({
                           Re-open
                         </button>
                       ) : null}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteJob(job.id);
-                        }}
-                        className="px-4 py-2 border border-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all flex-1"
-                      >
-                        Delete
-                      </button>
+                      {(job.status === "closed" || job.status === "archived") && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDeleteConfirmId(job.id);
+                            handleDeleteJob(job.id);
+                          }}
+                          className="px-4 py-2 border border-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all flex-1 font-bold"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -2272,7 +2380,7 @@ export default function TADashboard({
               </p>
             </div>
             <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
-              {(initialTab === "Candidates" || initialTab === "Employees") && (
+              {(initialTab === "Candidates" || (initialTab === "Employees" && subTab !== "STAFF" && subTab !== "ONBOARDING")) && (
                 <button
                   onClick={() => setAddCandidateModal(true)}
                   className="flex-1 sm:flex-none justify-center bg-[#FDF22F] hover:bg-black text-black hover:text-white px-3 sm:px-4 py-2 rounded-xl font-black text-[10px] sm:text-[11px] uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20 transition-all flex items-center gap-1.5 sm:gap-2"
@@ -2456,7 +2564,9 @@ export default function TADashboard({
                         <div className="flex flex-col items-end gap-2">
                           <span
                             className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm shadow-black/5 ${app.status === "hired"
-                              ? "bg-[#FDF22F] text-black ring-1 ring-black/5"
+                              ? "bg-green-50 text-green-600 ring-1 ring-green-100"
+                              : app.status === "onboarding"
+                                ? "bg-[#FDF22F] text-black ring-1 ring-black/5"
                               : app.status === "rejected"
                                 ? "bg-red-50 text-red-600"
                                 : "bg-gray-100 text-gray-500"
@@ -2550,10 +2660,10 @@ export default function TADashboard({
                         "STATUS",
                         "HIRED ON",
                         "APPLIED ON",
-                        "ACTIONS",
-                      ].map((h) => (
+                        subTab === "ONBOARDING" ? null : "ACTIONS",
+                      ].filter(Boolean).map((h) => (
                         <th
-                          key={h}
+                          key={h as string}
                           className={`px-5 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest ${h === "ACTIONS" ? "text-right" : ""}`}
                         >
                           {h}
@@ -2758,13 +2868,15 @@ export default function TADashboard({
                         ) : (
                           <span
                             className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest ${app.status === "hired"
-                              ? "bg-[#FDF22F] text-[#000000] shadow-sm ring-1 ring-[#FDF22F]/50"
+                              ? "bg-green-50 text-green-600 border border-green-100"
+                              : app.status === "onboarding"
+                                ? "bg-[#FDF22F] text-[#000000] shadow-sm ring-1 ring-[#FDF22F]/50"
                               : app.status === "rejected"
                                 ? "bg-red-50 text-red-600"
                                 : "bg-blue-50 text-blue-600"
                               }`}
                           >
-                            {app.status}
+                            {app.status === "onboarding" ? "Undergoing Onboarding" : app.status}
                           </span>
                         )}
                       </td>
@@ -2816,7 +2928,7 @@ export default function TADashboard({
                         )}
                       </td>
                       <td className="px-5 py-5 text-right">
-                        {initialTab === "Employees" && (
+                        {initialTab === "Employees" && subTab !== "ONBOARDING" && (
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -5426,145 +5538,63 @@ export default function TADashboard({
                   </div>
                 </div>
                 <div className="px-10 space-y-10 flex-1">
-                  {/* Enhanced Stat Grid */}
-                  <section className="grid grid-cols-3 gap-6 -mt-8 relative z-[75]">
-                    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col justify-center transform hover:scale-[1.02] transition-transform">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
-                        Experience
-                      </p>
-                      <p className="text-2xl font-black text-[#000000]">
-                        {drawerApp.years_of_experience ??
-                          drawerApp.experience ??
-                          "N/A"}{" "}
-                        <span className="text-xs text-gray-400 font-bold uppercase ml-1">
-                          Years
-                        </span>
-                      </p>
-                    </div>
-                    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col justify-center transform hover:scale-[1.02] transition-transform">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
-                        Match Score
-                      </p>
-                      <div className="flex items-center gap-2.5">
-                        <p className="text-2xl font-black text-[#000000]">
-                          {drawerApp.match_score || 88}%
-                        </p>
-                        <div className="flex-1 h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
-                          <div
-                            className="h-full bg-gradient-to-r from-black to-[#FDF22F]"
-                            style={{ width: `${drawerApp.match_score || 88}%` }}
-                          />
+                  {drawerApp.status !== "onboarding" && (
+                    <>
+                      {/* Enhanced Stat Grid */}
+                      <section className="grid grid-cols-3 gap-6 -mt-8 relative z-[75]">
+                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col justify-center transform hover:scale-[1.02] transition-transform">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
+                            Experience
+                          </p>
+                          <p className="text-2xl font-black text-[#000000]">
+                            {drawerApp.years_of_experience ??
+                              drawerApp.experience ??
+                              "N/A"}{" "}
+                            <span className="text-xs text-gray-400 font-bold uppercase ml-1">
+                              Years
+                            </span>
+                          </p>
                         </div>
-                      </div>
-                    </div>
-                    <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col justify-center transform hover:scale-[1.02] transition-transform">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
-                        Age / Gender
-                      </p>
-                      <p className="text-lg font-black text-[#000000]">
-                        {drawerApp.age || "N/A"}{" "}
-                        <span className="text-gray-300 mx-1">•</span>{" "}
-                        {drawerApp.gender || "N/A"}
-                      </p>
-                    </div>
-                  </section>
-
-                  {/* Detailed Info Cards */}
-                  <div className="grid grid-cols-2 gap-8">
-                    <section className="space-y-4">
-                      <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
-                        Candidate Profile
-                      </h3>
-                      <div className="space-y-3">
-                        <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center gap-4 hover:bg-white transition-colors">
-                          <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#000000]">
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2.5"
-                                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col justify-center transform hover:scale-[1.02] transition-transform">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
+                            Match Score
+                          </p>
+                          <div className="flex items-center gap-2.5">
+                            <p className="text-2xl font-black text-[#000000]">
+                              {drawerApp.match_score || 88}%
+                            </p>
+                            <div className="flex-1 h-2 bg-gray-50 rounded-full overflow-hidden border border-gray-100">
+                              <div
+                                className="h-full bg-gradient-to-r from-black to-[#FDF22F]"
+                                style={{ width: `${drawerApp.match_score || 88}%` }}
                               />
-                            </svg>
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                            <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">
-                              Email Address
-                            </p>
-                            <p className="text-sm font-bold text-[#000000] truncate">
-                              {drawerApp.email}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center gap-4 hover:bg-white transition-colors">
-                          <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#000000]">
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2.5"
-                                d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                              />
-                            </svg>
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                            <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">
-                              Phone Number
-                            </p>
-                            <p className="text-sm font-bold text-[#000000] truncate">
-                              {drawerApp.phone || "N/A"}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-
-                    <section className="space-y-4">
-                      <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
-                        Professional Links
-                      </h3>
-                      <div className="space-y-3">
-                        {drawerApp.portfolio_link ? (
-                          <a
-                            href={drawerApp.portfolio_link}
-                            target="_blank"
-                            className="p-5 bg-[#000000]/5 rounded-2xl border border-[#000000]/10 flex items-center gap-4 hover:bg-[#000000]/10 transition-all group"
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-[#FDF22F] flex items-center justify-center text-black shadow-lg shadow-[#FDF22F]/20">
-                              <svg
-                                className="w-5 h-5"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2.5"
-                                  d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 019-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-                                />
-                              </svg>
                             </div>
-                            <div className="flex-1">
-                              <p className="text-[10px] font-black text-[#000000] uppercase leading-none mb-1">
-                                Portfolio
-                              </p>
-                              <p className="text-sm font-bold text-[#000000] group-hover:underline flex items-center gap-1">
-                                Visit Portfolio{" "}
+                          </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/20 flex flex-col justify-center transform hover:scale-[1.02] transition-transform">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">
+                            Age / Gender
+                          </p>
+                          <p className="text-lg font-black text-[#000000]">
+                            {drawerApp.age || "N/A"}{" "}
+                            <span className="text-gray-300 mx-1">•</span>{" "}
+                            {drawerApp.gender || "N/A"}
+                          </p>
+                        </div>
+                      </section>
+
+                      {/* Detailed Info Cards */}
+                      <div className="grid grid-cols-2 gap-8">
+                        <section className="space-y-4">
+                          <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
+                            Candidate Profile
+                          </h3>
+                          <div className="space-y-3">
+                            <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center gap-4 hover:bg-white transition-colors">
+                              <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#000000]">
                                 <svg
-                                  className="w-3 h-3"
+                                  className="w-5 h-5"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
@@ -5572,211 +5602,605 @@ export default function TADashboard({
                                   <path
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
-                                    strokeWidth="3"
-                                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                    strokeWidth="2.5"
+                                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                                   />
                                 </svg>
-                              </p>
+                              </div>
+                              <div className="flex-1 overflow-hidden">
+                                <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">
+                                  Email Address
+                                </p>
+                                <p className="text-sm font-bold text-[#000000] truncate">
+                                  {drawerApp.email}
+                                </p>
+                              </div>
                             </div>
-                          </a>
-                        ) : (
-                          <div className="p-5 bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex items-center justify-center text-gray-400 text-[11px] font-bold uppercase tracking-widest italic h-[116px]">
-                            No Portfolio Provided
+                            <div className="p-5 bg-gray-50/50 rounded-2xl border border-gray-100 flex items-center gap-4 hover:bg-white transition-colors">
+                              <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-[#000000]">
+                                <svg
+                                  className="w-5 h-5"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2.5"
+                                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                                  />
+                                </svg>
+                              </div>
+                              <div className="flex-1 overflow-hidden">
+                                <p className="text-[10px] font-black text-gray-400 uppercase leading-none mb-1">
+                                  Phone Number
+                                </p>
+                                <p className="text-sm font-bold text-[#000000] truncate">
+                                  {drawerApp.phone || "N/A"}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    </section>
-                  </div>
+                        </section>
 
-                  <section className="space-y-4">
-                    <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
-                      Professional Background
-                    </h3>
-                    <div className="p-8 bg-gray-50/50 rounded-[32px] border border-gray-100 italic text-[#000000] leading-relaxed relative overflow-hidden group hover:bg-white hover:shadow-xl transition-all">
-                      <div className="absolute top-0 left-0 w-1.5 h-full bg-[#FDF22F]" />
-                      <div className="absolute top-4 left-4 text-6xl text-gray-200/50 select-none group-hover:text-[#000000]/10 transition-colors">
-                        “
+                        <section className="space-y-4">
+                          <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
+                            Professional Links
+                          </h3>
+                          <div className="space-y-3">
+                            {drawerApp.portfolio_link ? (
+                              <a
+                                href={drawerApp.portfolio_link}
+                                target="_blank"
+                                className="p-5 bg-[#000000]/5 rounded-2xl border border-[#000000]/10 flex items-center gap-4 hover:bg-[#000000]/10 transition-all group"
+                              >
+                                <div className="w-10 h-10 rounded-xl bg-[#FDF22F] flex items-center justify-center text-black shadow-lg shadow-[#FDF22F]/20">
+                                  <svg
+                                    className="w-5 h-5"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2.5"
+                                      d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 019-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+                                    />
+                                  </svg>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-[10px] font-black text-[#000000] uppercase leading-none mb-1">
+                                    Portfolio
+                                  </p>
+                                  <p className="text-sm font-bold text-[#000000] group-hover:underline flex items-center gap-1">
+                                    Visit Portfolio{" "}
+                                    <svg
+                                      className="w-3 h-3"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="3"
+                                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                                      />
+                                    </svg>
+                                  </p>
+                                </div>
+                              </a>
+                            ) : (
+                              <div className="p-5 bg-gray-50 rounded-2xl border border-dashed border-gray-200 flex items-center justify-center text-gray-400 text-[11px] font-bold uppercase tracking-widest italic h-[116px]">
+                                No Portfolio Provided
+                              </div>
+                            )}
+                          </div>
+                        </section>
                       </div>
-                      <p className="relative z-10 pl-6 text-[15px] font-medium opacity-80">
-                        {drawerApp.professional_background ||
-                          "No professional summary provided."}
-                      </p>
-                    </div>
-                  </section>
-                  {/* Scoring & Assessment Results */}
-                  {(drawerApp.written_exam_score ||
-                    drawerApp.technical_interview_score) && (
+
                       <section className="space-y-4">
                         <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-[#FDF22F]" />
-                          Scoring & Assessment
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
+                          Professional Background
                         </h3>
-                        <div className="grid grid-cols-2 gap-6">
-                          <div className="p-6 bg-[#FDF22F]/5 border border-[#FDF22F]/20 rounded-3xl">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                              Written Exam
-                            </p>
-                            <p className="text-3xl font-black text-black">
-                              {drawerApp.written_exam_score
-                                ? `${drawerApp.written_exam_score}%`
-                                : "N/A"}
-                            </p>
+                        <div className="p-8 bg-gray-50/50 rounded-[32px] border border-gray-100 italic text-[#000000] leading-relaxed relative overflow-hidden group hover:bg-white hover:shadow-xl transition-all">
+                          <div className="absolute top-0 left-0 w-1.5 h-full bg-[#FDF22F]" />
+                          <div className="absolute top-4 left-4 text-6xl text-gray-200/50 select-none group-hover:text-[#000000]/10 transition-colors">
+                            “
                           </div>
-                          <div className="p-6 bg-[#FDF22F]/5 border border-[#FDF22F]/20 rounded-3xl">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                              Technical Interview
-                            </p>
-                            <p className="text-3xl font-black text-black">
-                              {drawerApp.technical_interview_score
-                                ? `${drawerApp.technical_interview_score}%`
-                                : "N/A"}
-                            </p>
-                          </div>
+                          <p className="relative z-10 pl-6 text-[15px] font-medium opacity-80">
+                            {drawerApp.professional_background ||
+                              "No professional summary provided."}
+                          </p>
                         </div>
-                        {drawerApp.interviewer_feedback && (
-                          <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
-                              Interviewer Feedback
-                            </p>
-                            <p className="text-sm font-medium text-gray-600 italic leading-relaxed">
-                              &quot;{drawerApp.interviewer_feedback}&quot;
-                            </p>
-                          </div>
-                        )}
                       </section>
-                    )}
+                      {/* Scoring & Assessment Results */}
+                      {(drawerApp.written_exam_score ||
+                        drawerApp.technical_interview_score) && (
+                          <section className="space-y-4">
+                            <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#FDF22F]" />
+                              Scoring & Assessment
+                            </h3>
+                            <div className="grid grid-cols-2 gap-6">
+                              <div className="p-6 bg-[#FDF22F]/5 border border-[#FDF22F]/20 rounded-3xl">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                                  Written Exam
+                                </p>
+                                <p className="text-3xl font-black text-black">
+                                  {drawerApp.written_exam_score
+                                    ? `${drawerApp.written_exam_score}%`
+                                    : "N/A"}
+                                </p>
+                              </div>
+                              <div className="p-6 bg-[#FDF22F]/5 border border-[#FDF22F]/20 rounded-3xl">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
+                                  Technical Interview
+                                </p>
+                                <p className="text-3xl font-black text-black">
+                                  {drawerApp.technical_interview_score
+                                    ? `${drawerApp.technical_interview_score}%`
+                                    : "N/A"}
+                                </p>
+                              </div>
+                            </div>
+                            {drawerApp.interviewer_feedback && (
+                              <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100">
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">
+                                  Interviewer Feedback
+                                </p>
+                                <p className="text-sm font-medium text-gray-600 italic leading-relaxed">
+                                  &quot;{drawerApp.interviewer_feedback}&quot;
+                                </p>
+                              </div>
+                            )}
+                          </section>
+                        )}
 
-                  {/* Supporting Documents */}
-                  <section className="space-y-4">
-                    <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
-                      Supporting Documents
-                    </h3>
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-[#000000]/20 hover:bg-gray-50/50 transition-all shadow-sm">
-                        <div className="flex items-center gap-5">
-                          <div className="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all shadow-inner">
-                            <svg
-                              className="w-7 h-7"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
+                      {/* Supporting Documents */}
+                      <section className="space-y-4">
+                        <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#000000]" />
+                          Supporting Documents
+                        </h3>
+                        <div className="grid grid-cols-1 gap-4">
+                          <div className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-[#000000]/20 hover:bg-gray-50/50 transition-all shadow-sm">
+                            <div className="flex items-center gap-5">
+                              <div className="w-14 h-14 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center group-hover:bg-red-500 group-hover:text-white transition-all shadow-inner">
+                                <svg
+                                  className="w-7 h-7"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth="2"
+                                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                                  />
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-[#000000] uppercase tracking-tighter">
+                                  Professional Resume
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+                                  PDF Document
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() =>
+                                setPreviewUrl(
+                                  `${API_URL}/v1/applicants/${drawerApp.id}/resume`,
+                                )
+                              }
+                              className="px-8 py-3 bg-[#FDF22F] text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#000000] hover:text-white transition-all shadow-sm"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-                              />
-                            </svg>
+                              Open Document
+                            </button>
                           </div>
-                          <div>
-                            <p className="text-sm font-black text-[#000000] uppercase tracking-tighter">
-                              Professional Resume
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                              PDF Document
-                            </p>
+
+                          {drawerApp.exam_paper_path && (
+                            <div className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-[#FDF22F]/20 hover:bg-[#FDF22F]/5 transition-all shadow-sm">
+                              <div className="flex items-center gap-5">
+                                <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-inner">
+                                  <svg
+                                    className="w-7 h-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                  </svg>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black text-[#000000] uppercase tracking-tighter">
+                                    Candidate Exam Paper
+                                  </p>
+                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+                                    Proof of Assessment
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  window.open(
+                                    `${API_URL.replace("/api", "/storage")}/${drawerApp.exam_paper_path}`,
+                                    "_blank",
+                                  )
+                                }
+                                className="px-8 py-3 bg-black text-[#FDF22F] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#FDF22F] hover:text-black transition-all shadow-sm"
+                              >
+                                Open Paper
+                              </button>
+                            </div>
+                          )}
+
+                          {drawerApp.attachments?.map((file: any, i: number) => (
+                            <div
+                              key={i}
+                              className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-[#F7F8FA] hover:bg-[#F7F8FA] transition-all shadow-sm"
+                            >
+                              <div className="flex items-center gap-5">
+                                <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center group-hover:bg-[#000000] group-hover:text-white transition-all shadow-inner">
+                                  <svg
+                                    className="w-7 h-7"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth="2"
+                                      d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                    />
+                                  </svg>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black text-[#000000] uppercase tracking-tighter truncate max-w-[200px]">
+                                    {file.label || "Additional File"}
+                                  </p>
+                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
+                                    {file.file_type?.toUpperCase() || "FILE"}
+                                  </p>
+                                </div>
+                              </div>
+                              <button
+                                onClick={() =>
+                                  setPreviewUrl(
+                                    `${API_URL}/v1/attachments/${file.id}/view`,
+                                  )
+                                }
+                                className="px-8 py-3 bg-white border-2 border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#000000] hover:text-white hover:border-[#000000] transition-all shadow-sm"
+                              >
+                                Open File
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    </>
+                  )}
+
+                  {drawerApp.status === "onboarding" && (
+                    <div className="space-y-10">
+                      {/* Slim Professional Header */}
+                      <header className="relative bg-[#FDF22F] rounded-3xl p-6 text-black shadow-sm border border-[#FDE047] group">
+                        <div className="relative z-10 flex items-center justify-between">
+                          <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-2xl bg-black flex items-center justify-center text-[#FDF22F] shadow-lg">
+                               <Activity size={24} className="animate-pulse" />
+                            </div>
+                            <div>
+                               <div className="flex items-center gap-2 mb-0.5">
+                                 <span className="text-[9px] font-black uppercase tracking-[0.2em] bg-black/5 px-2 py-0.5 rounded-md">Onboarding Active</span>
+                               </div>
+                               <h2 className="text-2xl font-black tracking-tighter leading-none">{drawerApp.name}</h2>
+                               <p className="text-black/40 text-[10px] font-bold uppercase tracking-widest mt-1">
+                                 {drawerApp.job_posting?.title || "New Hire"} • {drawerApp.id}
+                               </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-6">
+                            <div className="text-right">
+                              <p className="text-[9px] font-black text-black/30 uppercase tracking-widest mb-0.5">Progress</p>
+                              <div className="flex items-baseline gap-1 justify-end">
+                                 <span className="text-2xl font-black tabular-nums">
+                                   {(() => {
+                                     const tasks = [
+                                       onboardingForm.contract_signed,
+                                       onboardingForm.id_verified,
+                                       onboardingForm.bank_account,
+                                       onboardingForm.tax_id,
+                                       onboardingForm.payroll_setup,
+                                       onboardingForm.workstation_ready,
+                                       onboardingForm.email_created,
+                                       onboardingForm.company_email,
+                                       onboardingForm.office_tour_done,
+                                       onboardingForm.orientation_done
+                                     ];
+                                     const done = tasks.filter(Boolean).length;
+                                     return Math.round((done / tasks.length) * 100);
+                                   })()}
+                                 </span>
+                                 <span className="text-sm font-black text-black/20">%</span>
+                              </div>
+                            </div>
+                            <div className="w-10 h-10 rounded-xl bg-black/5 flex items-center justify-center text-black/20 border border-black/5">
+                               <CheckCircle2 size={20} strokeWidth={3} />
+                            </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() =>
-                            setPreviewUrl(
-                              `${API_URL}/v1/applicants/${drawerApp.id}/resume`,
-                            )
-                          }
-                          className="px-8 py-3 bg-[#FDF22F] text-black rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#000000] hover:text-white transition-all shadow-sm"
-                        >
-                          Open Document
-                        </button>
+
+                        {/* Ultra-slim Progress Bar */}
+                        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/5 rounded-b-3xl overflow-hidden">
+                           <motion.div 
+                             initial={{ width: 0 }}
+                             animate={{ 
+                               width: `${(() => {
+                                 const tasks = [
+                                   onboardingForm.contract_signed,
+                                   onboardingForm.id_verified,
+                                   onboardingForm.bank_account,
+                                   onboardingForm.tax_id,
+                                   onboardingForm.payroll_setup,
+                                   onboardingForm.workstation_ready,
+                                   onboardingForm.email_created,
+                                   onboardingForm.company_email,
+                                   onboardingForm.office_tour_done,
+                                   onboardingForm.orientation_done
+                                 ];
+                                 const done = tasks.filter(Boolean).length;
+                                 return (done / tasks.length) * 100;
+                               })()}%` 
+                             }}
+                             className="h-full bg-black"
+                           />
+                        </div>
+                      </header>
+
+                      <div className="grid grid-cols-1 gap-10">
+                        {/* Legal Section */}
+                        <section className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-sm">
+                          <div className="flex items-center gap-5 mb-8">
+                             <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-inner">
+                                <FileText size={24} />
+                             </div>
+                             <div>
+                                <h3 className="text-xl font-black text-black">Legal & Compliance</h3>
+                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Stage 1: Documentation</p>
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+                             <div className={`p-6 rounded-[32px] transition-all duration-300 border ${onboardingForm.contract_signed ? 'bg-indigo-50/50 border-indigo-100' : 'bg-gray-50 border-transparent hover:border-gray-200'}`}>
+                                <div className="flex items-center justify-between mb-2">
+                                   <p className={`text-xs font-black uppercase tracking-widest ${onboardingForm.contract_signed ? 'text-indigo-600' : 'text-gray-400'}`}>Employment Contract</p>
+                                   <input 
+                                     type="checkbox" 
+                                     checked={onboardingForm.contract_signed}
+                                     onChange={(e) => setOnboardingForm(p => ({ ...p, contract_signed: e.target.checked }))}
+                                     className="w-6 h-6 rounded-lg accent-indigo-600 cursor-pointer"
+                                   />
+                                </div>
+                                <p className="text-[11px] font-bold text-gray-400 mb-4">Official DROGA Pharma contract signed by employee</p>
+                                <button className="w-full py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm hover:bg-black hover:text-white transition-all">
+                                   View / Upload Document
+                                </button>
+                             </div>
+
+                             <div className={`p-6 rounded-[32px] transition-all duration-300 border ${onboardingForm.id_verified ? 'bg-indigo-50/50 border-indigo-100' : 'bg-gray-50 border-transparent hover:border-gray-200'}`}>
+                                <div className="flex items-center justify-between mb-2">
+                                   <p className={`text-xs font-black uppercase tracking-widest ${onboardingForm.id_verified ? 'text-indigo-600' : 'text-gray-400'}`}>KYC & Verification</p>
+                                   <input 
+                                     type="checkbox" 
+                                     checked={onboardingForm.id_verified}
+                                     onChange={(e) => setOnboardingForm(p => ({ ...p, id_verified: e.target.checked }))}
+                                     className="w-6 h-6 rounded-lg accent-indigo-600 cursor-pointer"
+                                   />
+                                </div>
+                                <p className="text-[11px] font-bold text-gray-400">Government ID, Educational Certificates & Photos verified</p>
+                             </div>
+                          </div>
+
+                          <div className="p-8 bg-gray-50 rounded-[32px] border border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-8">
+                              <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-5">
+                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Bank Account Info</label>
+                                    <input 
+                                      type="text" 
+                                      value={onboardingForm.bank_account}
+                                      onChange={(e) => setOnboardingForm(p => ({ ...p, bank_account: e.target.value }))}
+                                      placeholder="Commercial Bank of Ethiopia"
+                                      className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-xs font-black focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                    />
+                                 </div>
+                                 <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tax ID Number (TIN)</label>
+                                    <input 
+                                      type="text" 
+                                      value={onboardingForm.tax_id}
+                                      onChange={(e) => setOnboardingForm(p => ({ ...p, tax_id: e.target.value }))}
+                                      placeholder="ET-10293485"
+                                      className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-xs font-black focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                                    />
+                                 </div>
+                              </div>
+                              <div className={`p-5 rounded-[24px] border flex flex-col items-center justify-center gap-2 transition-all cursor-pointer ${onboardingForm.payroll_setup ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg' : 'bg-white border-gray-200 text-gray-300'}`}
+                                   onClick={() => setOnboardingForm(p => ({ ...p, payroll_setup: !p.payroll_setup }))}>
+                                 <Check size={20} className={onboardingForm.payroll_setup ? 'text-[#FDF22F]' : 'text-gray-200'} />
+                                 <span className="text-[10px] font-black uppercase tracking-widest">Payroll Ready</span>
+                              </div>
+                          </div>
+                        </section>
+
+                        {/* Technical Section */}
+                        <section className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-sm">
+                          <div className="flex items-center gap-5 mb-8">
+                             <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shadow-inner">
+                                <Activity size={24} />
+                             </div>
+                             <div>
+                                <h3 className="text-xl font-black text-black">Technical Readiness</h3>
+                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Stage 2: IT Provisioning</p>
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <div className={`p-8 rounded-[32px] border transition-all ${onboardingForm.workstation_ready ? 'bg-amber-50 border-amber-100' : 'bg-gray-50 border-transparent'}`}>
+                                <div className="flex items-center justify-between mb-4">
+                                   <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm">
+                                      <Briefcase size={20} className="text-amber-500" />
+                                   </div>
+                                   <input 
+                                     type="checkbox" 
+                                     checked={onboardingForm.workstation_ready}
+                                     onChange={(e) => setOnboardingForm(p => ({ ...p, workstation_ready: e.target.checked }))}
+                                     className="w-7 h-7 accent-amber-500 cursor-pointer"
+                                   />
+                                </div>
+                                <h4 className="text-sm font-black text-black uppercase tracking-tight">Workstation Readiness</h4>
+                                <p className="text-[11px] font-medium text-gray-400 mt-1">Laptop, Desktop, Desk & ID card prepared for first day.</p>
+                             </div>
+
+                             <div className={`p-8 rounded-[32px] border transition-all ${onboardingForm.email_created ? 'bg-amber-50 border-amber-100' : 'bg-gray-50 border-transparent'}`}>
+                                <div className="flex items-center justify-between mb-5">
+                                   <p className="text-xs font-black uppercase tracking-widest text-[#000000]">Corporate Identity</p>
+                                   <input 
+                                      type="checkbox" 
+                                      checked={onboardingForm.email_created}
+                                      onChange={(e) => setOnboardingForm(p => ({ ...p, email_created: e.target.checked }))}
+                                      className="w-6 h-6 accent-black cursor-pointer"
+                                    />
+                                </div>
+                                <div className="space-y-4">
+                                   <div className="relative">
+                                      <MessageCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-300" size={16} />
+                                      <input 
+                                        type="text" 
+                                        value={onboardingForm.company_email}
+                                        onChange={(e) => setOnboardingForm(p => ({ ...p, company_email: e.target.value }))}
+                                        placeholder="full.name@droga.com"
+                                        className="w-full bg-white border border-gray-200 rounded-2xl pl-12 pr-5 py-4 text-xs font-black focus:ring-4 focus:ring-black/5 outline-none transition-all"
+                                      />
+                                   </div>
+                                   <p className="text-[10px] font-bold text-gray-400 ml-1">Company email account created and credentials ready.</p>
+                                </div>
+                             </div>
+                          </div>
+                        </section>
+
+                        {/* Integration Section */}
+                        <section className="bg-white rounded-[40px] border border-gray-100 p-8 shadow-sm">
+                          <div className="flex items-center gap-5 mb-8">
+                             <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+                                <Users size={24} />
+                             </div>
+                             <div>
+                                <h3 className="text-xl font-black text-black">Cultural Integration</h3>
+                                <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest mt-0.5">Stage 3: Team Welcome</p>
+                             </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <div className={`p-8 rounded-[35px] shadow-xl flex items-center justify-between group transition-all duration-500 overflow-hidden relative ${onboardingForm.office_tour_done ? 'bg-black text-[#FDF22F]' : 'bg-white text-black border border-gray-100'}`}>
+                                {onboardingForm.office_tour_done && <div className="absolute top-0 right-0 w-24 h-24 bg-[#FDF22F]/5 rounded-full -mr-8 -mt-8" />}
+                                <div className="flex items-center gap-5">
+                                   <div className={`w-14 h-14 rounded-[22px] flex items-center justify-center transition-colors ${onboardingForm.office_tour_done ? 'bg-[#FDF22F] text-black' : 'bg-gray-100 text-gray-400'}`}>
+                                      <Activity size={24} />
+                                   </div>
+                                   <div>
+                                      <h4 className="text-[15px] font-black uppercase tracking-tight">Office Immersion</h4>
+                                      <p className={`text-[10px] font-bold ${onboardingForm.office_tour_done ? 'text-white/40' : 'text-gray-400'}`}>Tour done • Team introduced</p>
+                                   </div>
+                                </div>
+                                <input 
+                                  type="checkbox" 
+                                  checked={onboardingForm.office_tour_done}
+                                  onChange={(e) => setOnboardingForm(p => ({ ...p, office_tour_done: e.target.checked }))}
+                                  className="w-8 h-8 accent-[#FDF22F] cursor-pointer relative z-10"
+                                />
+                             </div>
+
+                             <div className={`p-8 rounded-[35px] border transition-all ${onboardingForm.orientation_done ? 'bg-emerald-50/50 border-emerald-100' : 'bg-gray-50 border-transparent'}`}>
+                                <div className="flex items-center justify-between mb-5">
+                                   <div className="flex items-center gap-3">
+                                      <Calendar size={18} className="text-emerald-500" />
+                                      <p className="text-xs font-black uppercase tracking-widest text-[#000000]">Orientation Session</p>
+                                   </div>
+                                   <input 
+                                      type="checkbox" 
+                                      checked={onboardingForm.orientation_done}
+                                      onChange={(e) => setOnboardingForm(p => ({ ...p, orientation_done: e.target.checked }))}
+                                      className="w-7 h-7 accent-emerald-500 cursor-pointer"
+                                    />
+                                </div>
+                                <input 
+                                  type="date" 
+                                  value={onboardingForm.orientation_date}
+                                  onChange={(e) => setOnboardingForm(p => ({ ...p, orientation_date: e.target.value }))}
+                                  className="w-full bg-white border border-gray-200 rounded-2xl px-6 py-4 text-xs font-black focus:ring-8 focus:ring-emerald-500/5 transition-all outline-none"
+                                />
+                             </div>
+                          </div>
+                        </section>
                       </div>
 
-                      {drawerApp.exam_paper_path && (
-                        <div className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-[#FDF22F]/20 hover:bg-[#FDF22F]/5 transition-all shadow-sm">
-                          <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-inner">
-                              <svg
-                                className="w-7 h-7"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                />
-                              </svg>
-                            </div>
-                            <div>
-                              <p className="text-sm font-black text-[#000000] uppercase tracking-tighter">
-                                Candidate Exam Paper
-                              </p>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                                Proof of Assessment
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={() =>
-                              window.open(
-                                `${API_URL.replace("/api", "/storage")}/${drawerApp.exam_paper_path}`,
-                                "_blank",
-                              )
-                            }
-                            className="px-8 py-3 bg-black text-[#FDF22F] rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#FDF22F] hover:text-black transition-all shadow-sm"
-                          >
-                            Open Paper
-                          </button>
-                        </div>
-                      )}
-
-                      {drawerApp.attachments?.map((file: any, i: number) => (
-                        <div
-                          key={i}
-                          className="p-6 bg-white rounded-3xl border border-gray-100 flex items-center justify-between group hover:border-[#F7F8FA] hover:bg-[#F7F8FA] transition-all shadow-sm"
+                      {/* Final Actions */}
+                      <div className="flex flex-col gap-4">
+                        <button 
+                          onClick={handleUpdateOnboarding}
+                          disabled={actionLoading}
+                          className="w-full py-6 bg-white border-4 border-black text-black rounded-[40px] font-black text-xs uppercase tracking-[0.4em] shadow-xl hover:bg-gray-50 transition-all flex items-center justify-center gap-4 disabled:opacity-50"
                         >
-                          <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center group-hover:bg-[#000000] group-hover:text-white transition-all shadow-inner">
-                              <svg
-                                className="w-7 h-7"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                                />
-                              </svg>
-                            </div>
-                            <div>
-                              <p className="text-sm font-black text-[#000000] uppercase tracking-tighter truncate max-w-[200px]">
-                                {file.label || "Additional File"}
-                              </p>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">
-                                {file.file_type?.toUpperCase() || "FILE"}
-                              </p>
-                            </div>
+                          {actionLoading ? (
+                            <div className="w-6 h-6 border-4 border-black/30 border-t-black rounded-full animate-spin" />
+                          ) : (
+                            "Save Progress Update"
+                          )}
+                        </button>
+
+                        {/* FINAL MOVE TO STAFF BUTTON - WOW EFFECT */}
+                        <motion.button 
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handlePromoteToStaff}
+                          disabled={actionLoading}
+                          className="w-full py-8 bg-[#FDF22F] text-black rounded-[40px] font-black text-sm uppercase tracking-[0.5em] shadow-[0_20px_40px_-15px_rgba(253,242,47,0.4)] flex items-center justify-center gap-4 hover:shadow-[0_25px_50px_-12px_rgba(253,242,47,0.6)] transition-all relative overflow-hidden group/final"
+                        >
+                          <motion.div 
+                            className="absolute inset-0 bg-white"
+                            initial={{ x: '-100%' }}
+                            whileHover={{ x: '1000%' }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                            style={{ opacity: 0.1, rotate: '15deg', width: '20px' }}
+                          />
+                          <div className="w-8 h-8 rounded-xl bg-black text-[#FDF22F] flex items-center justify-center shrink-0">
+                             <ArrowRight size={18} />
                           </div>
-                          <button
-                            onClick={() =>
-                              setPreviewUrl(
-                                `${API_URL}/v1/attachments/${file.id}/view`,
-                              )
-                            }
-                            className="px-8 py-3 bg-white border-2 border-gray-100 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#000000] hover:text-white hover:border-[#000000] transition-all shadow-sm"
-                          >
-                            Open File
-                          </button>
-                        </div>
-                      ))}
+                          Finalize & Move to Staff Tab
+                        </motion.button>
+                        
+                        <p className="text-center text-[10px] font-black text-gray-300 uppercase tracking-widest mt-2">
+                          Warning: Moving to Staff will create a system user account for the employee.
+                        </p>
+                      </div>
                     </div>
-                  </section>
+                  )}
+
 
                   {/* Team Collaboration / Mentions */}
                   <section className="space-y-4">
@@ -6020,9 +6444,43 @@ export default function TADashboard({
                     </>
                   )}
                 {drawerApp.status === "hired" && (
-                  <div className="flex-1 py-4 bg-[#FDF22F] text-[#000000] rounded-2xl text-center font-black text-[10px] uppercase tracking-widest border border-[#FDF22F] shadow-lg shadow-[#FDF22F]/30 ring-1 ring-[#FDF22F]/50">
-                    🏆 Active Employee
+                  <div className="flex flex-col gap-4 w-full bg-gray-50 p-6 rounded-[32px] border border-gray-100 shadow-inner">
+                    <div className="space-y-2">
+                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
+                         Official Start Date
+                       </label>
+                       <input 
+                         type="date" 
+                         value={onboardingStartDate}
+                         onChange={(e) => setOnboardingStartDate(e.target.value)}
+                         className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-sm font-black focus:ring-2 focus:ring-[#FDF22F] focus:border-[#FDF22F] transition-all outline-none"
+                       />
+                    </div>
+                    <button
+                      onClick={handleStartOnboarding}
+                      disabled={actionLoading || !onboardingStartDate}
+                      className="w-full py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-1 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0"
+                    >
+                      {actionLoading ? (
+                         <div className="w-5 h-5 border-3 border-black/30 border-t-black rounded-full animate-spin" />
+                      ) : (
+                        <>Start Onboarding</>
+                      )}
+                    </button>
                   </div>
+                )}
+                {drawerApp.status === "onboarding" && (
+                   <button
+                     onClick={() => showToast(`Onboarding progress for ${drawerApp.name} is being tracked.`, "success")}
+                     className="flex-1 py-5 bg-black text-[#FDF22F] rounded-3xl text-center font-black text-[11px] uppercase tracking-[0.2em] border border-black shadow-2xl shadow-black/20 flex flex-col items-center gap-2 hover:bg-gray-900 transition-all active:scale-95"
+                   >
+                     <span>Undergoing Onboarding</span>
+                     {drawerApp.start_date && (
+                       <p className="text-[9px] text-white/40 tracking-widest font-bold">
+                         STARTS: {new Date(drawerApp.start_date).toLocaleDateString()}
+                       </p>
+                     )}
+                   </button>
                 )}
                 {drawerApp.status === "rejected" && (
                   <div className="flex-1 py-4 bg-red-50 text-red-500 rounded-2xl text-center font-black text-[10px] uppercase tracking-widest border border-red-100">

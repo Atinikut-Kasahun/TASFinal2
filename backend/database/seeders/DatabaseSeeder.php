@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
             'hiring_manager' => 'General Manager (GM)',
             'managing_director' => 'Managing Director (MD)',
             'interviewer' => 'Interviewer',
+            'employee' => 'Staff Employee (Hired)',
         ];
 
         foreach ($roles as $slug => $name) {
@@ -120,7 +121,20 @@ class DatabaseSeeder extends Seeder
                     'headcount' => 1,
                     'status' => 'pending',
                 ]);
+                // 7. Create Sample Employees (People already hired)
+            for ($i = 0; $i < 5; $i++) {
+                $employee = User::create([
+                    'name' => "Employee " . ($i + 1) . " ($tenant->name)",
+                    'email' => "employee" . ($i + 1) . "." . $tenant->slug . "@droga.com",
+                    'password' => bcrypt('password'),
+                    'tenant_id' => $tenant->id,
+                    'department' => $job->department,
+                    'joined_date' => now()->subMonths(rand(3, 12))->toDateString(),
+                    'employment_status' => 'active',
+                ]);
+                $employee->roles()->attach(Role::where('slug', 'employee')->first()->id);
             }
+        }
         }
     }
 }

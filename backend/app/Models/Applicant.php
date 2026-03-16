@@ -44,6 +44,18 @@ class Applicant extends Model
         'employment_status',    // 'active' | 'resigned' | 'terminated'
         'separation_date',
         'separation_reason',
+        'contract_path',
+        'contract_signed',
+        'id_verified',
+        'bank_account',
+        'tax_id',
+        'payroll_setup',
+        'workstation_ready',
+        'company_email',
+        'email_created',
+        'office_tour_done',
+        'orientation_date',
+        'orientation_done',
     ];
 
     protected $hidden = [

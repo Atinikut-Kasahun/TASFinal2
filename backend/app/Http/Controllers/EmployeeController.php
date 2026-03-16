@@ -17,14 +17,27 @@ class EmployeeController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $tenantId = $user->tenant_id;
-
-        if (!$tenantId) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+        $tenantId = $request->attributes->get('tenant_id') ?? $user->tenant_id;
+ 
+        $query = User::with('roles');
+        
+        if ($tenantId) {
+            $query->where('tenant_id', $tenantId);
         }
 
-        $query = User::with('roles')
-            ->where('tenant_id', $tenantId);
+        // TA Managers filter: See the regular workforce, but hide internal management/recruitment staff.
+        if ($user->hasRole('ta_manager') && !$user->hasRole('admin')) {
+            $query->where(function($q) {
+                $q->whereHas('roles', function($rq) {
+                    $rq->whereIn('slug', ['employee', 'staff']);
+                })
+                ->orWhereDoesntHave('roles'); // Show users with no roles (newly promoted fallback)
+            })
+            ->whereDoesntHave('roles', function($rq) {
+                // But explicitly hide these internal roles from the TA view
+                $rq->whereIn('slug', ['ta_manager', 'admin', 'managing_director']);
+            });
+        }
 
         // Allow filtering by status
         if ($request->has('status') && $request->status !== 'All') {

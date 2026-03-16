@@ -58,20 +58,33 @@ class JobPostingController extends Controller
         }
 
         if ($request->has('status') && $request->status && $request->status !== 'All') {
-            if ($request->status === 'ACTIVE' || $request->status === 'active') {
+            $status = strtolower($request->status);
+            if ($status === 'active') {
                 $query->where('status', 'active');
-            } else if ($request->status === 'ARCHIVED' || $request->status === 'closed') {
-                $query->where('status', 'closed');
+            } else if ($status === 'archived' || $status === 'closed') {
+                $query->whereIn('status', ['closed', 'archived']);
             } else {
-                $query->where('status', strtolower($request->status));
+                $query->where('status', $status);
             }
         } else if ($request->has('status') && $request->status) {
-            // fallback logic
             $query->where('status', strtolower($request->status));
         }
 
+        // Calculate optional KPIs to match the pattern in JobRequisitionController
+        $kpis = [
+            'active_postings' => (clone $query)->where('status', 'active')->count(),
+            'total_applicants' => (clone $query)->sum('applicants_count') ?? 0,
+            'closed_this_month' => (clone $query)->where('status', 'closed')
+                ->where('created_at', '>=', now()->startOfMonth())->count(),
+        ];
+
         $perPage = $request->input('per_page', 10);
-        return response()->json($query->orderBy('created_at', 'desc')->paginate($perPage));
+        $jobs = $query->orderBy('created_at', 'desc')->paginate($perPage);
+
+        return response()->json(array_merge(
+            $jobs->toArray(),
+            ['kpis' => $kpis]
+        ));
     }
 
     /**
@@ -214,5 +227,54 @@ class JobPostingController extends Controller
         $job->update(['status' => 'closed']);
 
         return response()->json(['message' => 'Job closed successfully', 'job' => $job]);
+    }
+
+    /**
+     * Update a job posting.
+     */
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $job = JobPosting::findOrFail($id);
+        $user = $request->user();
+
+        // Security check
+        if (!$user->hasRole('admin') && $job->tenant_id !== $user->tenant_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'location' => 'required|string',
+            'type' => 'required|in:full-time,part-time,contract',
+            'deadline' => 'nullable|date',
+        ]);
+
+        $job->update($request->only(['title', 'description', 'location', 'type', 'deadline', 'status']));
+
+        return response()->json($job);
+    }
+
+    /**
+     * Delete a job posting.
+     */
+    public function destroy(string $id, Request $request): JsonResponse
+    {
+        $job = JobPosting::findOrFail($id);
+        $user = $request->user();
+
+        // Security check
+        if (!$user->hasRole('admin') && $job->tenant_id !== $user->tenant_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // Optional: Check if job has applicants before deleting
+        if ($job->applicants()->count() > 0 && !$user->hasRole('admin')) {
+             return response()->json(['error' => 'Job with applicants cannot be deleted. Please close it instead.'], 403);
+        }
+
+        $job->delete();
+
+        return response()->json(['message' => 'Job posting deleted successfully.']);
     }
 }
