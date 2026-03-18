@@ -2360,6 +2360,15 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
     const [updatingId, setUpdatingId] = useState<string | null>(null);
     const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
+    const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+    const [deleting, setDeleting] = useState(false);
+    const [deleteError, setDeleteError] = useState('');
+
+    const [resetTarget, setResetTarget] = useState<any | null>(null);
+    const [resetting, setResetting] = useState(false);
+    const [resetError, setResetError] = useState('');
+    const [resetCredentials, setResetCredentials] = useState<{ email: string; pass: string; name: string } | null>(null);
+
     const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
         setToast({ msg, type });
         setTimeout(() => setToast(null), 3000);
@@ -2400,6 +2409,37 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
             showToast('Status updated successfully.');
         } catch { showToast('Failed to update status.', 'error'); }
         finally { setUpdatingId(null); }
+    };
+
+    const executeDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleting(true); setDeleteError('');
+        try {
+            await apiFetch(`/v1/admin/applicants/${deleteTarget.id}`, { method: 'DELETE' });
+            setApplicants(prev => prev.filter(a => a.id !== deleteTarget.id));
+            showToast('Applicant deleted successfully.');
+            setDeleteTarget(null);
+        } catch (err: any) {
+            setDeleteError(err.message || 'Failed to delete applicant.');
+        } finally { setDeleting(false); }
+    };
+
+    const executeResetPassword = async () => {
+        if (!resetTarget) return;
+        setResetting(true); setResetError('');
+        try {
+            const res = await apiFetch(`/v1/admin/applicants/${resetTarget.id}/reset-password`, { method: 'POST' });
+            if (res?.generated_password) {
+                setResetCredentials({
+                    name: resetTarget.name,
+                    email: resetTarget.email,
+                    pass: res.generated_password
+                });
+                setResetTarget(null);
+            }
+        } catch (err: any) {
+            setResetError(err.message || 'Failed to reset password.');
+        } finally { setResetting(false); }
     };
 
     const statusColors: Record<string, string> = {
@@ -2455,7 +2495,7 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                     <table className="w-full">
                         <thead>
                             <tr className="border-b border-gray-50 bg-gray-50/50">
-                                {['Candidate', 'Position', 'Company', 'Applied Date', 'Status Action'].map(h => (
+                                {['Candidate', 'Position', 'Company', 'Applied Date', 'Status Action', ''].map(h => (
                                     <th key={h} className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gray-400">{h}</th>
                                 ))}
                             </tr>
@@ -2514,6 +2554,24 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                                                 </select>
                                             </div>
                                         </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => setResetTarget(a)}
+                                                    className="p-2 text-gray-400 hover:text-black hover:bg-brandYellow rounded-xl transition-all"
+                                                    title="Reset Portal Password"
+                                                >
+                                                    <Key size={14} />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteTarget(a)}
+                                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                                    title="Delete Applicant"
+                                                >
+                                                    <Trash2 size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))
                             )}
@@ -2522,6 +2580,47 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                 </div>
                 {!loading && <Pagination meta={meta} onPageChange={setPage} onPerPageChange={setPerPage} />}
             </div>
+
+            {resetCredentials && (
+                <CredentialCard
+                    credentials={resetCredentials}
+                    onClose={() => setResetCredentials(null)}
+                    title="Applicant Password Reset"
+                    subtitle="Account portal credentials have been refreshed."
+                />
+            )}
+
+            {resetTarget && (
+                <ConfirmDialog
+                    title="Reset Applicant Password"
+                    detail={`Generate a new secure portal password for ${resetTarget.name}?`}
+                    warning="The applicant will need these new credentials to access their status portal."
+                    onConfirm={executeResetPassword}
+                    onCancel={() => setResetTarget(null)}
+                    loading={resetting}
+                    error={resetError}
+                    confirmLabel="Reset Password"
+                    confirmLoadingLabel="Resetting..."
+                    confirmColorClass="bg-brandYellow text-black border border-brandYellow/50 hover:bg-black hover:text-brandYellow transition-all"
+                    icon={<Key size={32} className="text-brandYellow" />}
+                />
+            )}
+
+            {deleteTarget && (
+                <ConfirmDialog
+                    title="Delete Applicant Record"
+                    detail={`Are you sure you want to remove ${deleteTarget.name}?`}
+                    warning="This will permanently delete their application, interview history, and documents. This action cannot be reversed."
+                    onConfirm={executeDelete}
+                    onCancel={() => { setDeleteTarget(null); setDeleteError(''); }}
+                    loading={deleting}
+                    error={deleteError}
+                    confirmLabel="Confirm Delete"
+                    confirmLoadingLabel="Deleting..."
+                    confirmColorClass="bg-red-500 text-white hover:bg-red-600 transition-all shadow-xl shadow-red-500/10"
+                    icon={<Trash2 size={28} className="text-red-500" />}
+                />
+            )}
         </div>
     );
 }

@@ -104,6 +104,8 @@ Route::middleware('mock.auth')->group(function () {
         Route::get('/admin/jobs', [\App\Http\Controllers\JobPostingController::class, 'indexGlobal']);
         Route::get('/admin/applicants', [\App\Http\Controllers\ApplicantController::class, 'index']);
         Route::patch('/admin/applicants/{id}/status', [\App\Http\Controllers\ApplicantController::class, 'updateStatus']);
+        Route::post('/admin/applicants/{id}/reset-password', [\App\Http\Controllers\ApplicantController::class, 'resetPassword']);
+        Route::delete('/admin/applicants/{id}', [\App\Http\Controllers\ApplicantController::class, 'destroy']);
         Route::get('/admin/interviews', [\App\Http\Controllers\InterviewController::class, 'indexGlobal']);
         Route::post('/admin/interviews', [\App\Http\Controllers\InterviewController::class, 'store']);
         Route::get('/admin/reports', [\App\Http\Controllers\DashboardController::class, 'reportsData']);

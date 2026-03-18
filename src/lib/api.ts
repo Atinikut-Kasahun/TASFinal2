@@ -1,4 +1,4 @@
-const defaultHost = "localhost";
+const defaultHost = "192.168.1.49";
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || `http://${defaultHost}:8081/api`;
 
 
@@ -57,6 +57,31 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}, retu
     }
 
     return response.json();
+}
+
+export function getStorageUrl(path: string | null | undefined, fallback: string = ""): string {
+    if (!path || path === "") return fallback;
+    
+    // 1. If it's already a full URL, ensure it points to the current host if it's a local address
+    if (path.startsWith('http')) {
+        const baseUrl = API_URL.split('/api')[0];
+        // Replace localhost/127.0.0.1 with the actual configured host if needed
+        return path
+            .replace(/https?:\/\/localhost:\d+/, baseUrl)
+            .replace(/https?:\/\/127\.0\.0\.1:\d+/, baseUrl);
+    }
+    
+    // 2. Clean up the path
+    let cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    
+    // 3. Remove redundant 'storage/' prefix if the backend already provides it
+    if (cleanPath.startsWith('storage/')) {
+        cleanPath = cleanPath.replace('storage/', '');
+    }
+    
+    // 4. Construct the proper storage URL
+    const baseUrl = API_URL.split('/api')[0];
+    return `${baseUrl}/storage/${cleanPath}`;
 }
 
 export const auth = {

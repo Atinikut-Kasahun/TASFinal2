@@ -180,7 +180,15 @@
                         ASSESSMENT RESULT
                     @endif
                 </div>
-                <div style="font-size: 48px; font-weight: 900; color: #000; line-height: 1;">{{ $score }}<span style="font-size: 20px; color: #94a3b8;">%</span></div>
+                <div style="font-size: 48px; font-weight: 900; color: #000; line-height: 1;">
+                    @if($score == $applicant->written_exam_score && $applicant->written_raw_score && $applicant->written_out_of)
+                        {{ rtrim(rtrim(number_format($applicant->written_raw_score, 2), '0'), '.') }}<span style="font-size: 24px; color: #94a3b8;">/{{ rtrim(rtrim(number_format($applicant->written_out_of, 2), '0'), '.') }}%</span>
+                    @elseif($score == $applicant->technical_interview_score && $applicant->technical_raw_score && $applicant->technical_out_of)
+                        {{ rtrim(rtrim(number_format($applicant->technical_raw_score, 2), '0'), '.') }}<span style="font-size: 24px; color: #94a3b8;">/{{ rtrim(rtrim(number_format($applicant->technical_out_of, 2), '0'), '.') }}%</span>
+                    @else
+                        {{ rtrim(rtrim(number_format($score, 2), '0'), '.') }}<span style="font-size: 20px; color: #94a3b8;">%</span>
+                    @endif
+                </div>
             </div>
         @endif
 

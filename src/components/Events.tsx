@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { Calendar, MapPin } from "lucide-react";
+import { API_URL, getStorageUrl } from "@/lib/api";
 
 export default function Events() {
     const [events, setEvents] = useState<any[]>([]);
@@ -10,7 +11,7 @@ export default function Events() {
     useEffect(() => {
         const fetchEvents = async () => {
             try {
-                const res = await fetch('http://localhost:8001/api/v1/public/events');
+                const res = await fetch(`${API_URL}/v1/public/events`);
                 const data = await res.json();
                 setEvents(data);
             } catch (error) {
@@ -44,7 +45,7 @@ export default function Events() {
                             <div className="aspect-[16/10] overflow-hidden relative">
                                 {event.image_path ? (
                                     <img
-                                        src={`http://localhost:8001/storage/${event.image_path}`}
+                                        src={getStorageUrl(event.image_path)}
                                         alt={event.title}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                     />

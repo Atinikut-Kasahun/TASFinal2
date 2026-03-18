@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { API_URL } from "@/lib/api";
+import { API_URL, getStorageUrl } from "@/lib/api";
 
 const defaultCulturePoints = [
     { heading: "Continuous Growth", text: "We invest heavily in the professional development of our team members." },
@@ -37,14 +37,6 @@ export default function Culture({ settings }: { settings?: any }) {
             setTeamDiversity(typeof diversity === 'string' ? JSON.parse(diversity) : diversity);
         }
     }, [settings]);
-
-    const getImageUrl = (path: string, fallback: string) => {
-        if (!path || path === "") return fallback;
-        if (path.startsWith('http')) return path;
-        const cleanPath = path.startsWith('/') ? path.substring(1) : path;
-        const baseUrl = API_URL.split('/api')[0];
-        return `${baseUrl}/storage/${cleanPath}`;
-    };
 
     return (
         <section className="py-16 sm:py-20 md:py-24 bg-[#FDF22F]" id="about-us">
@@ -96,7 +88,7 @@ export default function Culture({ settings }: { settings?: any }) {
                         whileHover={{ scale: 1.02 }}
                         className="rounded-2xl overflow-hidden aspect-[4/3] shadow-lg"
                         style={{
-                            backgroundImage: `url('${getImageUrl(cultureImages.img1, "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80")}')`,
+                            backgroundImage: `url('${getStorageUrl(cultureImages.img1, "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80")}')`,
                             backgroundSize: "cover",
                             backgroundPosition: "center",
                         }}
@@ -106,7 +98,7 @@ export default function Culture({ settings }: { settings?: any }) {
                         whileHover={{ scale: 1.02 }}
                         className="rounded-2xl overflow-hidden aspect-[4/3] shadow-lg"
                         style={{
-                            backgroundImage: `url('${getImageUrl(cultureImages.img2, "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80")}')`,
+                            backgroundImage: `url('${getStorageUrl(cultureImages.img2, "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80")}')`,
                             backgroundSize: "cover",
                             backgroundPosition: "center",
                         }}
@@ -116,7 +108,7 @@ export default function Culture({ settings }: { settings?: any }) {
                         whileHover={{ scale: 1.02 }}
                         className="rounded-2xl overflow-hidden aspect-[4/3] shadow-lg hidden md:block"
                         style={{
-                            backgroundImage: `url('${getImageUrl(cultureImages.img3, "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=600&q=80")}')`,
+                            backgroundImage: `url('${getStorageUrl(cultureImages.img3, "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&w=600&q=80")}')`,
                             backgroundSize: "cover",
                             backgroundPosition: "center",
                         }}

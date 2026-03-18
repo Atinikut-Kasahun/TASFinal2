@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
@@ -452,8 +453,12 @@ class ApplicantAuthController extends Controller
             'years_of_experience'     => $applicant->years_of_experience,
             'professional_background' => $applicant->professional_background,
             'portfolio_link'          => $applicant->portfolio_link,
-            'photo_path'              => $applicant->photo_path,
-            'resume_path'             => $applicant->resume_path,
+            'photo_path'              => $applicant->photo_path
+                                            ? Storage::disk('public')->url($applicant->photo_path)
+                                            : null,
+            'resume_path'             => $applicant->resume_path
+                                            ? Storage::disk('public')->url($applicant->resume_path)
+                                            : null,
         ];
     }
 }

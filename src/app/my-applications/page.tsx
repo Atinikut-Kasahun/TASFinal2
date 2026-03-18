@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiFetch, API_URL } from '@/lib/api';
+import { apiFetch, API_URL, getStorageUrl } from '@/lib/api';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import Link from 'next/link';
@@ -1170,7 +1170,7 @@ export default function MyApplicationsPage() {
                                         <div className="w-10 h-10 rounded-full bg-black flex items-center justify-center text-[#FDF22F] font-black overflow-hidden border-2 border-white shadow-sm">
                                             {applicant.photo_path ? (
                                                 <img
-                                                    src={applicant.photo_path.startsWith('http') ? applicant.photo_path : `${API_URL.split('/api')[0]}/storage/${applicant.photo_path.replace(/^\//, '')}`}
+                                                    src={getStorageUrl(applicant.photo_path)}
                                                     alt="Profile"
                                                     className="w-full h-full object-cover"
                                                 />
@@ -1244,7 +1244,7 @@ export default function MyApplicationsPage() {
                                     <div className="w-[72px] h-[72px] rounded-full bg-[#FDF22F] flex items-center justify-center text-black font-black text-xl mb-4 overflow-hidden border border-gray-100 shadow-sm relative">
                                         {applicant.photo_path ? (
                                             <img
-                                                src={applicant.photo_path.startsWith('http') ? applicant.photo_path : `${API_URL.split('/api')[0]}/storage/${applicant.photo_path.replace(/^\//, '')}`}
+                                                src={getStorageUrl(applicant.photo_path)}
                                                 alt="Profile"
                                                 className="w-full h-full object-cover"
                                                 onError={(e) => {
@@ -1763,7 +1763,7 @@ export default function MyApplicationsPage() {
                                                             <img src={URL.createObjectURL(photoFile)} alt="Preview" className="w-full h-full object-cover" />
                                                         ) : applicant?.photo_path ? (
                                                             <img 
-                                                                src={applicant.photo_path.startsWith('http') ? applicant.photo_path : `${API_URL.split('/api')[0]}/storage/${applicant.photo_path.replace(/^\//, '')}`} 
+                                                                src={getStorageUrl(applicant.photo_path)} 
                                                                 alt="Profile" 
                                                                 className="w-full h-full object-cover" 
                                                                 onError={(e) => {

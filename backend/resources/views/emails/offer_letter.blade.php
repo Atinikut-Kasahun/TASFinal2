@@ -36,14 +36,14 @@
 
     /* ── Envelope body ── */
     .envelope-body {
-      background: linear-gradient(160deg, #d4c4a8 0%, #c8b89a 100%);
+      background: #e8e8e8;
       border-radius: 8px;
       padding: 4px 4px 0;
       position: relative;
       z-index: 2;
       box-shadow:
-        0 8px 40px var(--shadow),
-        0 2px 8px rgba(0,0,0,0.1);
+        0 8px 40px rgba(0,0,0,0.10),
+        0 2px 8px rgba(0,0,0,0.06);
       overflow: hidden;
     }
 
@@ -222,20 +222,12 @@
 
     /* ── The letter paper ── */
     .letter-card {
-      background: var(--paper);
+      background: #ffffff;
       border-radius: 4px;
       margin: 0 4px;
       padding: 50px 58px 52px;
       position: relative;
       z-index: 6;
-      /* subtle paper texture via repeating lines */
-      background-image: repeating-linear-gradient(
-        to bottom,
-        transparent,
-        transparent 27px,
-        rgba(0,0,0,0.032) 27px,
-        rgba(0,0,0,0.032) 28px
-      );
       box-shadow:
         inset 0 1px 0 rgba(255,255,255,0.95);
     }
@@ -373,10 +365,10 @@
     /* ── Bottom fold ── */
     .envelope-bottom {
       height: 22px;
-      background: linear-gradient(to bottom, #c0af96, #b0a080);
+      background: #d5d5d5;
       margin: 0 4px;
       border-radius: 0 0 8px 8px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
     }
 
     /* ── Ground shadow ── */
@@ -410,57 +402,26 @@
           </linearGradient>
         </defs>
         <!-- Flap shape -->
-        <path d="M0,0 L720,0 L360,108 Z" fill="url(#fg)"/>
+        <path d="M0,0 L720,0 L360,108 Z" fill="#d0d0d0"/>
         <!-- Inner crease shadow -->
-        <path d="M0,0 L360,108 L720,0" fill="none" stroke="rgba(0,0,0,0.07)" stroke-width="1.5"/>
+        <path d="M0,0 L360,108 L720,0" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="1.5"/>
         <!-- Highlight edges -->
-        <path d="M1,0 L360,105"  fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
-        <path d="M719,0 L360,105" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>
-        <!-- Wax seal circle at tip -->
+        <path d="M1,0 L360,105"  fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <path d="M719,0 L360,105" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+        <!-- Wax seal circle at tip (no text) -->
         <circle cx="360" cy="90" r="14" fill="#1a6b3c" opacity="0.85"/>
         <circle cx="360" cy="90" r="10" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
-        <text x="360" y="94" text-anchor="middle" font-family="DM Serif Display, serif" font-size="10" fill="white" opacity="0.9">DP</text>
       </svg>
     </div>
 
-    <!-- ── Stamp + address ── -->
-    <div class="stamp-area">
-      <div class="stamp">
-        <span class="stamp-logo">Droga<br/>Pharma</span>
-        <span class="stamp-sub">P.L.C.</span>
-      </div>
-      <div class="postmark">
-        <div class="postmark-ring">
-          <span class="postmark-text">ADDIS<br/>ABABA<br/>ET</span>
-        </div>
-      </div>
-    </div>
 
-    <div class="address-row">
-      <div class="address-window">
-        <div class="addr-label">Deliver To</div>
-        <div class="addr-name">{{ $applicant->name }}</div>
-        <div class="addr-city">Addis Ababa, Ethiopia</div>
-        <div class="addr-email">{{ $applicant->email }}</div>
-      </div>
-    </div>
 
     <!-- ══════════════════════════════════════
          LETTER PAPER
     ══════════════════════════════════════ -->
     <div class="letter-card">
 
-      <!-- Letterhead -->
-      <div class="letter-header">
-        <div>
-          <div class="brand-name">Droga Pharma P.L.C.</div>
-          <div class="brand-dept">Human Resources Department</div>
-        </div>
-        <div class="letter-date">
-          <strong>Addis Ababa</strong>, Ethiopia<br/>
-          {{ \Carbon\Carbon::parse($startDate)->format('F d, Y') }}
-        </div>
-      </div>
+
 
       <!-- To: block -->
       <div class="to-block">

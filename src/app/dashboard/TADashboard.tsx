@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { apiFetch, API_URL } from "@/lib/api";
+import { apiFetch, API_URL, getStorageUrl } from "@/lib/api";
 import ExportModal from "@/components/ExportModal";
 import {
   Check, ChevronLeft, ChevronRight, FileText, CheckCircle2,
@@ -240,6 +240,7 @@ const STATUS_COLOR_BAR: Record<string, string> = {
   offer: 'bg-emerald-50 text-emerald-600 border-emerald-100',
   hired: 'bg-green-50 text-green-700 border-green-100',
   rejected: 'bg-red-50 text-red-600 border-red-100',
+  talent_pool: 'bg-gray-100 text-gray-600 border-gray-200',
 };
 const DEPT_COLORS = ['#FDF22F', '#000000', '#374151', '#6B7280', '#D1D5DB'];
 
@@ -357,6 +358,10 @@ export default function TADashboard({
   const [scoringForm, setScoringForm] = useState({
     written_exam_score: "",
     technical_interview_score: "",
+    written_raw_score: "",
+    written_out_of: "100",
+    tech_raw_score: "",
+    tech_out_of: "100",
     interviewer_feedback: "",
     exam_paper: null as File | null,
   });
@@ -1206,6 +1211,7 @@ export default function TADashboard({
               "TECHNICAL INTERVIEW": "technical_interview",
               "FINAL INTERVIEW": "final_interview",
               OFFERS: "offer",
+              "TALENT POOL": "talent_pool",
               REJECTED: "rejected",
               HIRED: "hired",
               ACTIVE: "active",
@@ -1369,6 +1375,7 @@ export default function TADashboard({
         offer: "Offer stage",
         hired: "Hired status",
         rejected: "Rejected",
+        talent_pool: "Talent Pool",
       };
       const label = statusLabels[newStatus] || newStatus;
       showToast(`Candidate successfully moved to ${label}`, "success");
@@ -1581,6 +1588,15 @@ export default function TADashboard({
         "technical_interview_score",
         scoringForm.technical_interview_score,
       );
+      // Send raw scores so the backend stores X/Y for email display
+      if (scoringForm.written_raw_score) {
+        formData.append("written_raw_score", scoringForm.written_raw_score);
+        formData.append("written_out_of", scoringForm.written_out_of || "100");
+      }
+      if (scoringForm.tech_raw_score) {
+        formData.append("technical_raw_score", scoringForm.tech_raw_score);
+        formData.append("technical_out_of", scoringForm.tech_out_of || "100");
+      }
       formData.append("interviewer_feedback", scoringForm.interviewer_feedback);
 
       if (scoringForm.exam_paper) {
@@ -1797,6 +1813,7 @@ export default function TADashboard({
                   "TECHNICAL INTERVIEW",
                   "FINAL INTERVIEW",
                   "OFFERS",
+                  "TALENT POOL",
                   "REJECTED",
                 ];
               else if (initialTab === "Jobs")
@@ -2525,11 +2542,7 @@ export default function TADashboard({
                             <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-md group-hover:rotate-3 transition-transform duration-500">
                               {app.photo_path ? (
                                 <img
-                                  src={
-                                    app.photo_path.startsWith("http")
-                                      ? app.photo_path
-                                      : `${API_URL.split("/api")[0]}/storage/${app.photo_path.replace(/^\//, "")}`
-                                  }
+                                  src={getStorageUrl(app.photo_path)}
                                   alt=""
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
@@ -5510,11 +5523,7 @@ export default function TADashboard({
                     <div className="w-32 h-32 rounded-[36px] bg-white p-1 shadow-2xl overflow-hidden border-4 border-white/10 shrink-0">
                       {drawerApp.photo_path ? (
                         <img
-                          src={
-                            drawerApp.photo_path.startsWith("http")
-                              ? drawerApp.photo_path
-                              : `${API_URL.replace("/api", "/storage")}/${drawerApp.photo_path}`
-                          }
+                          src={getStorageUrl(drawerApp.photo_path)}
                           alt={drawerApp.name}
                           className="w-full h-full object-cover rounded-[30px]"
                         />
@@ -6300,17 +6309,43 @@ export default function TADashboard({
                 {drawerApp.status !== "hired" &&
                   drawerApp.status !== "rejected" && (
                     <>
-                      {/* NEW → Move to Written Exam */}
+                      {/* NEW → Move to Written Exam OR Talent Pool */}
                       {drawerApp.status === "new" && (
+                        <>
+                          <button
+                            onClick={() => openStageScheduleModal("written_exam")}
+                            className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-[#FDF22F] hover:border-[#FDF22F] transition-all"
+                          >
+                            {actionLoading ? (
+                              <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mx-auto" />
+                            ) : (
+                              "Move to Written Exam"
+                            )}
+                          </button>
+                          
+                          <button
+                            onClick={() => handleStatusUpdate(drawerApp.id, "talent_pool")}
+                            className="flex-1 py-4 bg-white text-gray-500 border-[1.5px] border-gray-300 rounded-full font-bold text-[13px] hover:bg-black hover:text-[#FDF22F] hover:border-black transition-all"
+                          >
+                            {actionLoading ? (
+                              <div className="w-4 h-4 border-2 border-gray-300 border-t-black rounded-full animate-spin mx-auto" />
+                            ) : (
+                              "To Talent Pool"
+                            )}
+                          </button>
+                        </>
+                      )}
+
+                      {/* TALENT POOL → Move back to New */}
+                      {drawerApp.status === "talent_pool" && (
                         <button
-                          onClick={() => openStageScheduleModal("written_exam")}
-                          disabled={actionLoading}
-                          className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
+                          onClick={() => handleStatusUpdate(drawerApp.id, "new")}
+                          className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-[#FDF22F] hover:border-[#FDF22F] transition-all"
                         >
                           {actionLoading ? (
-                            <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mx-auto" />
+                            <div className="w-4 h-4 border-2 border-[#FDF22F]/30 border-t-[#FDF22F] rounded-full animate-spin mx-auto" />
                           ) : (
-                            "✍️ Move to Written Exam"
+                            "Reactivate to New"
                           )}
                         </button>
                       )}
@@ -6324,16 +6359,19 @@ export default function TADashboard({
                                 drawerApp.written_exam_score || "",
                               technical_interview_score:
                                 drawerApp.technical_interview_score || "",
+                              written_raw_score: drawerApp.written_raw_score || "",
+                              written_out_of: drawerApp.written_out_of ? String(drawerApp.written_out_of) : "100",
+                              tech_raw_score: drawerApp.technical_raw_score || "",
+                              tech_out_of: drawerApp.technical_out_of ? String(drawerApp.technical_out_of) : "100",
                               interviewer_feedback:
                                 drawerApp.interviewer_feedback || "",
                               exam_paper: null,
                             });
                             setScoringModal(true);
                           }}
-                          disabled={actionLoading}
-                          className="flex-1 py-5 bg-black text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#FDF22F] hover:text-black transition-all"
+                          className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-black hover:text-white transition-all"
                         >
-                          ✍️ Fill Exam Score
+                          Fill Exam Score
                         </button>
                       )}
                       {drawerApp.status === "written_exam" &&
@@ -6342,10 +6380,9 @@ export default function TADashboard({
                             onClick={() =>
                               openStageScheduleModal("technical_interview")
                             }
-                            disabled={actionLoading}
-                            className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
+                            className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-[#FDF22F] hover:border-[#FDF22F] transition-all"
                           >
-                            ⚙️ Move to Tech Interview
+                            Move to Tech Interview
                           </button>
                         )}
 
@@ -6358,16 +6395,19 @@ export default function TADashboard({
                                 drawerApp.written_exam_score || "",
                               technical_interview_score:
                                 drawerApp.technical_interview_score || "",
+                              written_raw_score: drawerApp.written_raw_score || "",
+                              written_out_of: drawerApp.written_out_of ? String(drawerApp.written_out_of) : "100",
+                              tech_raw_score: drawerApp.technical_raw_score || "",
+                              tech_out_of: drawerApp.technical_out_of ? String(drawerApp.technical_out_of) : "100",
                               interviewer_feedback:
                                 drawerApp.interviewer_feedback || "",
                               exam_paper: null,
                             });
                             setScoringModal(true);
                           }}
-                          disabled={actionLoading}
-                          className="flex-1 py-5 bg-black text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#FDF22F] hover:text-black transition-all"
+                          className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-black hover:text-white transition-all"
                         >
-                          ⚙️ Fill Tech Results
+                          Fill Tech Results
                         </button>
                       )}
                       {drawerApp.status === "technical_interview" &&
@@ -6376,10 +6416,9 @@ export default function TADashboard({
                             onClick={() =>
                               openStageScheduleModal("final_interview")
                             }
-                            disabled={actionLoading}
-                            className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
+                            className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-[#FDF22F] hover:border-[#FDF22F] transition-all"
                           >
-                            🗣️ Move to Final Interview
+                            Move to Final Interview
                           </button>
                         )}
 
@@ -6392,26 +6431,28 @@ export default function TADashboard({
                                 drawerApp.written_exam_score || "",
                               technical_interview_score:
                                 drawerApp.technical_interview_score || "",
+                              written_raw_score: drawerApp.written_raw_score || "",
+                              written_out_of: drawerApp.written_out_of ? String(drawerApp.written_out_of) : "100",
+                              tech_raw_score: drawerApp.technical_raw_score || "",
+                              tech_out_of: drawerApp.technical_out_of ? String(drawerApp.technical_out_of) : "100",
                               interviewer_feedback:
                                 drawerApp.interviewer_feedback || "",
                               exam_paper: null,
                             });
                             setScoringModal(true);
                           }}
-                          disabled={actionLoading}
-                          className="flex-1 py-5 bg-black text-white rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] hover:bg-[#FDF22F] hover:text-black transition-all"
+                          className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-black hover:text-white transition-all"
                         >
-                          📊 Final Scoring
+                          Final Scoring
                         </button>
                       )}
                       {drawerApp.status === "final_interview" &&
                         drawerApp.technical_interview_score && (
                           <button
                             onClick={() => openStageScheduleModal("offer")}
-                            disabled={actionLoading}
-                            className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
+                            className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-[#FDF22F] hover:border-[#FDF22F] transition-all"
                           >
-                            ✉️ Send Offer
+                            Send Offer
                           </button>
                         )}
 
@@ -6419,26 +6460,24 @@ export default function TADashboard({
                       {drawerApp.status === "offer" && (
                         <button
                           onClick={() => openStageScheduleModal("hired")}
-                          disabled={actionLoading}
-                          className="flex-1 py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-0.5 transition-all"
+                          className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-[#FDF22F] hover:border-[#FDF22F] transition-all"
                         >
                           {actionLoading ? (
                             <div className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin mx-auto" />
                           ) : (
-                            "🏆 Confirm Hire"
+                            "Confirm Hire"
                           )}
                         </button>
                       )}
 
                       <button
                         onClick={() => openStageScheduleModal("rejected")}
-                        disabled={actionLoading}
-                        className="flex-1 py-5 bg-white text-red-500 border-2 border-red-50 rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] hover:bg-red-50 hover:border-red-100 transition-all"
+                        className="flex-1 py-4 bg-white text-red-500 border-[1.5px] border-red-500 rounded-full font-bold text-[13px] hover:bg-red-50 transition-all"
                       >
                         {actionLoading ? (
                           <div className="w-4 h-4 border-2 border-red-200 border-t-red-500 rounded-full animate-spin mx-auto" />
                         ) : (
-                          "✕ Reject"
+                          "Reject"
                         )}
                       </button>
                     </>
@@ -6458,8 +6497,7 @@ export default function TADashboard({
                     </div>
                     <button
                       onClick={handleStartOnboarding}
-                      disabled={actionLoading || !onboardingStartDate}
-                      className="w-full py-5 bg-[#FDF22F] text-black rounded-[24px] font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-[#FDF22F]/20 hover:bg-black hover:text-white hover:-translate-y-1 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50 disabled:hover:translate-y-0"
+                      className="w-full py-4 bg-white text-black border-[1.5px] border-black rounded-full font-bold text-[13px] hover:bg-black hover:text-[#FDF22F] transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
                     >
                       {actionLoading ? (
                          <div className="w-5 h-5 border-3 border-black/30 border-t-black rounded-full animate-spin" />
@@ -6471,12 +6509,11 @@ export default function TADashboard({
                 )}
                 {drawerApp.status === "onboarding" && (
                    <button
-                     onClick={() => showToast(`Onboarding progress for ${drawerApp.name} is being tracked.`, "success")}
-                     className="flex-1 py-5 bg-black text-[#FDF22F] rounded-3xl text-center font-black text-[11px] uppercase tracking-[0.2em] border border-black shadow-2xl shadow-black/20 flex flex-col items-center gap-2 hover:bg-gray-900 transition-all active:scale-95"
+                     className="flex-1 py-4 bg-white text-black border-[1.5px] border-black rounded-full text-center font-bold text-[13px] flex flex-col items-center justify-center gap-1 hover:bg-gray-50 transition-all active:scale-95"
                    >
                      <span>Undergoing Onboarding</span>
                      {drawerApp.start_date && (
-                       <p className="text-[9px] text-white/40 tracking-widest font-bold">
+                       <p className="text-[10px] text-gray-500 font-medium">
                          STARTS: {new Date(drawerApp.start_date).toLocaleDateString()}
                        </p>
                      )}
@@ -6546,13 +6583,14 @@ export default function TADashboard({
               </div>
 
               <div className="p-10 space-y-8 overflow-y-auto bg-white">
-                <div className="grid grid-cols-2 gap-8">
+                <div className={`grid ${(drawerApp.status === "final_interview" || drawerApp.status === "offer" || drawerApp.status === "hired") ? 'grid-cols-2' : 'grid-cols-1'} gap-8`}>
+                  {(drawerApp.status === "written_exam" || drawerApp.status === "final_interview" || drawerApp.status === "offer" || drawerApp.status === "hired") && (
                   <div
-                    className={`space-y-2 p-7 rounded-[32px] transition-all duration-500 ${drawerApp.status === "written_exam" ? "bg-[#FDF22F]/10 border-2 border-[#FDF22F] shadow-lg shadow-[#FDF22F]/5" : "bg-gray-50 border-2 border-transparent"}`}
+                    className={`space-y-4 p-7 rounded-[32px] transition-all duration-500 ${drawerApp.status === "written_exam" ? "bg-[#FDF22F]/10 border-2 border-[#FDF22F] shadow-lg shadow-[#FDF22F]/5" : "bg-gray-50 border-2 border-transparent"}`}
                   >
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex justify-between items-center">
                       <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Written Exam (%)
+                        Written Exam
                       </label>
                       {drawerApp.status === "written_exam" && (
                         <span className="text-[9px] font-black text-[#FDF22F] bg-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow-lg shadow-black/20">
@@ -6560,26 +6598,65 @@ export default function TADashboard({
                         </span>
                       )}
                     </div>
-                    <input
-                      type="number"
-                      placeholder="00"
-                      max="100"
-                      value={scoringForm.written_exam_score}
-                      onChange={(e) =>
-                        setScoringForm((p) => ({
-                          ...p,
-                          written_exam_score: e.target.value,
-                        }))
-                      }
-                      className="w-full bg-transparent border-none focus:ring-0 text-black font-black text-4xl placeholder-black/5 p-0"
-                    />
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1">Score</label>
+                        <input
+                          type="number"
+                          placeholder="00"
+                          value={scoringForm.written_raw_score}
+                          onChange={(e) => {
+                             const raw = e.target.value;
+                             const outOf = scoringForm.written_out_of || '100';
+                             const ratio = parseFloat(outOf) > 0 ? (parseFloat(raw) / parseFloat(outOf)) * 100 : 0;
+                             setScoringForm((p) => ({
+                               ...p,
+                               written_raw_score: raw,
+                               written_exam_score: raw ? ratio.toFixed(2).replace(/\.00$/, '') : "",
+                             }));
+                          }}
+                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-2xl placeholder-black/5 px-4 py-3 shadow-inner"
+                        />
+                      </div>
+                      <div className="text-2xl font-black text-gray-300 pt-5">/</div>
+                      <div className="flex-1">
+                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1">Out Of</label>
+                        <input
+                          type="number"
+                          placeholder="100"
+                          value={scoringForm.written_out_of}
+                          onChange={(e) => {
+                             const outOf = e.target.value;
+                             const raw = scoringForm.written_raw_score;
+                             const ratio = parseFloat(outOf) > 0 ? (parseFloat(raw) / parseFloat(outOf)) * 100 : 0;
+                             setScoringForm((p) => ({
+                               ...p,
+                               written_out_of: outOf,
+                               written_exam_score: raw ? ratio.toFixed(2).replace(/\.00$/, '') : "",
+                             }));
+                          }}
+                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-2xl placeholder-black/5 px-4 py-3 shadow-inner"
+                        />
+                      </div>
+                    </div>
+                    {scoringForm.written_raw_score && (
+                        <div className="flex justify-end pt-1">
+                          <span className="text-[12px] font-black text-black bg-[#FDF22F] px-4 py-2 rounded-2xl uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20">
+                            Result: {scoringForm.written_raw_score}/{scoringForm.written_out_of || "100"}%
+                          </span>
+                        </div>
+                    )}
                   </div>
+                  )}
+
+                  {(drawerApp.status === "technical_interview" || drawerApp.status === "final_interview" || drawerApp.status === "offer" || drawerApp.status === "hired") && (
                   <div
-                    className={`space-y-2 p-7 rounded-[32px] transition-all duration-500 ${drawerApp.status === "technical_interview" ? "bg-[#FDF22F]/10 border-2 border-[#FDF22F] shadow-lg shadow-[#FDF22F]/5" : "bg-gray-50 border-2 border-transparent"}`}
+                    className={`space-y-4 p-7 rounded-[32px] transition-all duration-500 ${drawerApp.status === "technical_interview" ? "bg-[#FDF22F]/10 border-2 border-[#FDF22F] shadow-lg shadow-[#FDF22F]/5" : "bg-gray-50 border-2 border-transparent"}`}
                   >
-                    <div className="flex justify-between items-center mb-2">
+                    <div className="flex justify-between items-center">
                       <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Tech Interview (%)
+                        Tech Interview
                       </label>
                       {drawerApp.status === "technical_interview" && (
                         <span className="text-[9px] font-black text-[#FDF22F] bg-black px-2.5 py-1 rounded-lg uppercase tracking-widest shadow-lg shadow-black/20">
@@ -6587,20 +6664,57 @@ export default function TADashboard({
                         </span>
                       )}
                     </div>
-                    <input
-                      type="number"
-                      placeholder="00"
-                      max="100"
-                      value={scoringForm.technical_interview_score}
-                      onChange={(e) =>
-                        setScoringForm((p) => ({
-                          ...p,
-                          technical_interview_score: e.target.value,
-                        }))
-                      }
-                      className="w-full bg-transparent border-none focus:ring-0 text-black font-black text-4xl placeholder-black/5 p-0"
-                    />
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1">Score</label>
+                        <input
+                          type="number"
+                          placeholder="00"
+                          value={scoringForm.tech_raw_score}
+                          onChange={(e) => {
+                             const raw = e.target.value;
+                             const outOf = scoringForm.tech_out_of || '100';
+                             const ratio = parseFloat(outOf) > 0 ? (parseFloat(raw) / parseFloat(outOf)) * 100 : 0;
+                             setScoringForm((p) => ({
+                               ...p,
+                               tech_raw_score: raw,
+                               technical_interview_score: raw ? ratio.toFixed(2).replace(/\.00$/, '') : "",
+                             }));
+                          }}
+                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-2xl placeholder-black/5 px-4 py-3 shadow-inner"
+                        />
+                      </div>
+                      <div className="text-2xl font-black text-gray-300 pt-5">/</div>
+                      <div className="flex-1">
+                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1">Out Of</label>
+                        <input
+                          type="number"
+                          placeholder="100"
+                          value={scoringForm.tech_out_of}
+                          onChange={(e) => {
+                             const outOf = e.target.value;
+                             const raw = scoringForm.tech_raw_score;
+                             const ratio = parseFloat(outOf) > 0 ? (parseFloat(raw) / parseFloat(outOf)) * 100 : 0;
+                             setScoringForm((p) => ({
+                               ...p,
+                               tech_out_of: outOf,
+                               technical_interview_score: raw ? ratio.toFixed(2).replace(/\.00$/, '') : "",
+                             }));
+                          }}
+                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-2xl placeholder-black/5 px-4 py-3 shadow-inner"
+                        />
+                      </div>
+                    </div>
+                    {scoringForm.tech_raw_score && (
+                        <div className="flex justify-end pt-1">
+                          <span className="text-[12px] font-black text-black bg-[#FDF22F] px-4 py-2 rounded-2xl uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20">
+                            Result: {scoringForm.tech_raw_score}/{scoringForm.tech_out_of || "100"}%
+                          </span>
+                        </div>
+                    )}
                   </div>
+                  )}
                 </div>
 
                 <div className="space-y-3">

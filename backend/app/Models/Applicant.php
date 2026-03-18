@@ -56,6 +56,10 @@ class Applicant extends Model
         'office_tour_done',
         'orientation_date',
         'orientation_done',
+        'written_raw_score',
+        'written_out_of',
+        'technical_raw_score',
+        'technical_out_of',
     ];
 
     protected $hidden = [

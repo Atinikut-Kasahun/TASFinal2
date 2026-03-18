@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Notifications\ApplicantStatusUpdated;
 use App\Notifications\DirectMessage;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
 class ApplicantController extends Controller
 {
@@ -33,6 +35,8 @@ class ApplicantController extends Controller
 
         if (!$isAdmin) {
             $query->where('tenant_id', $tenantId);
+        } elseif ($request->has('tenant_id') && !empty($request->tenant_id)) {
+            $query->where('tenant_id', $request->tenant_id);
         }
 
         if ($request->has('status') && $request->status !== 'ALL') {
@@ -102,6 +106,55 @@ class ApplicantController extends Controller
     }
 
     /**
+     * Reset an applicant's password.
+     */
+    public function resetPassword(Request $request, $id): JsonResponse
+    {
+        try {
+            $admin = $request->user();
+            if (!$admin->hasRole('admin')) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            $applicant = Applicant::findOrFail($id);
+
+            // Generate random password: e.g. Abcd-1234
+            $autoPassword = ucfirst(\Illuminate\Support\Str::random(4)) . '-' . \Illuminate\Support\Str::random(4);
+
+            $applicant->update([
+                'password' => \Illuminate\Support\Facades\Hash::make($autoPassword),
+            ]);
+
+            return response()->json([
+                'message' => 'Password reset successfully',
+                'generated_password' => $autoPassword
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete an applicant.
+     */
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        try {
+            $admin = $request->user();
+            if (!$admin->hasRole('admin')) {
+                return response()->json(['message' => 'Unauthorized'], 403);
+            }
+
+            $applicant = Applicant::findOrFail($id);
+            $applicant->delete();
+
+            return response()->json(['message' => 'Applicant deleted successfully']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
+    }
+
+    /**
      * Store a new applicant.
      */
     public function store(Request $request): JsonResponse
@@ -152,9 +205,13 @@ class ApplicantController extends Controller
     public function updateStatus(Request $request, $id): JsonResponse
     {
         $request->validate([
-            'status'                    => 'required|string|in:new,written_exam,technical_interview,final_interview,offer,hired,onboarding,rejected',
+            'status'                    => 'required|string|in:new,written_exam,technical_interview,final_interview,offer,hired,onboarding,rejected,talent_pool',
             'written_exam_score'        => 'nullable|numeric',
+            'written_raw_score'         => 'nullable|numeric',
+            'written_out_of'            => 'nullable|numeric',
             'technical_interview_score' => 'nullable|numeric',
+            'technical_raw_score'       => 'nullable|numeric',
+            'technical_out_of'          => 'nullable|numeric',
             'interviewer_feedback'      => 'nullable|string',
             'exam_paper'                => 'nullable|file|mimes:pdf,doc,docx,jpg,png,jpeg|max:10240',
             'rejection_note'            => 'nullable|string',
@@ -183,7 +240,11 @@ class ApplicantController extends Controller
         $data = $request->only([
             'status',
             'written_exam_score',
+            'written_raw_score',
+            'written_out_of',
             'technical_interview_score',
+            'technical_raw_score',
+            'technical_out_of',
             'interviewer_feedback',
             'offered_salary',
             'start_date',
@@ -244,7 +305,28 @@ class ApplicantController extends Controller
                 $examPaperAbsPath
             );
             $applicant->notify(new ApplicantStatusUpdated($applicant, $oldStatus, $applicant->status));
-        } elseif ($request->has('written_exam_score') || $request->has('technical_interview_score')) {
+        }
+
+        if ($applicant->wasChanged('written_exam_score') && $applicant->written_exam_score !== null) {
+            if ($applicant->email) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($applicant->email)->send(
+                        new \App\Mail\ScoreUpdated($applicant, 'Written Exam', (float)$applicant->written_exam_score, $applicant->interviewer_feedback)
+                    );
+                } catch (\Throwable $e) {}
+            }
+        }
+        if ($applicant->wasChanged('technical_interview_score') && $applicant->technical_interview_score !== null) {
+            if ($applicant->email) {
+                try {
+                    \Illuminate\Support\Facades\Mail::to($applicant->email)->send(
+                        new \App\Mail\ScoreUpdated($applicant, 'Technical Interview', (float)$applicant->technical_interview_score, $applicant->interviewer_feedback)
+                    );
+                } catch (\Throwable $e) {}
+            }
+        }
+
+        if ($oldStatus === $applicant->status && ($applicant->wasChanged('written_exam_score') || $applicant->wasChanged('technical_interview_score'))) {
             $applicant->notify(new ApplicantStatusUpdated($applicant, $oldStatus, $applicant->status));
         }
 

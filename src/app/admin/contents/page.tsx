@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
-import { apiFetch, API_URL } from '@/lib/api';
+import { apiFetch, API_URL, getStorageUrl } from '@/lib/api';
 import { Save, Image as ImageIcon, Upload, Users, TrendingUp, BookOpen, Star, RefreshCw, Plus, Trash2, CheckCircle } from 'lucide-react';
 
 // Reusable components for the Site Editor
@@ -331,7 +331,7 @@ export default function SiteEditor() {
                                         <div className="relative w-full aspect-[4/3] rounded-lg overflow-hidden mb-3">
                                             {/* We use a standard img tag because next/image requires domains config for external URLs */}
                                             <img
-                                                src={`${API_URL.split('/api')[0]}/storage/${cultureImages[key]}`}
+                                                src={getStorageUrl(cultureImages[key])}
                                                 alt={`Culture ${idx + 1}`}
                                                 className="w-full h-full object-cover"
                                             />
