@@ -66,8 +66,6 @@ class JobPostingController extends Controller
             } else {
                 $query->where('status', $status);
             }
-        } else if ($request->has('status') && $request->status) {
-            $query->where('status', strtolower($request->status));
         }
 
         // Calculate optional KPIs to match the pattern in JobRequisitionController

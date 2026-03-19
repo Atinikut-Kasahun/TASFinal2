@@ -9,11 +9,11 @@
     <p>We have updated the results for your recent assessment at Droga Pharma.</p>
 
     <p><strong>Assessment Type:</strong> {{ $examType }}<br>
-    <strong>Score:</strong> 
+    <strong>Result:</strong> 
     @if($examType === 'Written Exam' && $applicant->written_raw_score && $applicant->written_out_of)
-        {{ rtrim(rtrim(number_format($applicant->written_raw_score, 2), '0'), '.') }}/{{ rtrim(rtrim(number_format($applicant->written_out_of, 2), '0'), '.') }}%
+        {{ rtrim(rtrim(number_format($applicant->written_raw_score, 2), '0'), '.') }}/{{ rtrim(rtrim(number_format($applicant->written_out_of, 2), '0'), '.') }}
     @elseif($examType === 'Technical Interview' && $applicant->technical_raw_score && $applicant->technical_out_of)
-        {{ rtrim(rtrim(number_format($applicant->technical_raw_score, 2), '0'), '.') }}/{{ rtrim(rtrim(number_format($applicant->technical_out_of, 2), '0'), '.') }}%
+        {{ rtrim(rtrim(number_format($applicant->technical_raw_score, 2), '0'), '.') }}/{{ rtrim(rtrim(number_format($applicant->technical_out_of, 2), '0'), '.') }}
     @else
         {{ $score }}%
     @endif

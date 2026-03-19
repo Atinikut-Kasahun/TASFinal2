@@ -2384,7 +2384,7 @@ function GlobalApplicantsView({ tenants }: { tenants: any[] }) {
                 status: filterStatus,
                 search: search
             });
-            const data = await apiFetch(`/v1/applicants?${params.toString()}`);
+            const data = await apiFetch(`/v1/admin/applicants?${params.toString()}`);
             setApplicants(data?.data || []);
             setMeta(data);
         } catch (err) {

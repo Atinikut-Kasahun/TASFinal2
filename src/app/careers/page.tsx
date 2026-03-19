@@ -202,25 +202,58 @@ function CareersContent() {
         if (provider === "Google") {
             if (!GOOGLE_CLIENT_ID) { alert("Google Client ID is not configured."); return; }
             if (!(window as any).google) { alert("Google sign-in is still loading."); return; }
-                    (window as any).google.accounts.id.initialize({
-                        client_id: GOOGLE_CLIENT_ID,
-                        callback: (response: { credential: string }) => {
-                            try {
-                                const base64Url = response.credential.split(".")[1];
-                        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-                        const profile = JSON.parse(decodeURIComponent(atob(base64).split("").map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")));
-                        if (!profile.email) { alert("Could not retrieve email from Google."); return; }
-                        setFormData((prev) => ({ ...prev, email: profile.email, name: profile.name || prev.name }));
-                        setOtpVerified(true); setAppStep(2);
-                    } catch { alert("Google login failed."); }
-                },
-            });
-            (window as any).google.accounts.id.prompt((n: any) => {
-                if (n.isNotDisplayed() || n.isSkippedMoment()) {
-                    const params = new URLSearchParams({ client_id: GOOGLE_CLIENT_ID, redirect_uri: `${window.location.origin}/`, response_type: "id_token", scope: "openid email profile", nonce: Math.random().toString(36).substring(2) });
-                    window.open(`https://accounts.google.com/o/oauth2/v2/auth?${params}`, "google-signin", "width=500,height=600");
-                }
-            });
+            
+            console.log("[Google SSO] Initializing with Client ID:", GOOGLE_CLIENT_ID);
+            console.log("[Google SSO] Current Origin:", window.location.origin);
+            
+            try {
+                (window as any).google.accounts.id.initialize({
+                    client_id: GOOGLE_CLIENT_ID,
+                    use_fedcm_for_prompt: true,
+                    callback: (response: { credential: string }) => {
+                        console.log("[Google SSO] Callback received response");
+                        try {
+                            const base64Url = response.credential.split(".")[1];
+                            const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+                            const profile = JSON.parse(decodeURIComponent(atob(base64).split("").map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")));
+                            
+                            console.log("[Google SSO] Profile decoded:", profile.email);
+                            
+                            if (!profile.email) {
+                                alert("Could not retrieve email from Google.");
+                                return;
+                            }
+                            setFormData((prev) => ({ 
+                                ...prev, 
+                                email: profile.email, 
+                                name: profile.name || prev.name 
+                            }));
+                            setOtpVerified(true);
+                            setAppStep(2);
+                        } catch (err) {
+                            console.error("[Google SSO] Error decoding credential:", err);
+                            alert("Google login failed during profile decoding.");
+                        }
+                    },
+                });
+
+                (window as any).google.accounts.id.prompt((notification: any) => {
+                    console.log("[Google SSO] Prompt notification:", notification.getMomentType());
+                    if (notification.isNotDisplayed()) {
+                        console.warn("[Google SSO] Prompt not displayed:", notification.getNotDisplayedReason());
+                        // Fallback logic if needed, but FedCM usually handles this
+                    }
+                    if (notification.isSkippedMoment()) {
+                        console.warn("[Google SSO] Prompt skipped:", notification.getSkippedReason());
+                    }
+                    if (notification.isDismissedMoment()) {
+                        console.warn("[Google SSO] Prompt dismissed:", notification.getDismissedReason());
+                    }
+                });
+            } catch (err) {
+                console.error("[Google SSO] Initialization error:", err);
+                alert("Failed to initialize Google Sign-In.");
+            }
         }
     };
 
@@ -328,7 +361,7 @@ function CareersContent() {
                             <p className="text-gray-500 leading-relaxed text-base mb-6">Established in April 2015, Droga Pharma PLC was founded by healthcare professionals with a mission to ensure sustainable supply of quality medicines and medical devices across Ethiopia.</p>
                             <div className="p-6 bg-[#FAFAF8] rounded-2xl border border-gray-100">
                                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Our Vision</p>
-                                <p className="text-black font-bold leading-relaxed">"To be the leading group company in Ethiopia that creates health and wealth for human being."</p>
+                                <p className="text-black font-bold leading-relaxed">&quot;To be the leading group company in Ethiopia that creates health and wealth for human being.&quot;</p>
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
@@ -538,7 +571,7 @@ function CareersContent() {
                                             <p className="text-xs font-black text-green-700">Identity verified — <span className="font-bold text-green-600">{formData.email}</span></p>
                                         </div>
                                         <section className="bg-black/5 rounded-3xl p-8 border border-black/10 space-y-4">
-                                            <h3 className="text-[11px] font-black text-black uppercase tracking-widest">Resume (PDF)</h3>
+                                            <h3 className="text-[11px] font-black text-black uppercase tracking-widest">Resume (PDF) <span className="text-red-500">*</span></h3>
                                             <label className="block p-10 border-2 border-dashed border-black/30 rounded-2xl text-center cursor-pointer hover:bg-white transition-all group">
                                                 <input type="file" className="hidden" accept=".pdf" onChange={(e) => setResume(e.target.files?.[0] || null)} />
                                                 <div className="space-y-2">
@@ -561,14 +594,14 @@ function CareersContent() {
                                                         </label>
                                                     </div>
                                                 </div>
-                                                <div className="col-span-2"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Full Name</label><input type="text" placeholder="e.g. John Doe" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
-                                                <div className="col-span-2"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Email</label><div className="relative"><input type="email" readOnly className="w-full px-5 py-4 bg-green-50 border border-green-200 rounded-xl font-bold text-gray-500 text-sm cursor-not-allowed" value={formData.email} /><span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-green-600 bg-green-100 px-2 py-1 rounded-full">✓ Verified</span></div></div>
-                                                <div><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Phone</label><input type="tel" placeholder="+251 9..." className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
-                                                <div><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Age</label><input type="number" placeholder="25" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" value={formData.age} onChange={(e) => setFormData({ ...formData, age: e.target.value })} /></div>
+                                                <div className="col-span-2"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Full Name <span className="text-red-500">*</span></label><input type="text" placeholder="e.g. John Doe" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
+                                                <div className="col-span-2"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Email <span className="text-red-500">*</span></label><div className="relative"><input type="email" readOnly className="w-full px-5 py-4 bg-green-50 border border-green-200 rounded-xl font-bold text-gray-500 text-sm cursor-not-allowed" value={formData.email} /><span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-green-600 bg-green-100 px-2 py-1 rounded-full">✓ Verified</span></div></div>
+                                                <div><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Phone <span className="text-red-500">*</span></label><input type="tel" placeholder="+251 9..." className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
+                                                <div><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Age <span className="text-red-500">*</span></label><input type="number" placeholder="25" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" value={formData.age} onChange={(e) => setFormData({ ...formData, age: e.target.value })} /></div>
                                                 <div className="col-span-2"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Portfolio Link</label><input type="url" placeholder="https://..." className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" value={formData.portfolio_link} onChange={(e) => setFormData({ ...formData, portfolio_link: e.target.value })} /></div>
-                                                <div><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Gender</label><select className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm appearance-none transition-all" value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option></select></div>
-                                                <div className="col-span-2"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Professional Background</label><textarea rows={3} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" placeholder="Summarize your experience..." value={formData.professional_background} onChange={(e) => setFormData({ ...formData, professional_background: e.target.value })} /></div>
-                                                <div className="col-span-2"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Years of Experience</label><input type="number" placeholder="5" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" value={formData.years_of_experience} onChange={(e) => setFormData({ ...formData, years_of_experience: e.target.value })} /></div>
+                                                <div><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Gender <span className="text-red-500">*</span></label><select className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm appearance-none transition-all" value={formData.gender} onChange={(e) => setFormData({ ...formData, gender: e.target.value })}><option value="">Select</option><option>Male</option><option>Female</option></select></div>
+                                                <div className="col-span-2"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Professional Background <span className="text-red-500">*</span></label><textarea rows={3} className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" placeholder="Summarize your experience..." value={formData.professional_background} onChange={(e) => setFormData({ ...formData, professional_background: e.target.value })} /></div>
+                                                <div className="col-span-2"><label className="block text-[10px] font-black text-gray-400 uppercase mb-2">Years of Experience <span className="text-red-500">*</span></label><input type="number" placeholder="5" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-xl outline-none focus:ring-4 focus:ring-[#FDF22F]/10 focus:border-[#FDF22F] font-bold text-black text-sm transition-all" value={formData.years_of_experience} onChange={(e) => setFormData({ ...formData, years_of_experience: e.target.value })} /></div>
                                             </div>
                                         </section>
                                         <section className="space-y-4">

@@ -1165,7 +1165,9 @@ export default function TADashboard({
               ? jobFilters.status
               : subTab === "ARCHIVED"
                 ? "archived"
-                : "active";
+                : subTab === "TOTAL"
+                  ? "All"
+                  : "active";
 
           const jobsQuery = `/v1/jobs?page=${page}&status=${encodeURIComponent(statusQuery)}${searchParam}${posParam}${locParam}${deptParam}`;
           const jobsResponse = await apiFetch(jobsQuery);
@@ -1306,7 +1308,7 @@ export default function TADashboard({
 
     // Default sub-tab when global category changes
     if (initialTab === "Candidates") setSubTab("NEW");
-    else if (initialTab === "Jobs") setSubTab("ACTIVE");
+    else if (initialTab === "Jobs") setSubTab("TOTAL");
     else if (initialTab === "Employees") setSubTab("HIRED");
     else if (initialTab === "HiringPlan") setSubTab("REQUISITIONS");
     else if (initialTab === "Reports") setSubTab("OVERVIEW");
@@ -1817,7 +1819,7 @@ export default function TADashboard({
                   "REJECTED",
                 ];
               else if (initialTab === "Jobs")
-                items = ["ACTIVE", "ARCHIVED"];
+                items = ["TOTAL", "ARCHIVED"];
               else if (initialTab === "HiringPlan")
                 items = ["REQUISITIONS"];
               else if (initialTab === "Employees")
@@ -1992,408 +1994,19 @@ export default function TADashboard({
             <div className="w-8 h-8 border-4 border-[#FDF22F] border-t-transparent rounded-full animate-spin" />
           </div>
         )
-      ) : initialTab === "Jobs" ? (
-        <div className="flex flex-col gap-6">
-          {/* Professional Filter Bar for Jobs */}
-          <div className="px-4 sm:px-10 py-4 sm:py-5 bg-gray-50/30 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 relative z-[10]">
-            <div className="flex items-center gap-2 shrink-0">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" /></svg>
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filters</span>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-              {/* Position Search */}
-              <div className="relative w-full sm:w-auto">
-                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input type="text" placeholder="Search titles..." value={jobFilters.position} onChange={(e) => setJobFilters({...jobFilters, position: e.target.value})} className="bg-white border border-gray-100 rounded-xl pl-9 pr-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all w-full sm:w-48 placeholder:text-gray-400" />
-              </div>
-
-              <select value={jobFilters.location} onChange={(e) => setJobFilters({ ...jobFilters, location: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
-                <option value="All">All Locations</option>
-                {Array.from(new Set((jobs || []).map((j) => j.location).filter(Boolean))).map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
-              </select>
-
-              <select value={jobFilters.department} onChange={(e) => setJobFilters({ ...jobFilters, department: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
-                <option value="All">All Departments</option>
-                {Array.from(new Set((jobs || []).map((j) => j.department || j.requisition?.department).filter(Boolean))).map((dept) => (<option key={dept} value={dept}>{dept}</option>))}
-              </select>
-
-              <select value={jobFilters.status} onChange={(e) => setJobFilters({ ...jobFilters, status: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
-                <option value="All">All Statuses</option>
-                <option value="Active">Active</option>
-                <option value="Archived">Archived</option>
-              </select>
-
-              <button onClick={() => setJobFilters({ position: "", location: "All", department: "All", status: "All" })} className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest ml-1 sm:ml-2 transition-colors flex items-center gap-1.5 w-full sm:w-auto mt-2 sm:mt-0 justify-end sm:justify-start">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                Reset
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
-            {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left">
-              <thead className="bg-[#F9FAFB] border-b border-gray-100">
-                <tr>
-                  {[
-                    "POSITION",
-                    "LOCATION",
-                    "DEPARTMENT",
-                    "STATUS",
-                    "ACTIONS",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-8 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest"
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {jobs === null ? null : jobs.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-8 py-20 text-center text-gray-400 italic text-sm"
-                    >
-                      No {subTab.toLowerCase()} jobs found for{" "}
-                      {user.tenant?.name || "this company"}.
-                    </td>
-                  </tr>
-                ) : (
-                  jobs.map((job: any) => (
-                    <tr
-                      key={job.id}
-                      className="hover:bg-gray-50 transition-colors cursor-pointer group"
-                    >
-                      <td className="px-8 py-6">
-                        <p className="font-bold text-[#000000] group-hover:text-[#000000] transition-colors">
-                          {job.title}
-                        </p>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
-                          {job.published_at &&
-                            (() => {
-                              const d = new Date(job.published_at);
-                              const now = new Date();
-                              const diffDays = Math.floor(
-                                (now.getTime() - d.getTime()) /
-                                (1000 * 60 * 60 * 24),
-                              );
-                              const relative =
-                                diffDays === 0
-                                  ? "Today"
-                                  : diffDays === 1
-                                    ? "Yesterday"
-                                    : `${diffDays}d ago`;
-                              return (
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                                  Posted {relative}
-                                </span>
-                              );
-                            })()}
-                          {job.deadline &&
-                            (() => {
-                              const d = new Date(job.deadline);
-                              const now = new Date();
-                              const exactDate = d.toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                              });
-                              const diffTime = d.getTime() - now.getTime();
-                              const diffDays = Math.ceil(
-                                diffTime / (1000 * 60 * 60 * 24),
-                              );
-                              return (
-                                <span
-                                  className={`text-[10px] font-black uppercase tracking-widest ${diffDays <= 3 ? "text-red-500 animate-pulse" : "text-amber-600"}`}
-                                >
-                                  {exactDate} (
-                                  {diffDays <= 0
-                                    ? "Today"
-                                    : `${diffDays}d left`}
-                                  )
-                                </span>
-                              );
-                            })()}
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 text-sm text-gray-500">
-                        {job.location || "—"}
-                      </td>
-                      <td className="px-8 py-6 text-sm text-gray-500">
-                        {job.department ||
-                          job.requisition?.department ||
-                          "General"}
-                      </td>
-                      <td className="px-8 py-6">
-                        <span
-                          className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === "active" ? "bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10" : (job.status === "closed" || job.status === "archived") ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-400"}`}
-                        >
-                          {job.status}
-                        </span>
-                      </td>
-                      <td className="px-8 py-6">
-                        <div className="flex gap-2">
-                          {job.status === "active" ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleJobStatus(job.id, "archived");
-                              }}
-                              className="px-4 py-2 border border-red-200 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-50 transition-all"
-                            >
-                              Close Job
-                            </button>
-                          ) : (job.status === "closed" || job.status === "archived") ? (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleToggleJobStatus(job.id, "active");
-                              }}
-                              className="px-4 py-2 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-50 transition-all"
-                            >
-                              Re-open
-                            </button>
-                          ) : null}
-                          {(job.status === "closed" || job.status === "archived") && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeleteConfirmId(job.id);
-                                handleDeleteJob(job.id);
-                              }}
-                              className="px-4 py-2 border border-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all font-bold"
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="md:hidden flex flex-col gap-4 p-4">
-              {jobs === null ? null : jobs.length === 0 ? (
-                <div className="py-12 text-center text-gray-400 italic text-sm border border-dashed border-gray-200 rounded-3xl">
-                  No {subTab.toLowerCase()} jobs found for{" "}
-                  {user.tenant?.name || "this company"}.
-                </div>
-              ) : (
-                jobs.map((job: any) => (
-                  <div
-                    key={job.id}
-                    className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold text-[#000000]">{job.title}</p>
-                      <span
-                        className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === "active" ? "bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10" : (job.status === "closed" || job.status === "archived") ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-400"}`}
-                      >
-                        {job.status}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1 text-sm text-gray-500">
-                      <p>
-                        <span className="font-semibold">Location:</span>{" "}
-                        {job.location || "—"}
-                      </p>
-                      <p>
-                        <span className="font-semibold">Department:</span>{" "}
-                        {job.department || job.requisition?.department || "General"}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1">
-                      {job.published_at &&
-                        (() => {
-                          const d = new Date(job.published_at);
-                          const now = new Date();
-                          const diffDays = Math.floor(
-                            (now.getTime() - d.getTime()) /
-                            (1000 * 60 * 60 * 24),
-                          );
-                          const relative =
-                            diffDays === 0
-                              ? "Today"
-                              : diffDays === 1
-                                ? "Yesterday"
-                                : `${diffDays}d ago`;
-                          return (
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                              Posted {relative}
-                            </span>
-                          );
-                        })()}
-                      {job.deadline &&
-                        (() => {
-                          const d = new Date(job.deadline);
-                          const now = new Date();
-                          const exactDate = d.toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          });
-                          const diffTime = d.getTime() - now.getTime();
-                          const diffDays = Math.ceil(
-                            diffTime / (1000 * 60 * 60 * 24),
-                          );
-                          return (
-                            <span
-                              className={`text-[10px] font-black uppercase tracking-widest ${diffDays <= 3 ? "text-red-500 animate-pulse" : "text-amber-600"}`}
-                            >
-                              {exactDate} (
-                              {diffDays <= 0 ? "Today" : `${diffDays}d left`})
-                            </span>
-                          );
-                        })()}
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      {job.status === "active" ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleJobStatus(job.id, "archived");
-                          }}
-                          className="px-4 py-2 border border-red-200 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-50 transition-all flex-1"
-                        >
-                          Close Job
-                        </button>
-                      ) : (job.status === "closed" || job.status === "archived") ? (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggleJobStatus(job.id, "active");
-                          }}
-                          className="px-4 py-2 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-50 transition-all flex-1"
-                        >
-                          Re-open
-                        </button>
-                      ) : null}
-                      {(job.status === "closed" || job.status === "archived") && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteConfirmId(job.id);
-                            handleDeleteJob(job.id);
-                          }}
-                          className="px-4 py-2 border border-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all flex-1 font-bold"
-                        >
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Jobs Pagination Controls */}
-            {jobsPagination && jobsPagination.last_page > 1 && (
-              <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">
-                    Showing{" "}
-                    <span className="text-[#000000]">
-                      {jobsPagination.from}
-                    </span>{" "}
-                    -{" "}
-                    <span className="text-[#000000]">{jobsPagination.to}</span>{" "}
-                    of{" "}
-                    <span className="text-[#000000]">
-                      {jobsPagination.total}
-                    </span>
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => fetchData(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#000000] hover:border-[#000000] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2.5"
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                  </button>
-
-                  {Array.from(
-                    { length: Math.min(5, jobsPagination.last_page) },
-                    (_, i) => {
-                      let pageNum =
-                        currentPage <= 3 ? i + 1 : currentPage + i - 2;
-                      if (pageNum > jobsPagination.last_page)
-                        pageNum = jobsPagination.last_page - (4 - i);
-                      if (pageNum < 1) pageNum = i + 1;
-                      if (pageNum > jobsPagination.last_page) return null;
-
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => fetchData(pageNum)}
-                          className={`w-10 h-10 rounded-xl text-[11px] font-black transition-all shadow-sm border ${currentPage === pageNum
-                            ? "bg-[#FDF22F] text-black border-[#FDF22F]"
-                            : "bg-white text-gray-400 border-gray-200 hover:border-[#FDF22F] hover:text-[#000000]"
-                            }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    },
-                  )}
-
-                  <button
-                    onClick={() => fetchData(currentPage + 1)}
-                    disabled={currentPage === jobsPagination.last_page}
-                    className="w-10 h-10 rounded-xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-[#000000] hover:border-[#000000] transition-all disabled:opacity-30 disabled:cursor-not-allowed shadow-sm"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2.5"
-                        d="M9 5l7 7-7 7"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       ) : null}
 
-      {(initialTab === "Candidates" || initialTab === "Employees") && (
+      {(initialTab === "Candidates" || initialTab === "Employees" || initialTab === "Jobs") && (
         <div className="flex flex-col">
           {/* Header Section without inner filters */}
           <div className="px-4 sm:px-10 py-6 sm:py-8 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 bg-white">
             <div className="space-y-1">
               <h2 className="text-xl sm:text-2xl font-black text-[#000000] flex items-center gap-2 sm:gap-3">
                 <div className="w-1.5 sm:w-2 h-6 sm:h-8 bg-[#FDF22F] rounded-full" />
-                {subTab} PIPELINE
+                {initialTab === "Jobs" ? `${subTab} POSITIONS` : `${subTab} PIPELINE`}
               </h2>
               <p className="text-[10px] sm:text-xs font-medium text-gray-400">
-                Manage talent through the {subTab.toLowerCase()} stage
+                {initialTab === "Jobs" ? `Manage and track ${subTab.toLowerCase()} job openings` : `Manage talent through the ${subTab.toLowerCase()} stage`}
               </p>
             </div>
             <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
@@ -2414,7 +2027,9 @@ export default function TADashboard({
                     : initialTab === "Employees" &&
                       (subTab === "STAFF" || subTab === "SEPARATED")
                       ? (employeesPagination?.total ?? 0)
-                      : (applicantsPagination?.total ?? 0)}
+                      : initialTab === "Jobs"
+                        ? (jobsPagination?.total ?? 0)
+                        : (applicantsPagination?.total ?? 0)}
                 </span>
               </p>
             </div>
@@ -2520,7 +2135,152 @@ export default function TADashboard({
             </div>
           )}
 
-          {candidateViewMode === "grid" && initialTab === "Candidates" ? (
+          {/* Professional Filter Bar for Jobs */}
+          {initialTab === "Jobs" && (
+            <div className="flex flex-col gap-6">
+              <div className="px-4 sm:px-10 py-4 sm:py-5 bg-gray-50/30 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 relative z-[10]">
+                <div className="flex items-center gap-2 shrink-0">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z" /></svg>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Filters</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  <div className="relative w-full sm:w-auto">
+                    <Search className="w-3.5 h-3.5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input type="text" placeholder="Search titles..." value={jobFilters.position} onChange={(e) => setJobFilters({...jobFilters, position: e.target.value})} className="bg-white border border-gray-100 rounded-xl pl-9 pr-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all w-full sm:w-48 placeholder:text-gray-400" />
+                  </div>
+
+                  <select value={jobFilters.location} onChange={(e) => setJobFilters({ ...jobFilters, location: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
+                    <option value="All">All Locations</option>
+                    {Array.from(new Set((jobs || []).map((j) => j.location).filter(Boolean))).map((loc) => (<option key={loc} value={loc}>{loc}</option>))}
+                  </select>
+
+                  <select value={jobFilters.department} onChange={(e) => setJobFilters({ ...jobFilters, department: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
+                    <option value="All">All Departments</option>
+                    {Array.from(new Set((jobs || []).map((j) => j.department || j.requisition?.department).filter(Boolean))).map((dept) => (<option key={dept} value={dept}>{dept}</option>))}
+                  </select>
+
+                  <select value={jobFilters.status} onChange={(e) => setJobFilters({ ...jobFilters, status: e.target.value })} className="flex-1 sm:flex-none bg-white border border-gray-100 rounded-xl px-2 sm:px-4 py-2 text-[11px] font-bold outline-none focus:border-[#FDF22F] transition-all cursor-pointer">
+                    <option value="All">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Archived">Archived</option>
+                  </select>
+
+                  <button onClick={() => setJobFilters({ position: "", location: "All", department: "All", status: "All" })} className="text-[10px] font-black text-gray-400 hover:text-black uppercase tracking-widest ml-1 sm:ml-2 transition-colors flex items-center gap-1.5 w-full sm:w-auto mt-2 sm:mt-0 justify-end sm:justify-start">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white rounded border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-[#F9FAFB] border-b border-gray-100">
+                      <tr>
+                        {["POSITION", "LOCATION", "DEPARTMENT", "STATUS", "ACTIONS"].map((h) => (
+                          <th key={h} className="px-8 py-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {jobs === null ? null : jobs.length === 0 ? (
+                        <tr><td colSpan={5} className="px-8 py-20 text-center text-gray-400 italic text-sm">No {subTab.toLowerCase()} jobs found for {user.tenant?.name || "this company"}.</td></tr>
+                      ) : (
+                        jobs.map((job: any) => (
+                          <tr key={job.id} className="hover:bg-gray-50 transition-colors cursor-pointer group">
+                            <td className="px-8 py-6">
+                              <p className="font-bold text-[#000000] group-hover:text-[#000000] transition-colors">{job.title}</p>
+                              <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1">
+                                {job.published_at && (() => {
+                                  const d = new Date(job.published_at);
+                                  const now = new Date();
+                                  const diffDays = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+                                  const relative = diffDays === 0 ? "Today" : diffDays === 1 ? "Yesterday" : `${diffDays}d ago`;
+                                  return <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Posted {relative}</span>;
+                                })()}
+                                {job.deadline && (() => {
+                                  const d = new Date(job.deadline);
+                                  const now = new Date();
+                                  const exactDate = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                                  const diffTime = d.getTime() - now.getTime();
+                                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                  return <span className={`text-[10px] font-black uppercase tracking-widest ${diffDays <= 3 ? "text-red-500 animate-pulse" : "text-amber-600"}`}>{exactDate} ({diffDays <= 0 ? "Today" : `${diffDays}d left`})</span>;
+                                })()}
+                              </div>
+                            </td>
+                            <td className="px-8 py-6 text-sm text-gray-500">{job.location || "—"}</td>
+                            <td className="px-8 py-6 text-sm text-gray-500">{job.department || job.requisition?.department || "General"}</td>
+                            <td className="px-8 py-6">
+                              <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === "active" ? "bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10" : (job.status === "closed" || job.status === "archived") ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-400"}`}>{job.status}</span>
+                            </td>
+                            <td className="px-8 py-6">
+                              <div className="flex gap-2">
+                                {job.status === "active" ? (
+                                  <button onClick={(e) => { e.stopPropagation(); handleToggleJobStatus(job.id, "archived"); }} className="px-4 py-2 border border-red-200 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-50 transition-all">Close Job</button>
+                                ) : (job.status === "closed" || job.status === "archived") ? (
+                                  <button onClick={(e) => { e.stopPropagation(); handleToggleJobStatus(job.id, "active"); }} className="px-4 py-2 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-50 transition-all">Re-open</button>
+                                ) : null}
+                                {(job.status === "closed" || job.status === "archived") && (
+                                  <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(job.id); handleDeleteJob(job.id); }} className="px-4 py-2 border border-gray-100 text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all font-bold">Delete</button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View for Jobs */}
+                <div className="md:hidden flex flex-col gap-4 p-4">
+                  {jobs === null ? null : jobs.length === 0 ? (
+                    <div className="py-12 text-center text-gray-400 italic text-sm border border-dashed border-gray-200 rounded-3xl">No {subTab.toLowerCase()} jobs found.</div>
+                  ) : (
+                    jobs.map((job: any) => (
+                      <div key={job.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <p className="font-bold text-[#000000]">{job.title}</p>
+                          <span className={`px-3 py-1 rounded text-[10px] font-black uppercase tracking-widest ${job.status === "active" ? "bg-[#FDF22F] text-black shadow-lg shadow-[#FDF22F]/10" : (job.status === "closed" || job.status === "archived") ? "bg-red-50 text-red-600" : "bg-gray-100 text-gray-400"}`}>{job.status}</span>
+                        </div>
+                        <div className="flex flex-col gap-1 text-sm text-gray-500">
+                          <p><span className="font-semibold">Location:</span> {job.location || "—"}</p>
+                          <p><span className="font-semibold">Department:</span> {job.department || job.requisition?.department || "General"}</p>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          {job.status === "active" ? (
+                            <button onClick={(e) => { e.stopPropagation(); handleToggleJobStatus(job.id, "archived"); }} className="px-4 py-2 border border-red-200 text-red-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-red-50 transition-all flex-1">Close</button>
+                          ) : (job.status === "closed" || job.status === "archived") ? (
+                            <button onClick={(e) => { e.stopPropagation(); handleToggleJobStatus(job.id, "active"); }} className="px-4 py-2 border border-emerald-200 text-emerald-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-50 transition-all flex-1">Re-open</button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Jobs Pagination */}
+                {jobsPagination && jobsPagination.last_page > 1 && (
+                  <div className="px-8 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+                    <p className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Showing <span className="text-[#000000]">{jobsPagination.from}</span> - <span className="text-[#000000]">{jobsPagination.to}</span> of <span className="text-[#000000]">{jobsPagination.total}</span></p>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => fetchData(currentPage - 1)} disabled={currentPage === 1} className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 disabled:opacity-30">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" /></svg>
+                      </button>
+                      <button onClick={() => fetchData(currentPage + 1)} disabled={currentPage === jobsPagination.last_page} className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 disabled:opacity-30">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {initialTab !== "Jobs" && (
+            <>
+              {candidateViewMode === "grid" && initialTab === "Candidates" ? (
             <div className="p-10 bg-gray-50/20">
               {applicants === null ? null : applicants.length === 0 ? (
                 <div className="py-20 text-center text-gray-400 italic text-sm bg-white rounded-3xl border border-dashed border-gray-200">
@@ -3103,8 +2863,10 @@ export default function TADashboard({
               </div>
             );
           })()}
-        </div>
+        </>
       )}
+    </div>
+  )}
 
       {initialTab === "HiringPlan" && (
         <div className="flex flex-col">
@@ -5141,10 +4903,10 @@ export default function TADashboard({
                       Description & Justification
                     </h3>
                     <div className="text-sm text-gray-600 leading-relaxed bg-white p-6 rounded border border-gray-100 italic">
-                      "
+                      &quot;
                       {drawerReq.description ||
                         "No detailed description provided."}
-                      "
+                      &quot;
                     </div>
                   </div>
                 </section>
@@ -6601,7 +6363,7 @@ export default function TADashboard({
                     
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
-                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1">Score</label>
+                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1 flex items-center gap-1">Score <span className="text-red-500">*</span></label>
                         <input
                           type="number"
                           placeholder="00"
@@ -6616,12 +6378,12 @@ export default function TADashboard({
                                written_exam_score: raw ? ratio.toFixed(2).replace(/\.00$/, '') : "",
                              }));
                           }}
-                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-2xl placeholder-black/5 px-4 py-3 shadow-inner"
+                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-xl placeholder-black/5 px-1 py-3 shadow-inner text-center"
                         />
                       </div>
                       <div className="text-2xl font-black text-gray-300 pt-5">/</div>
                       <div className="flex-1">
-                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1">Out Of</label>
+                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1 flex items-center gap-1">Out Of <span className="text-red-500">*</span></label>
                         <input
                           type="number"
                           placeholder="100"
@@ -6636,14 +6398,14 @@ export default function TADashboard({
                                written_exam_score: raw ? ratio.toFixed(2).replace(/\.00$/, '') : "",
                              }));
                           }}
-                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-2xl placeholder-black/5 px-4 py-3 shadow-inner"
+                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-xl placeholder-black/5 px-1 py-3 shadow-inner text-center"
                         />
                       </div>
                     </div>
                     {scoringForm.written_raw_score && (
                         <div className="flex justify-end pt-1">
                           <span className="text-[12px] font-black text-black bg-[#FDF22F] px-4 py-2 rounded-2xl uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20">
-                            Result: {scoringForm.written_raw_score}/{scoringForm.written_out_of || "100"}%
+                            Result: {scoringForm.written_raw_score}/{scoringForm.written_out_of || "100"}
                           </span>
                         </div>
                     )}
@@ -6667,7 +6429,7 @@ export default function TADashboard({
                     
                     <div className="flex items-center gap-4">
                       <div className="flex-1">
-                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1">Score</label>
+                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1 flex items-center gap-1">Score <span className="text-red-500">*</span></label>
                         <input
                           type="number"
                           placeholder="00"
@@ -6682,12 +6444,12 @@ export default function TADashboard({
                                technical_interview_score: raw ? ratio.toFixed(2).replace(/\.00$/, '') : "",
                              }));
                           }}
-                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-2xl placeholder-black/5 px-4 py-3 shadow-inner"
+                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-xl placeholder-black/5 px-1 py-3 shadow-inner text-center"
                         />
                       </div>
                       <div className="text-2xl font-black text-gray-300 pt-5">/</div>
                       <div className="flex-1">
-                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1">Out Of</label>
+                        <label className="block text-[9px] uppercase tracking-widest text-black/40 font-bold mb-1 flex items-center gap-1">Out Of <span className="text-red-500">*</span></label>
                         <input
                           type="number"
                           placeholder="100"
@@ -6702,14 +6464,14 @@ export default function TADashboard({
                                technical_interview_score: raw ? ratio.toFixed(2).replace(/\.00$/, '') : "",
                              }));
                           }}
-                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-2xl placeholder-black/5 px-4 py-3 shadow-inner"
+                          className="w-full bg-white rounded-2xl border-none focus:ring-0 text-black font-black text-xl placeholder-black/5 px-1 py-3 shadow-inner text-center"
                         />
                       </div>
                     </div>
                     {scoringForm.tech_raw_score && (
                         <div className="flex justify-end pt-1">
                           <span className="text-[12px] font-black text-black bg-[#FDF22F] px-4 py-2 rounded-2xl uppercase tracking-widest shadow-lg shadow-[#FDF22F]/20">
-                            Result: {scoringForm.tech_raw_score}/{scoringForm.tech_out_of || "100"}%
+                            Result: {scoringForm.tech_raw_score}/{scoringForm.tech_out_of || "100"}
                           </span>
                         </div>
                     )}
@@ -6719,7 +6481,7 @@ export default function TADashboard({
 
                 <div className="space-y-3">
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest ml-2">
-                    Interviewer Feedback & Assessment Notes
+                    Interviewer Feedback & Assessment Notes <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     rows={4}
@@ -6945,7 +6707,7 @@ export default function TADashboard({
                   </div>
                   <div>
                     <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                      Date of Separation
+                      Date of Separation {employeeStatusForm.status !== "active" && <span className="text-red-500 ml-1">*</span>}
                     </label>
                     <input
                       type="date"
@@ -6964,7 +6726,7 @@ export default function TADashboard({
 
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                    Reason (Internal Note)
+                    Reason (Internal Note) {employeeStatusForm.status !== "active" && <span className="text-red-500 ml-1">*</span>}
                   </label>
                   <textarea
                     rows={4}
@@ -7071,7 +6833,7 @@ export default function TADashboard({
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                      Event Date
+                      Event Date <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
                       type="date"
@@ -7087,7 +6849,7 @@ export default function TADashboard({
                   </div>
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                      Start Time
+                      Start Time <span className="text-red-500 ml-1">*</span>
                     </label>
                     <input
                       type="time"
@@ -7124,7 +6886,7 @@ export default function TADashboard({
 
                   <div className="space-y-3">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                      Assigned Staff / Invigilator
+                      Assigned Staff / Invigilator <span className="text-red-500 ml-1">*</span>
                     </label>
                     <select
                       value={globalScheduleForm.interviewer_id}
@@ -7173,7 +6935,7 @@ export default function TADashboard({
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-3">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                          Offered Salary
+                          Offered Salary <span className="text-red-500 ml-1">*</span>
                         </label>
                         <input
                           type="text"
@@ -7190,7 +6952,7 @@ export default function TADashboard({
                       </div>
                       <div className="space-y-3">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">
-                          Proposed Start Date
+                          Proposed Start Date <span className="text-red-500 ml-1">*</span>
                         </label>
                         <input
                           type="date"

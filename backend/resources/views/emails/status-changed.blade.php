@@ -173,18 +173,18 @@
             <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; text-align: center;">
                 <div style="font-size: 11px; font-weight: 900; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">
                     @if($score == $applicant->written_exam_score)
-                        WRITTEN EXAM RESULT
+                        WRITTEN EXAM RESULT:
                     @elseif($score == $applicant->technical_interview_score)
-                        TECHNICAL INTERVIEW RESULT
+                        TECHNICAL INTERVIEW RESULT:
                     @else
-                        ASSESSMENT RESULT
+                        RESULT:
                     @endif
                 </div>
                 <div style="font-size: 48px; font-weight: 900; color: #000; line-height: 1;">
                     @if($score == $applicant->written_exam_score && $applicant->written_raw_score && $applicant->written_out_of)
-                        {{ rtrim(rtrim(number_format($applicant->written_raw_score, 2), '0'), '.') }}<span style="font-size: 24px; color: #94a3b8;">/{{ rtrim(rtrim(number_format($applicant->written_out_of, 2), '0'), '.') }}%</span>
+                        {{ rtrim(rtrim(number_format($applicant->written_raw_score, 2), '0'), '.') }}<span style="font-size: 24px; color: #94a3b8;">/{{ rtrim(rtrim(number_format($applicant->written_out_of, 2), '0'), '.') }}</span>
                     @elseif($score == $applicant->technical_interview_score && $applicant->technical_raw_score && $applicant->technical_out_of)
-                        {{ rtrim(rtrim(number_format($applicant->technical_raw_score, 2), '0'), '.') }}<span style="font-size: 24px; color: #94a3b8;">/{{ rtrim(rtrim(number_format($applicant->technical_out_of, 2), '0'), '.') }}%</span>
+                        {{ rtrim(rtrim(number_format($applicant->technical_raw_score, 2), '0'), '.') }}<span style="font-size: 24px; color: #94a3b8;">/{{ rtrim(rtrim(number_format($applicant->technical_out_of, 2), '0'), '.') }}</span>
                     @else
                         {{ rtrim(rtrim(number_format($score, 2), '0'), '.') }}<span style="font-size: 20px; color: #94a3b8;">%</span>
                     @endif

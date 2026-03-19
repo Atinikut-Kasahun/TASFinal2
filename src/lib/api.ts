@@ -1,4 +1,4 @@
-const defaultHost = "192.168.1.49";
+const defaultHost = "192.168.1.55";
 export const API_URL = process.env.NEXT_PUBLIC_API_URL || `http://${defaultHost}:8081/api`;
 
 

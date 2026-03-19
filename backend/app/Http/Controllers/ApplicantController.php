@@ -39,7 +39,7 @@ class ApplicantController extends Controller
             $query->where('tenant_id', $request->tenant_id);
         }
 
-        if ($request->has('status') && $request->status !== 'ALL') {
+        if ($request->filled('status') && $request->status !== 'ALL') {
             if ($request->status === 'active') {
                 $query->whereIn('status', ['new', 'written_exam', 'technical_interview', 'final_interview', 'interview', 'offer']);
             } else {
@@ -47,11 +47,11 @@ class ApplicantController extends Controller
             }
         }
 
-        if ($request->has('job_id') && !in_array($request->job_id, ['All', 'ALL'])) {
+        if ($request->filled('job_id') && !in_array($request->job_id, ['All', 'ALL'])) {
             $query->where('job_posting_id', $request->job_id);
         }
 
-        if ($request->has('experience') && $request->experience !== 'All') {
+        if ($request->filled('experience') && $request->experience !== 'All') {
             match ($request->experience) {
                 'under_1', '0-1' => $query->where('years_of_experience', '<', 1),
                 '1-3'            => $query->whereBetween('years_of_experience', [1, 3]),
@@ -62,15 +62,15 @@ class ApplicantController extends Controller
             };
         }
 
-        if ($request->has('department') && $request->department !== 'All') {
+        if ($request->filled('department') && $request->department !== 'All') {
             $query->whereHas('jobPosting', fn($q) => $q->where('department', $request->department));
         }
 
-        if ($request->has('gender') && $request->gender !== 'All') {
+        if ($request->filled('gender') && $request->gender !== 'All') {
             $query->where('gender', $request->gender);
         }
 
-        if ($request->has('min_score') && $request->min_score > 0) {
+        if ($request->filled('min_score') && $request->min_score > 0) {
             $query->where(
                 fn($q) => $q
                     ->where('written_exam_score', '>=', $request->min_score)
@@ -532,7 +532,7 @@ class ApplicantController extends Controller
 
         // ── Funnel counts ────────────────────────────────────────────────────
         $funnelStats = (clone $query)->selectRaw("
-            COUNT(*) as total,
+            SUM(CASE WHEN applicants.status IN ('new', 'written_exam', 'technical_interview', 'final_interview', 'offer') THEN 1 ELSE 0 END) as applied,
             SUM(CASE WHEN applicants.status = 'hired' THEN 1 ELSE 0 END) as hired,
             SUM(CASE WHEN applicants.status = 'offer' THEN 1 ELSE 0 END) as offer_count
         ")->first();
@@ -582,11 +582,19 @@ class ApplicantController extends Controller
                     ->count(),
             ];
         }
-
-        // ── Turnover data (12 months) ────────────────────────────────────────
+        // ── Workforce headcount ─────────────────────────────────────────────
         $deptFilter = $request->input('department');
-
         $activeUsersCount = \App\Models\User::where('tenant_id', $tenantId)
+            ->when($deptFilter && $deptFilter !== 'All', fn($q) => $q->where('department', $deptFilter))
+            ->where(function($q) {
+                $q->whereHas('roles', function($rq) {
+                    $rq->whereIn('slug', ['employee', 'staff']);
+                })
+                ->orWhereDoesntHave('roles');
+            })
+            ->whereDoesntHave('roles', function($rq) {
+                $rq->whereIn('slug', ['ta_manager', 'admin', 'managing_director', 'hr_manager', 'dept_manager']);
+            })
             ->where(fn($q) => $q
                 ->whereNull('employment_status')
                 ->orWhere('employment_status', 'active')
@@ -594,12 +602,17 @@ class ApplicantController extends Controller
 
         $activeApplicantsCount = \App\Models\Applicant::where('tenant_id', $tenantId)
             ->where('status', 'hired')
-            ->where(fn($q) => $q
-                ->whereNull('employment_status')
-                ->orWhere('employment_status', 'active')
-            )->count();
+            ->when($deptFilter && $deptFilter !== 'All', function($q) use ($deptFilter) {
+                $q->whereHas('jobPosting', fn($jq) => $jq->where('department', $deptFilter));
+            })->count();
 
-        $totalHeadcount = max($activeUsersCount + $activeApplicantsCount, 1);
+        $onboardingCount = \App\Models\Applicant::where('tenant_id', $tenantId)
+            ->where('status', 'onboarding')
+            ->when($deptFilter && $deptFilter !== 'All', function($q) use ($deptFilter) {
+                $q->whereHas('jobPosting', fn($jq) => $jq->where('department', $deptFilter));
+            })->count();
+
+        $totalHeadcount = max($activeUsersCount + $activeApplicantsCount + $onboardingCount, 0);
 
         $turnoverData = [];
         for ($i = 11; $i >= 0; $i--) {
@@ -677,7 +690,7 @@ class ApplicantController extends Controller
 
         return response()->json([
             'funnel' => [
-                'applied'      => $funnelStats->total,
+                'applied'      => $funnelStats->applied,
                 'screening'    => $screeningCount,
                 'interviewing' => $interviewingCount,
                 'offer'        => $funnelStats->offer_count,
